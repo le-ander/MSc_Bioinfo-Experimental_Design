@@ -194,7 +194,7 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
 
     # split data to correct size to run on GPU
     #was 1000.0
-    Max = 1000.0 # max number of threads on whole gpu
+    Max = 100.0 # max number of threads on whole gpu
     dist_gpu1 = mod.get_function("distance1")
     print "registers: ", dist_gpu1.num_regs
 
@@ -244,8 +244,8 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
             res1 = zeros([Ni,Nj]).astype(float64) # results vector [shape(data1)*shape(data2)]
 
             # invoke kernel
-            R = 15.0 # square root off maximum threads per block
-
+            R = 15.0 # square root of maximum threads per block
+#print "MAX THREADS PER BLOCK", driver.Device(0).get_attributes()[driver.device_attribute.MAX_THREADS_PER_BLOCK]
             if(Ni<R):
                 gi = 1  # grid width  (i.e. gi * gj gives number of blocks)
                 bi = Ni # block width (i.e. bi * bj gives size of each block (max. R*R))
