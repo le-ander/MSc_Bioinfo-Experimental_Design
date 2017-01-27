@@ -194,7 +194,7 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
 
     # split data to correct size to run on GPU
     #was 1000.0
-    Max = 1000.0
+    Max = 1000.0 # max number of threads on whole gpu
     dist_gpu1 = mod.get_function("distance1")
     print "registers: ", dist_gpu1.num_regs
 
