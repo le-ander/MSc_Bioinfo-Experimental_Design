@@ -44,9 +44,9 @@ def getWeightedSample(weights):
         if rnd < total:
             return i
 
-    
+
 def checkNAs(result):
-    
+
     index = []
     for i in range(len(result)):
         # loop over species
@@ -61,15 +61,15 @@ def checkNAs(result):
                     break
             l = l+1
     return(index)
-                                                
+
 def removeNAs(result, parameter,index):
     p = parameter
-    x = result    
+    x = result
     xKeep = []
     pKeep = []
     xRemove = []
     pRemove = []
-    
+
     for i in range(len(p)):
         rem = False
         for j in range(len(index)):
@@ -94,9 +94,9 @@ def print_results(result, outfile,timepoints):
     print >>out, ""
     # loop over threads
     for i in range(len(result)):
-        # loop over species
+        # loop over all species
         for l in range(len(result[i][0])):
-                
+
             print >>out, i,"0",l,
             for k in range(len(timepoints)):
                 print >>out, result[i][k][l],
@@ -111,7 +111,7 @@ def print_results(result, outfile,timepoints):
 def print_parameters(param, outfile):
 
     out = open(outfile,'w')
-    
+
     for i in range(len(param)):
         for j in range(len(param[i])):
             print >>out, param[i][j],
@@ -128,9 +128,9 @@ def prod( iterable ):
 
 
 def saveResults(result,outfile):
-    
+
     out = open(outfile,'w')
-        
+
     for i in range(shape(result)[0]):
         for j in range(shape(result)[1]):
             print >>out, result[i,j],
@@ -182,7 +182,7 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
     N1 = 10
 #was 4500000
     N2 = 90
-    
+
     d1 = data[0:N1,:,:].astype(float64)
     d2 = array(theta)[N1:(N1+N2),:,:].astype(float64)
     d3 = array(theta)[0:N1,:,:].astype(float64)
@@ -226,16 +226,16 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
 
         if((s*(i+1)) > N1): # If last run with less that max remaining trajectories
             si = int(N1 - Max*i) # Set si to remaining number of particels
-        
+
         for j in range(numRuns2):
-            
+
             if((s*(j+1)) > N2): # If last run with less that max remaining trajectories
                 sj = int(N2 - Max*j) # Set sj to remaining number of particels
 
             data1 = d1[(i*int(Max)):(i*int(Max)+si),:,:] # d1 subunit for this run (same vector 9 times)
             data2 = d2[(j*int(Max)):(j*int(Max)+sj),:,:] # d2 subunit for this run (9 different verctors)
             print shape(data1), shape(data2)
-            
+
             Ni=data1.shape[0] # Number of particels in data1
             Nj=data2.shape[0] # Number of particels in data2
 
@@ -258,7 +258,7 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
             else:
                 gj = ceil(Nj/R)
                 bj = R
-                
+
             dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float32(pi), float64(a), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
             # takes data1 and data2 as input, outputs res1
             print "SHAPE RES1", shape(res1)
@@ -267,8 +267,8 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
             countsj = countsj+sj
 
         countsi = countsi+si
-                                 
-                                        
+
+
     sum1 = 0.0
     counter = 0  # counts number of nan in matrix
     counter2 = 0 # counts number of inf sums in matrix
@@ -277,7 +277,7 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
     for i in range(N1):
         if(isnan(sum(result2[i,:]))): counter=counter+1
         if(isinf(log(sum(result2[i,:])))): counter2=counter2+1
-        else: 
+        else:
             sum1 = sum1 - log(sum(result2[i,:])) + log(float(N2)) + M*P*log(a) +  M*P*log(2.0*pi*sigma*sigma)
 
     Info = sum1/float(N1)
@@ -287,7 +287,7 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
     print "counter: ",counter,"counter2: ",counter2
 
     out = open('results','w')
-    
+
     print >>out, "counter: ",counter2
     print >>out, "mutual info: ", Info
 
@@ -397,14 +397,14 @@ def getEntropy2(dataRef,dataY,N,sigma,theta1,theta2):
 
             s = N1/numRuns
             data1 = d1[(i*s):(i*s+s),:,:]
-            data2 = d2[(j*s):(j*s+s),:,:]  
+            data2 = d2[(j*s):(j*s+s),:,:]
             data3 = d3[(i*s):(i*s+s),:,:]
-            data4 = d4[(j*s):(j*s+s),:,:]  
+            data4 = d4[(j*s):(j*s+s),:,:]
 
             data5 = d5[(i*s):(i*s+s),:,:]
-            data6 = d6[(j*s):(j*s+s),:,:]  
+            data6 = d6[(j*s):(j*s+s),:,:]
             data7 = d7[(i*s):(i*s+s),:,:]
-            data8 = d8[(j*s):(j*s+s),:,:]  
+            data8 = d8[(j*s):(j*s+s),:,:]
 
 
             N=data1.shape[0]
@@ -423,12 +423,12 @@ def getEntropy2(dataRef,dataY,N,sigma,theta1,theta2):
                 dist_gpu1(int32(N), int32(M), int32(P), float32(sigma), float32(pi), driver.In(data1), driver.In(data2), driver.In(data3), driver.In(data4), driver.Out(res1), block=(15,15,1), grid=(int(g),int(g)))
                 dist_gpu2(int32(N), int32(M), int32(P), float32(sigma), float32(pi), driver.In(data5), driver.In(data6), driver.In(data7), driver.In(data8), driver.Out(res2), driver.Out(res3), block=(15,15,1), grid=(int(g),int(g)))
 
- 
+
             result1[(i*s):(i*s+s),(j*s):(j*s+s)] = res1
             result2[(i*s):(i*s+s),(j*s):(j*s+s)] = res2
             result3[(i*s):(i*s+s),(j*s):(j*s+s)] = res3
 
-    
+
     sum1 = 0.0
     a1 = 0.0
     a2 = 0.0
@@ -444,7 +444,7 @@ def getEntropy2(dataRef,dataY,N,sigma,theta1,theta2):
         a3 = a3 + log(sum(result3[i,:])/N4)
 
 
-  
+
     print "a1: ", a1/float(i+1) , "a2: ", a2/float(i+1), "a3: ", a3/float(i+1)
     print "all: ",  a1/float(i+1) - a2/float(i+1) - a3/float(i+1)
 
@@ -455,7 +455,7 @@ def getEntropy2(dataRef,dataY,N,sigma,theta1,theta2):
 
 
 def printOptions():
-    
+
     print "\nList of possible options:"
 
     print "\n Input options:"
@@ -467,19 +467,19 @@ def printOptions():
     print "-tm\t--timing\t print timing information"
     print "--c++\t\t\t use C++ implementation"
     print "-cu\t--cuda\t\t use CUDA implementation"
-    
-    print "\n Output options:"  
+
+    print "\n Output options:"
     print "-of\t--outfolder\t write results to folder eg -of=/full/path/to/folder (default is _results_ in current directory)"
     print "-f\t--fulloutput\t print epsilon, sampling steps and acceptence rates after each population"
     print "-s\t--save\t\t no backup after each population"
     print "-db\t--debug\t set the debug mode"
-    
+
     print "\n Simulate options:"
     print "-S\t--simulate\t simulate the model over the range of timepoints, using paramters sampled from the priors"
 
     print "\n Design options:"
     print "-D\t--design\t run ABC-SysBio in design mode"
-    
+
     print "\n Plotting options:"
     print "-d\t--diagnostic\t no printing of diagnostic plots"
     print "-t\t--timeseries\t no plotting of simulation results after each population"
@@ -488,9 +488,9 @@ def printOptions():
 
     print "\n"
 
-    
+
 def main():
-        
+
     diagnostic=True
     pickling=True
     file_exist=False
@@ -513,7 +513,7 @@ def main():
 
         if sys.argv[i].startswith('--'):
             option = sys.argv[i][2:]
-          
+
             if option == 'help':
                 printOptions()
                 sys.exit()
@@ -525,24 +525,24 @@ def main():
             elif option == 'design': design=True
             elif option == 'debug': full_debug=True
             elif option == 'fulloutput': full=True
-            elif option == 'localcode' : usesbml = False 
+            elif option == 'localcode' : usesbml = False
             elif option[0:8] == 'setseed=' : seed = int( option[8:] )
             elif option[0:10] == 'outfolder=' : fname = option[10:]
             elif option[0:9] == 'cudacode=' : app_file = option[9:]
-            elif option == 'timing' : timing = True 
+            elif option == 'timing' : timing = True
             elif option == 'custk' : custom_kernel = True
             elif option == 'custd' : custom_distance = True
             elif option == 'cuda' : use_cuda = True
             elif option == 'c++' : use_c = True
-            elif option == 'infile': 
+            elif option == 'infile':
                 input_file=sys.argv[i+1]
                 file_exist=True
-            elif not(sys.argv[i-1][2:] == 'infile'): 
+            elif not(sys.argv[i-1][2:] == 'infile'):
                 print "\nunknown option "+sys.argv[i]
                 printOptions()
                 sys.exit()
-            
-        
+
+
         elif sys.argv[i].startswith('-'):
             option = sys.argv[i][1:]
             if option == 'h':
@@ -561,10 +561,10 @@ def main():
             elif option[0:3] == 'sd=' : seed = int( option[3:] )
             elif option[0:3] == 'of=' : fname = option[3:]
             elif option == 'tm' : timing = True
-            elif option == 'i': 
+            elif option == 'i':
                 input_file=sys.argv[i+1]
                 file_exist=True
-            elif not(sys.argv[i-1][2:] == 'i'): 
+            elif not(sys.argv[i-1][2:] == 'i'):
                 print "\nunknown option "+sys.argv[i]
                 printOptions()
                 sys.exit()
@@ -577,7 +577,7 @@ def main():
         print "\nNo input_file is given!\nUse: \n\t-i 'inputfile' \nor: \n\t--infile 'inputfile' \n"
         sys.exit()
 
-    # python, C++ or CUDA 
+    # python, C++ or CUDA
     if use_cuda == True and use_c == True:
         print "specified both c++ and CUDA "
         sys.exit()
@@ -590,7 +590,7 @@ def main():
     if simulate == True: mode = 1
     if design == True: mode = 2
 
-    info_new = parse_infoEnt.algorithm_info(input_file, mode) 
+    info_new = parse_infoEnt.algorithm_info(input_file, mode)
 
     info_new.print_info()
 
@@ -617,7 +617,7 @@ def main():
         except ImportError:
             print "ABORT: cudasim required for running on CUDA GPUs. Please install cuda-sim"
             sys.exit()
-    
+
     # set the random seeds
     if seed != None:
         print "#### Seeding random number generator : ", seed
@@ -627,7 +627,7 @@ def main():
     modelCorrect = False
     if usesbml == True :
         integrationType = []
-        
+
         if use_cuda == True:
             # CUDA
             for i in range(len(info_new.type)):
@@ -639,10 +639,10 @@ def main():
                     info_new.type[i] = "EulerSDE"
                 integrationType.append(info_new.type[i]+' C')
         else:
-            # python 
+            # python
             for i in range(len(info_new.type)):
                 integrationType.append(info_new.type[i]+' Python')
-            
+
 
         ParseAndWrite.ParseAndWrite(info_new.source,integrationType,info_new.name,inputPath="",outputPath="",method=None)
 
@@ -680,13 +680,13 @@ def main():
         modelTraj.append([])
         accepted = 0
         while(accepted<info_new.particles):
-            if(mod==0): parameters = zeros( [info_new.particles,len(info_new.prior[mod])] )     
+            if(mod==0): parameters = zeros( [info_new.particles,len(info_new.prior[mod])] )
             species = zeros([info_new.particles,info_new.nspecies[mod]])
-            
+
             for i in range(info_new.particles):
                 for j in range(info_new.nspecies[mod]):
                     species[i,j] = info_new.x0prior[mod][j][1]
-            
+
             if(mod==0 and sampleFromPost==False):
                 for j in range(len(info_new.prior[mod])):
                     if(info_new.prior[mod][j][0]==0):
@@ -731,31 +731,31 @@ def main():
                     sys.exit()
                 else:
                     parameters = zeros( [info_new.particles,len(param[0])] )
-                                    
+
                     index = getWeightedSample(weights)
 
                     for i in range(info_new.particles):
                         index = getWeightedSample(weights)
                         for j in range(len(param[0])):
                             parameters[i,j] = param[index][j]
- 
-    
-                
+
+
+
             # simulate model mod
             cudaCode = info_new.name[mod] + '.cu'
             modelInstance = Lsoda.Lsoda(info_new.times, cudaCode, dt=info_new.dt)
-            result = modelInstance.run(parameters, species)     
+            result = modelInstance.run(parameters, species)
             #n = shape(result0)[2]
             #result = result0[:,:,0:n,:]
             #print "SHAPERESULT",shape(result[:][0])
 # merge result and parameters
-            
+
 # check for NA
-            
+
             index = [p for p, i in enumerate(isnan(sum(result[:,0,7:8,:],axis=2))) if i==False]
             print len(index)
             saveIndex.append(index)
-            
+
             saveResult.append(result)
 #           accepted = len(parametersKeepFinal)
 #           print "accepted particles: ",accepted
@@ -772,7 +772,7 @@ def main():
             for i in (set(saveIndex[0])):
                 parametersKeepFinal.append(parameters[i])
                 resultKeepFinal.append(saveResult[mod][i][0])
-                
+
         #use the first N particles only
         #del resultKeepFinal[info_new.particles:]
         #del parametersKeepFinal[info_new.particles:]
@@ -795,7 +795,7 @@ def main():
 
         #fileName =  "rejectedParticles/model"+`mod+1`+"_parameters_rejected.txt"
         #print_parameters(parametersRemoveFinal,fileName)
-    
+
     sigma = 5.0
 
     ftheta = []
