@@ -10,7 +10,7 @@ def run_cudasim(m_object, parameters, species):
 		##Different parameters and species matrices for i in nmodels?
 		result = modelInstance.run(parameters, species)
 		modelTraj.append(result[:,0])
-		
+
 	return modelTraj
 
 def remove_na(m_object, modelTraj):
@@ -48,9 +48,9 @@ def get_max_dist(m_object, ftheta):
 
 def get_mutinf_all_param(m_object, ftheta, modelTraj, maxDistTraj, sigma):
 	MutInfo1 = []
-	# For each model in turn...
+	# For each model in turn....
 	for mod in range(m_object.nmodels):
 		# Run function to get the mutual information for all parameters inference
 		MutInfo1.append(getEntropy1(ftheta[mod],shape(modelTraj[mod])[0],sigma,array(modelTraj[mod]),maxDistTraj[mod]))
-	
+
 	return MutInfo1
