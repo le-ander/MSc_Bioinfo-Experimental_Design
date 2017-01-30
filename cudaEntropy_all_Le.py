@@ -197,7 +197,7 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
     Max = 100.0 # max number of threads on whole gpu
     dist_gpu1 = mod.get_function("distance1")
     print "registers: ", dist_gpu1.num_regs
-
+    # Set up scaling factor to avoid working with too small numbers
     preci = pow(10,-34)
     FmaxDistTraj = 1.0*exp(-(maxDistTraj*maxDistTraj)/(2.0*sigma*sigma))
     print "FmaxDistTraj:",FmaxDistTraj
@@ -207,7 +207,7 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
         a = pow(1.79*pow(10,300),1.0/(d1.shape[1]*d1.shape[2]))
 
     print "preci:", preci, "a:",a
-
+    # Determine required number of runs for i and j
     numRuns = int(ceil(N1/Max))
     print "numRuns: ", numRuns
     numRuns2 = int(ceil(N2/Max))
