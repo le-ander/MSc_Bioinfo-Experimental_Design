@@ -1,5 +1,6 @@
 from pycuda import compiler, driver
 from pycuda import autoinit
+import pycuda
 
 '''
 # Print all attributes
@@ -12,10 +13,14 @@ for devicenum in range(driver.Device.count()):
 	for (key,value) in attrs.iteritems():
 		print("%s:%s"%(str(key),str(value)))
 '''
+
 # Print one attribute
+
 #device=driver.Device(0)
 #attrs=device.get_attributes()
 #print attrs[driver.device_attribute.MAX_THREADS_PER_BLOCK]
 
 # Print one attribute
-print driver.Device(0).get_attributes()[driver.device_attribute.MAX_THREADS_PER_BLOCK]
+
+#print driver.Device(0).get_attributes()[driver.device_attribute.MAX_THREADS_PER_BLOCK]
+print driver.Device(0).max_threads_per_block
