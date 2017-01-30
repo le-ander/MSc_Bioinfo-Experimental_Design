@@ -24,9 +24,9 @@ for devicenum in range(driver.Device.count()):
 
 #print driver.Device(0).get_attributes()[driver.device_attribute.MAX_THREADS_PER_BLOCK]
 #print driver.Device(0).max_threads_per_block
-#print driver.Device(0).warp_size
+print driver.Device(0).warp_size
 
-print pycuda.tools.DeviceData().max_threads
+#print pycuda.tools.DeviceData().max_threads
 
 # NOT WORKING
 #print pycuda.tools.OccupancyRecord().tb_per_mp

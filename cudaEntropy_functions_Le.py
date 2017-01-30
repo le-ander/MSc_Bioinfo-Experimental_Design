@@ -102,9 +102,9 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 
 	# Split data to correct size to run on GPU
 	Max = 10.0 # max number of threads on whole gpu
-	
+
 	dist_gpu1 = mod.get_function("distance1")
-	
+
 	# Set up scaling factor to avoid working with too small numbers
 	preci = pow(10,-34)
 	FmaxDistTraj = 1.0*exp(-(maxDistTraj*maxDistTraj)/(2.0*sigma*sigma))
@@ -114,13 +114,13 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 	else:
 		a = pow(1.79*pow(10,300),1.0/(d1.shape[1]*d1.shape[2]))
 	print "preci:", preci, "a:",a
-	
+
 	# Determine required number of runs for i and j
 	numRuns = int(ceil(N1/Max))
 	numRuns2 = int(ceil(N2/Max))
 
 	result2 = zeros([N1,numRuns2])
-	
+
 	countsi = 0
 
 	for i in range(numRuns):
@@ -144,11 +144,12 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 			data2 = d2[(j*int(Max)):(j*int(Max)+sj),:,:] # d2 subunit for this run (9 different verctors)
 			#print shape(data1), shape(data2)
 
-			Ni = data1.shape[0] # Number of particels in data1
-			Nj = data2.shape[0] # Number of particels in data2
+			Ni = data1.shape[0] # Number of particels in data1 (<= Max)
+			Nj = data2.shape[0] # Number of particels in data2 (<= Max)
 
 			M = data1.shape[1] # number of timepoints in d1 subunit
 			P = data1.shape[2] # number of species in d1 subunit
+
 			res1 = zeros([Ni,Nj]).astype(float64) # results vector [shape(data1)*shape(data2)]
 
 			# Define square root of maximum threads per block
@@ -156,7 +157,7 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 
 			if(Ni<R):
 				gi = 1  # grid width  (no of blocks in i direction, i.e. gi * gj gives number of blocks)
-				bi = Ni # block width (no of threads in j direction, i.e. bi * bj gives size of each block (max. R*R))
+				bi = Ni # block width (no of threads in i direction, i.e. bi * bj gives size of each block (max. R*R))
 			else:
 				gi = ceil(Ni/R)
 				bi = R
@@ -167,9 +168,10 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 				gj = ceil(Nj/R)
 				bj = R
 
+			# Invoke GPU calculations (takes data1 and data2 as input, outputs res1)
 			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float32(pi), float64(a), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
-			# takes data1 and data2 as input, outputs res1
-			print "SHAPE RES1", shape(res1)
+
+			#print "SHAPE RES1", shape(res1)
 			for k in range(si):
 				result2[(i*int(Max)+k),j] = sum(res1[k,:])
 			countsj = countsj+sj
