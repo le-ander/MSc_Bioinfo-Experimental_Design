@@ -66,7 +66,10 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 
 	out_file=open(filename+".xml","w")
 	sum_file=open(sumname+".xml","w")
-	
+	data_file = open("new_file2", 'r')
+	info = data_file.read()
+	data_file.close()
+
 
 	have_data = False
 	times = []
@@ -79,39 +82,37 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 	count = 0
 	if dataname != None:
 		have_data = True
-		df = open(dataname,'r')
-		for line in df:
-			strs = str(line).rstrip().split(' ')
-#            vals = [float(i) for i in strs[1:]]
-			print strs
-			if (strs[0]=="dt") :
-				dt=float(strs[1])
-			elif (strs[0]=="particles"):
-				particles=float(strs[1])
-			elif (strs[0] == "timepoint"):
-				for i in range(1,len(strs)):
-					times.append(float(strs[i]))
-			elif (strs[0]=="prior"):
-				prior.append([strs[1],float(strs[2]), float(strs[3])])
-				count += 1
-			elif (strs[0]=="fit"):
-				if (len(strs)==1):
-					fit_species.append("None")
-				else:
-					for i in range(1,len(strs)):
-						fit_species.append(strs[i])
+		
+		prior_list = re.sub('\n', " ", re.search('(\>prior\n)(.*)\n<prior', info, re.DOTALL).group(2)).split(" ")
+		for i in range(0, len(prior_list), 3):
+			prior.append(prior_list[i:i+3])
+		for j in range(len(prior)):
+			prior[j]=prior[j][:1]+ [float(i) for i in prior[j][1:]]
 
-	print count
+
+		particles_list = re.sub('\n', " ", re.search('(\>particles\n)(.*)\n<particles', info, re.DOTALL).group(2)).split(" ")
+		particles=float(particles_list[0])
+
+
+
+		times = re.sub('\n', " ", re.search('(\>timepoint\n)(.*)\n<timepoint', info, re.DOTALL).group(2)).split(" ")
+		times = [float(i) for i in times]
+
+
+		fit_list = re.sub('\n', " ", re.search('(\>fit\n)(.*)\n<fit', info, re.DOTALL).group(2)).split(" ")
+		print fit_list
+		if (len(fit_list)==0):
+			fit_species.append("None")
+		else:
+			fit_species = fit_list
+
+
+		dt_list = re.sub('\n', " ", re.search('(\>dt\n)(.*)\n<dt', info, re.DOTALL).group(2)).split(" ")
+		dt=float(dt_list[0])
+
 	print models_nparameters[0]
-					
-	if (count<models_nparameters[0]):
-		print "Not enough prior defined in input file"
-	elif (count>models_nparameters[0]):
-		print "More prior than parameters defined in input file"
-	elif (count==models_nparameters[0]):
-		print "Prior distributions are properly defined"
 
-
+	
 	print particles
 	print times
 	print dt
