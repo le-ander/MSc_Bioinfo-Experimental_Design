@@ -44,6 +44,7 @@ class Parser:
                 self.writer = SDEPythonWriter(sbmlFileName, modelName, inputPath, outputPath)       
         
         reader = SBMLReader()
+
         document = reader.readSBML(inputPath+sbmlFileName)
         self.sbmlModel = document.getModel()
         
@@ -77,6 +78,7 @@ class Parser:
         self.writer.parsedModel.numSpecies = self.sbmlModel.getNumSpecies()
         self.writer.parsedModel.numReactions = self.sbmlModel.getNumReactions()
         self.writer.parsedModel.numGlobalParameters = self.sbmlModel.getNumParameters()
+        self.writer.parsedModel.numCompartments = len(self.sbmlModel.getListOfCompartments()) 
 
     def getCompartmentVolume(self):       
         listOfCompartments = self.sbmlModel.getListOfCompartments()  

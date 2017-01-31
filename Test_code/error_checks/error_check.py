@@ -74,7 +74,7 @@ def input_checker(sys_arg,mode):
 				print "\n"
 			elif option == 'infile_data': 
 				input_file_data=sys_arg[i+1]
-				file_exist_data=True
+				file_exist_data=Truewhich_species, parameter_change, init_condit
 				print "Input data file: " + input_file_data + "\n"
 			elif option == "species":
 				which_species = True
@@ -156,6 +156,3 @@ def input_checker(sys_arg,mode):
 		os.mkdir(fname)
 
 	return input_file_SBML, input_file_data, analysis, fname, usesbml, which_species, parameter_change, init_condit
-
-	#info_new = parse_infoEnt.algorithm_info(input_file_SBML, mode)
-	#info_new.print_info()

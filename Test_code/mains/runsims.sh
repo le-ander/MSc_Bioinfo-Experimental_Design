@@ -42,6 +42,8 @@ rm -rf rejectedParticles
 
 $python_exe -u $entBio_exe -i input_file_repressilator.xml -of=results_1 -cu -lc >log_all.txt
 
-# $test_exe -i rep_test.origin -of=results_1 -cu 
+#$test_exe -i rep_test.origin -of=results_1 -cu 
 
 #$python_exe $test_exe -i input_file_repressilator.xml
+
+#qsub [-keo] -q long -lnodes=cuda07:gpus=1 bash_script
