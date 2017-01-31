@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="407"
+   name=""
+   committed-date="2011-09-23T16:37:34.252506Z"
+   url="https://abc-sysbio.svn.sourceforge.net/svnroot/abc-sysbio/trunk/abcsysbio_parser"
+   last-author="finalstate"
+   kind="dir"
+   uuid="9fd3cdd8-cb19-473b-9a16-0324ff0cf891"
+   revision="419"/>
+<entry
+   committed-rev="313"
+   name="CUDAParser.py"
+   text-time="2011-10-05T12:09:55.000000Z"
+   committed-date="2011-07-19T18:32:29.514023Z"
+   checksum="cab62c679fe333eb360ce85ff3656419"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:54.000000Z"/>
+<entry
+   committed-rev="344"
+   name="Parser.py"
+   text-time="2011-10-05T12:09:55.000000Z"
+   committed-date="2011-07-22T14:40:14.983871Z"
+   checksum="a6f4bbfcd5e40398dcfbc97225fa2286"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:54.000000Z"/>
+<entry
+   committed-rev="305"
+   name="__init__.py"
+   text-time="2011-10-05T12:09:55.000000Z"
+   committed-date="2011-07-19T12:29:12.907352Z"
+   checksum="8bed92a526c6e821a8d1c6fe80a5fb0a"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:54.000000Z"/>
+<entry
+   committed-rev="305"
+   name="ParsedModel.py"
+   text-time="2011-10-05T12:09:55.000000Z"
+   committed-date="2011-07-19T12:29:12.907352Z"
+   checksum="2ca46f8654a93ffce7452084c757a78f"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:54.000000Z"/>
+<entry
+   committed-rev="407"
+   name="ODECUDAWriter.py"
+   text-time="2011-10-05T12:09:55.000000Z"
+   committed-date="2011-09-23T16:37:34.252506Z"
+   checksum="250e800bf730455ddd6e805d96732298"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:54.000000Z"/>
+<entry
+   committed-rev="407"
+   name="SDECUDAWriter.py"
+   text-time="2011-10-05T12:09:55.000000Z"
+   committed-date="2011-09-23T16:37:34.252506Z"
+   checksum="51742a194ea268518dd7cae245c30ab7"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:54.000000Z"/>
+<entry
+   committed-rev="305"
+   name="SDEAndGillespieCUDAParser.py"
+   text-time="2011-10-05T12:09:55.000000Z"
+   committed-date="2011-07-19T12:29:12.907352Z"
+   checksum="66fa495bfaaa76701c1275795324e401"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:54.000000Z"/>
+<entry
+   committed-rev="322"
+   name="ODEPythonWriter.py"
+   text-time="2011-10-05T12:09:55.000000Z"
+   committed-date="2011-07-21T10:58:57.278263Z"
+   checksum="74fa5427568cbc93195a94568e00eb6d"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:54.000000Z"/>
+<entry
+   committed-rev="305"
+   name="GillespieCUDAWriter.py"
+   text-time="2011-10-05T12:09:55.000000Z"
+   committed-date="2011-07-19T12:29:12.907352Z"
+   checksum="e6a18697624e54b4a23d6f071dadafb6"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:54.000000Z"/>
+<entry
+   committed-rev="311"
+   name="ParseAndWrite.py"
+   text-time="2011-10-05T12:09:55.000000Z"
+   committed-date="2011-07-19T18:30:10.426963Z"
+   checksum="a9d0eacdebf3623a452f16b8bc0485b4"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:54.000000Z"/>
+<entry
+   committed-rev="319"
+   name="SDEPythonWriter.py"
+   text-time="2011-10-05T12:09:56.000000Z"
+   committed-date="2011-07-21T10:15:45.656498Z"
+   checksum="879ba5811fe6a69fe78caf02792c03f9"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:54.000000Z"/>
+<entry
+   committed-rev="305"
+   name="Writer.py"
+   text-time="2011-10-05T12:09:56.000000Z"
+   committed-date="2011-07-19T12:29:12.907352Z"
+   checksum="e06f6dca52eb48525ac29e86f059c17f"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:55.000000Z"/>
+<entry
+   committed-rev="315"
+   name="GillespiePythonWriter.py"
+   text-time="2011-10-05T12:09:56.000000Z"
+   committed-date="2011-07-21T09:26:22.735140Z"
+   checksum="e28b9f453f683735802a1a89468760e3"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:54.000000Z"/>
+<entry
+   committed-rev="400"
+   name="CWriter.py"
+   text-time="2011-10-05T12:09:56.000000Z"
+   committed-date="2011-09-22T15:37:36.284784Z"
+   checksum="472d0dc168a0bd3b6ec62f499df1265c"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:55.000000Z"/>
+<entry
+   committed-rev="305"
+   name="ODECUDAParser.py"
+   text-time="2011-10-05T12:09:56.000000Z"
+   committed-date="2011-07-19T12:29:12.907352Z"
+   checksum="3c2c263e13ecbf8d9263ee76d35ae831"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:55.000000Z"/>
+<entry
+   committed-rev="312"
+   name="CandPythonParser.py"
+   text-time="2011-10-05T12:09:56.000000Z"
+   committed-date="2011-07-19T18:31:57.847209Z"
+   checksum="c8a78530d2ee70108ffde14404ae7fd7"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:55.000000Z"/>
+</wc-entries>

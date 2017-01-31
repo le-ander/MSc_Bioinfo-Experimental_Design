@@ -1,0 +1,68 @@
+<input>
+
+# Number of models for which details are described in this input file
+<modelnumber> 1 </modelnumber>
+
+# Restart from previous (pickled) population?
+<restart> False </restart>
+
+<epsilon> 
+	<e1> 20 16 12 11 10 9 8 7 6 5 4 3 2.6 2.2 2.0 1.8 1.6 1.4 1.2 1.0 0.8 0.6 0.4 0.3 0.2 0.1 </e1>
+</epsilon>
+
+# Population size
+# Was 4600000
+<particles> 100 </particles>
+
+
+<beta> 1 </beta>
+
+# Make this small for a stiff model.
+<dt> 1 </dt>
+
+# <times> 0.0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30  </times>
+
+<data>
+	<times> 0.0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30   </times>
+ 	<variables>
+ 		<var1> 0.5 0.979853786822 6.11831772463 4.64986747384 3.02245810186 3.96033526514 4.46761469625 3.76212439107 3.84072390329 </var1>
+ 		<var2> 3.0 0.207408267result0[99]538 0.775791321762 0.883031855197 0.552615028835 0.597273303162 0.747503128288 0.654714195239 0.627664810926 </var2>
+ 		<var3> 2.0 2.10849420227 1.63122009074 2.35085915984 2.15468166439 1.84359476701 2.00684007954 2.06323198078 1.954459411  </var3>
+ 	</variables>
+</data>
+
+
+<models>
+	<model1>
+		<name> repressilator_WT </name>
+		<source> repressilator_WT.xml </source>
+		<type> ODE </type>
+		<fits>
+			<fit> species1 species2 species3 species4 species5 species6</fit>
+			<fit> species1 species2 species3 species4 </fit>
+		</fits>
+		<fit1s>
+			<fit1> theta1 theta2 theta3 theta4 </fit1>
+			<fit1> theta1 theta2  </fit1>
+		</fit1s>
+		<initial>
+ 			<ic1> constant 0.0 </ic1>
+ 			<ic2> constant 1.0 </ic2>
+ 			<ic3> constant 0.0 </ic3>
+ 			<ic4> constant 0.0 </ic4>
+ 			<ic5> constant 0.0 </ic5>
+ 			<ic6> constant 0.0 </ic6>
+		</initial>
+
+		<parameters>
+			<parameter1> uniform 1 10 </parameter1>
+			<parameter2> uniform 0 20 </parameter2>
+			<parameter3> uniform 500 2000 </parameter3>
+			<parameter4> uniform 0 10 </parameter4>
+		</parameters>
+		
+		
+	</model1>
+</models>
+
+</input>
