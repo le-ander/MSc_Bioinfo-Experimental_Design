@@ -365,4 +365,4 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 	sum_file.close()
 
    
-generateTemplate(["rep_test1.xml","rep_test2.xml" ], "test1", "test2", "new_file2")
+#generateTemplate(["rep_test1.xml","rep_test2.xml" ], "test1", "test2", "new_file2")
