@@ -64,11 +64,15 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 	print models_nspecies
 	print models_nparameters
 
+	if len(set(models_nparameters)) == 1:
+		globalnparameters=models_nparameters[0]
+	else:
+		print "Input models do not have identical numbers of parameters"
+		sys.exit()
+
 	out_file=open(filename+".xml","w")
 	sum_file=open(sumname+".xml","w")
-	data_file = open("new_file2", 'r')
-	info = data_file.read()
-	data_file.close()
+
 
 
 	have_data = False
@@ -82,7 +86,11 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 	count = 0
 	if dataname != None:
 		have_data = True
-		
+
+		data_file = open(dataname, 'r')
+		info = data_file.read()
+		data_file.close()
+
 		prior_list = re.sub('\n', " ", re.search('(\>prior\n)(.*)\n<prior', info, re.DOTALL).group(2)).split(" ")
 		for i in range(0, len(prior_list), 3):
 			prior.append(prior_list[i:i+3])
@@ -177,6 +185,14 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 
 	else:
 		out_file.write("<times> 0 1 2 3 4 5 6 7 8 9 10 </times>\n\n")
+
+	out_file.write("# Numbers of parameters defined in models below \n")
+	out_file.write("<globalnparameters> ")
+	out_file.write(repr(globalnparameters))
+	out_file.write(" </globalnparameters> \n\n")
+
+
+
 
 	
 	out_file.write("</data>\n\n")
@@ -365,4 +381,4 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 	sum_file.close()
 
    
-#generateTemplate(["rep_test1.xml","rep_test2.xml" ], "test1", "test2", "new_file2")
+generateTemplate(["rep_test1.xml","rep_test2.xml" ], "test1", "test2", "new_file2")
