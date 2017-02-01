@@ -73,6 +73,10 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 	out_file=open(filename+".xml","w")
 	sum_file=open(sumname+".xml","w")
 
+	###regex for corresponding cuda file
+	cudaid = re.compile(r'Exp_\d+')
+
+
 
 
 	have_data = False
@@ -80,6 +84,7 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 	fit_species = []
 #    vars = []
 	prior =[]
+	comps=[]
 	nvar = 0
 	first = True
 	second = True
@@ -107,7 +112,7 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 		times = [float(i) for i in times]
 
 
-		fit_list = re.sub('\n', " ", re.search('(\>fit\n)(.*)\n<fit', info, re.DOTALL).group(2)).split(" ")
+		fit_list = re.search('(\>fit\n)(.*)\n<fit', info, re.DOTALL).group(2).split("\n")
 		print fit_list
 		if (len(fit_list)==0):
 			fit_species.append("None")
@@ -118,6 +123,13 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 		dt_list = re.sub('\n', " ", re.search('(\>dt\n)(.*)\n<dt', info, re.DOTALL).group(2)).split(" ")
 		dt=float(dt_list[0])
 
+
+		comps_list = re.sub('\n', " ", re.search('(\>compartments\n)(.*)\n<compartments', info, re.DOTALL).group(2)).split(" ")
+		for i in range(0, len(comps_list), 3):
+			comps.append(comps_list[i:i+3])
+		for j in range(len(comps)):
+			comps[j]=comps[j][:1]+ [float(i) for i in prior[j][1:]]
+
 	print models_nparameters[0]
 
 	
@@ -126,6 +138,7 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 	print dt
 	print prior
 	print fit_species
+	print comps
 
 
 
@@ -208,7 +221,8 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 			sum_file.write("name: model"+repr(i+1+j*len(source))+"\nsource: "+source[i]+"\n\n")
 
 			out_file.write("<model"+repr(i+1+j*len(source))+">\n")
-			out_file.write("<name> model"+repr(i+1+j*len(source))+" </name>\n<source> "+source[i]+" </source>\n\n")
+			out_file.write("<name> model"+repr(i+1+j*len(source))+" </name>\n<source> "+source[i]+" </source>\n")
+			out_file.write("<cuda> " + cudaid.match(source[i]).group() + ".cu </cuda>\n\n")
 			out_file.write("# type: the method used to simulate your model. ODE, SDE or Gillespie.\n")
 			out_file.write("<type> SDE </type>\n\n")  ################# Needs to be adapted
 
@@ -299,7 +313,9 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 			paramAsSpecies=0
 			sum_file.write("Species with initial values: "+repr(numSpecies)+"\n")
 
-			out_file.write("# Priors on initial conditions and parameters:\n")
+			
+
+			out_file.write("# Priors on initial conditions, compartments and parameters:\n")
 			out_file.write("# one of \n")
 			out_file.write("#       constant, value \n")
 			out_file.write("#       normal, mean, variance \n")
@@ -329,6 +345,31 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 			out_file.write("</initial>\n\n")
 
 			sum_file.write("\n")
+
+
+
+			out_file.write("<compartments>\n")
+			counter=0
+			if have_data==True:
+				for k in range(len(comps)):
+					print k
+					counter=counter+1
+#					sum_file.write("P"+repr(counter)+":\t"+parameterId[k]+"\t"+parameterId2[k]+"\t("+repr(parameter[k])+")\n")
+					out_file.write("<compartment"+repr(counter)+"> ")
+					out_file.write(comps[k][0] + " ")
+					out_file.write(repr(comps[k][1]) + " " + repr(comps[k][2]) + " </compartment" + repr(counter)+">\n")
+
+	
+			else:	
+				out_file.write("<compartment1> ")
+				out_file.write("constant 1 0")
+				out_file.write(" </compartment1>\n")
+
+			out_file.write("</compartments>\n\n")
+
+
+
+
 			
 			if(numGlobalParameters==0): string=" (all of them are local parameters)\n"
 			elif(numGlobalParameters==1): string=" (the first parameter is a global parameter)\n"
@@ -380,5 +421,8 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 	out_file.close()
 	sum_file.close()
 
+input_xml_files = ["Exp_1_1.xml",  "Exp_1_2.xml",  "Exp_1_3.xml",  "Exp_2_1.xml",  "Exp_2_2.xml",  "Exp_2_3.xml"]
+
+#input_xml_files = ["E"]
    
-generateTemplate(["rep_test1.xml","rep_test2.xml" ], "test1", "test2", "new_file2")
+generateTemplate(input_xml_files, "output_xml", "sum2", "new_file2")
