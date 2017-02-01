@@ -174,7 +174,7 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
 
 	res1[idx2d(i,j,Nj)] = exp(x1);
 	}
-	""")
+	""",options=['--ptxas-options','-v'])
 
 	# prepare data
 
@@ -194,7 +194,7 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
 
 	# split data to correct size to run on GPU
 	#was 1000.0
-	Max = 100000.0 # max number of threads on whole gpu
+	Max = 40000.0 # max number of threads on whole gpu
 	dist_gpu1 = mod.get_function("distance1")
 	print "registers: ", dist_gpu1.num_regs
 
@@ -205,7 +205,7 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
 	if(FmaxDistTraj<preci):
 		a = pow(1.79*pow(10,300),1.0/(d1.shape[1]*d1.shape[2]))
 	else:
-		a = pow(1.79*pow(10,300),1.0/(d1.shape[1]*d1.shape[2]))
+		a = pow(preci,1.0/(d1.shape[1]*d1.shape[2]))*1.0/FmaxDistTraj
 	print "preci:", preci, "a:",a
 
 	# Determine required number of runs for i and j
@@ -245,7 +245,7 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
 			res1 = zeros([Ni,Nj]).astype(float64) # results vector [shape(data1)*shape(data2)]
 
 			# invoke kernel
-			R = 15.0 # square root of maximum threads per block
+			R = 16.0 # square root of maximum threads per block
 			print "Ni:",Ni,"Nj:",Nj
 
 			if(Ni<R):
@@ -289,14 +289,14 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
 	Info = Info - M*P/2.0*log(2.0*pi*sigma*sigma*exp(1))
 
 	print "counter: ",counter,"counter2: ",counter2
-
+	'''
 	out = open('results','w')
 
 	print >>out, "counter: ",counter2
 	print >>out, "mutual info: ", Info
 
 	out.close()
-
+	'''
 	return(Info)
 
 
@@ -841,3 +841,4 @@ def main():
 
 '''
 main()
+driver.stop_profiler()
