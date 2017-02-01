@@ -1,6 +1,11 @@
+## Maybe not required here
+def pre_cudasim_stacking():
+
+
 def run_cudasim(m_object, parameters, species):
 	modelTraj = []
 	# For each model in turn...
+	##Should run over cudafiles
 	for mod in range(m_object.nmodels):
 		# Define CUDA filename for cudasim
 		cudaCode = m_object.name[mod] + '.cu'
@@ -10,14 +15,13 @@ def run_cudasim(m_object, parameters, species):
 		##Different parameters and species matrices for i in nmodels?
 		result = modelInstance.run(parameters, species)
 		modelTraj.append(result[:,0])
-
 	return modelTraj
 
 def remove_na(m_object, modelTraj):
 	# For each model in turn...
 	for mod in range(m_object.nmodels):
 		# Create a list of indices of particles that have an NA in their row
-		##Why using 7:8 when summing?
+		##Why using 7:8 when summing? -> Change this
 		index = [p for p, i in enumerate(isnan(sum(asarray(modelTraj[mod])[:,7:8,:],axis=2))) if i==True]
 		# Delete row of 1. results and 2. parameters from the output array for which an index exists
 		for i in index:
@@ -112,8 +116,8 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 	if(FmaxDistTraj<preci):
 		a = pow(1.79*pow(10,300),1.0/(d1.shape[1]*d1.shape[2]))
 	else:
-		a = pow(1.79*pow(10,300),1.0/(d1.shape[1]*d1.shape[2]))
-	print "preci:", preci, "a:",a
+		a = pow(preci,1.0/(d1.shape[1]*d1.shape[2]))*1.0/FmaxDistTraj
+	print "preci:", preci, "a:", a
 
 	# Determine required number of runs for i and j
 	numRuns = int(ceil(N1/Max))
