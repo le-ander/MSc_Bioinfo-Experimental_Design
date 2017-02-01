@@ -54,8 +54,7 @@ def input_checker(sys_arg,mode):
 				elif analysis == 2:
 					print "Type of Analysis: Prediction of experiment\n"
 			elif option == 'localcode' : 
-				usesbml = False
-				print "Using local code\n"
+				usesbml = sys_arg[i+1]
 			elif option[0:10] == 'outfolder=' : 
 				fname = option[10:]
 				print "Output file destination: " + fname + "\n"
@@ -71,20 +70,26 @@ def input_checker(sys_arg,mode):
 					else:
 						break
 				input_file_SBML=input_file_SBML[:keep]
-				print "\n"
+				print ""
 			elif option == 'infile_data': 
-				input_file_data=sys_arg[i+1]
-				file_exist_data=Truewhich_species, parameter_change, init_condit
-				print "Input data file: " + input_file_data + "\n"
+				input_file_data=sys_arg[i+1:]
+				file_exist_data=True
+				print "Input data files: "
+				keep = 0
+				for j in input_file_data:
+					if not(j.startswith('-')):
+						keep += 1
+						print "\t" + j
+					else:
+						break
+				input_file_data=input_file_data[:keep]
+				print ""
 			elif option == "species":
-				which_species = True
-				print "Changing species measured between experiments\n"
+				which_species = sys_arg[i+1]
 			elif option == "params":
-				parameter_change = True
-				print "Changing parameters between experiments\n"
+				parameter_change = sys_arg[i+1]
 			elif option == "init":
-				init_condit = True
-				print "Changing initial conditions between experiments\n"
+				init_condit = sys_arg[i+1]
 			elif not(sys_arg[i-1][2:] == 'infile_SBML'): 
 				print "\nunknown option "+sys_arg[i]
 				printOptions()
@@ -104,8 +109,7 @@ def input_checker(sys_arg,mode):
 				elif analysis == 2:
 					print "Type of Analysis: Prediction of experiment\n"
 			elif option == 'lc' : 
-				usesbml = False
-				print "Using local code\n"
+				usesbml = sys_arg[i+1]
 			elif option[0:3] == 'of=' : 
 				fname = option[3:]
 				print "Output file destination: " + fname + "\n"
@@ -123,23 +127,29 @@ def input_checker(sys_arg,mode):
 				input_file_SBML=input_file_SBML[:keep]
 				print ""
 			elif option == 'i2': 
-				input_file_data=sys_arg[i+1]
+				input_file_data=sys_arg[i+1:]
 				file_exist_data=True
-				print "Input data file: " + input_file_data + "\n"
+				print "Input data files: "
+				keep = 0
+				for j in input_file_data:
+					if not(j.startswith('-')):
+						keep += 1
+						print "\t" + j
+					else:
+						break
+				input_file_data=input_file_data[:keep]
+				print ""
 			elif option == "s":
-				which_species = True
-				print "Changing species measured between experiments\n"
+				which_species = sys_arg[i+1]
 			elif option == "p":
-				parameter_change = True
-				print "Changing parameters between experiments\n"
+				parameter_change = sys_arg[i+1]
 			elif option == "ic":
-				init_condit = True
-				print "Changing initial conditions between experiments\n"
+				init_condit = sys_arg[i+1]
 			elif not(sys_arg[i-1][2:] == 'i1'): 
 				print "\nunknown option "+sys_arg[i]
 				printOptions()
 				sys.exit()
-
+ 
 	if file_exist_SBML == False:
 		print "\nNo input_file_SBML is given!\nUse: \n\t-i1 'inputfile' \nor: \n\t--infile_SBML 'inputfile' \n"
 		sys.exit()

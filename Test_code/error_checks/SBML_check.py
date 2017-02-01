@@ -16,8 +16,9 @@ def SBML_checker(input_files):
 
 def SBML_initialcond(nu="", input_file="", SBML_obj="", init_cond="", outputpath=""):
 	if type(init_cond)!=list:
-		init_cond = open(init_cond,'r')
-		init_cond = [i.rstrip() for i in init_cond.readlines()]
+		data = open(init_cond,'r')
+		init_cond = [i.rstrip() for i in data.readlines()]
+		data.close()
 
 	start_index = re.compile(r'>Initial Conditions')
 	end_index = re.compile(r'<Initial Conditions')
@@ -34,7 +35,7 @@ def SBML_initialcond(nu="", input_file="", SBML_obj="", init_cond="", outputpath
 		if outputpath == "":
 			writeSBML(SBML_obj,"test" + "_" + repr(nu) + "_" + repr(1) + ".xml")
 		else:
-			writeSBML(SBML_obj,"./" + outputpath + "/exp_xml/Exp" + "_" + repr(nu) + "_" + repr(1) + ".xml")
+			writeSBML(SBML_obj,"./" + outputpath + "/Exp" + "_" + repr(nu) + "_" + repr(1) + ".xml")
 		for i in range(0,len(init_lines)):
 			if sum([SBML_obj.getModel().getListOfSpecies()[j].isSetInitialAmount() for j in range(0,len(init_lines[i]))]) == len(init_lines[i]):
 				for j, k in enumerate(init_lines[i]):
@@ -45,14 +46,14 @@ def SBML_initialcond(nu="", input_file="", SBML_obj="", init_cond="", outputpath
 			if outputpath == "":
 				writeSBML(SBML_obj,"test" + "_" + repr(nu) + "_" + repr(i+2) + ".xml")
 			else:
-				writeSBML(SBML_obj,"./" + outputpath + "/exp_xml/Exp" + "_" + repr(nu) + "_" + repr(i+2) + ".xml")
+				writeSBML(SBML_obj,"./" + outputpath + "/Exp" + "_" + repr(nu) + "_" + repr(i+2) + ".xml")
 	else:
 		reader = SBMLReader()
 		SBML_master = reader.readSBML(input_file)
 		if outputpath == "":
 			writeSBML(SBML_master,"test" + "_" + repr(nu) + "_" + repr(1) + ".xml")
 		else:
-			writeSBML(SBML_master,"./" + outputpath + "/exp_xml/Exp" + "_" + repr(1) + "_" + repr(1) + ".xml")
+			writeSBML(SBML_master,"./" + outputpath + "/Exp" + "_" + repr(1) + "_" + repr(1) + ".xml")
 		for i in range(0,len(init_lines)):
 			if sum([SBML_master.getModel().getListOfSpecies()[j].isSetInitialAmount() for j in range(0,len(init_lines[i]))]) == len(init_lines[i]):
 				for j, k in enumerate(init_lines[i]):
@@ -63,7 +64,8 @@ def SBML_initialcond(nu="", input_file="", SBML_obj="", init_cond="", outputpath
 			if outputpath == "":
 				writeSBML(SBML_master,"test" + "_" + repr(nu) + "_" + repr(i+2) + ".xml")
 			else:
-				writeSBML(SBML_master,"./" + outputpath + "/exp_xml/Exp" + "_" + repr(nu) + "_" + repr(i+2) + ".xml")
+				writeSBML(SBML_master,"./" + outputpath + "/Exp" + "_" + repr(nu) + "_" + repr(i+2) + ".xml")
+
 
 def SBML_reactionchange(input_file, lines, param_to_change, mult_fact, param_reaction, nu, init_condit=False, dest=""):
 	reader = SBMLReader()
@@ -74,9 +76,9 @@ def SBML_reactionchange(input_file, lines, param_to_change, mult_fact, param_rea
 		SBML_master.getModel().getListOfReactions()[reaction_no-1].getKineticLaw().setMath(parseFormula(temp))
 	if init_condit == False:
 		if dest=="":
-			writeSBML(SBML_master, "Exp_" + repr(nu) + ".xml")
+			writeSBML(SBML_master, "Exp_" + repr(nu) + "_1" + ".xml")
 		else:
-			writeSBML(SBML_master, "./" + dest + "/exp_xml/Exp_" + repr(nu) + ".xml")
+			writeSBML(SBML_master, "./" + dest + "/Exp_" + repr(nu) + ".xml")
 	else:
 		SBML_initialcond(nu, input_file,SBML_master,lines,dest)
 
@@ -89,6 +91,7 @@ def SBML_reactionchanges(input_file, fname="", param_changes="",init_cond=False)
 	start_list = []
 	end_list = []
 	exp_list = []
+	
 	for i, line in enumerate(lines):
 		if start_index.search(line):
 			start_list.append(i)
@@ -112,4 +115,5 @@ def SBML_reactionchanges(input_file, fname="", param_changes="",init_cond=False)
 
 			param_reaction.append(int(el_temp[2]))
 		SBML_reactionchange(input_file, lines, param_to_change,mult_fact,param_reaction,exp_list[i],init_condit=init_cond, dest=fname)
+	change_params.close()
 	return len(start_list)

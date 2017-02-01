@@ -47,3 +47,5 @@ $python_exe -u $entBio_exe -i input_file_repressilator.xml -of=results_1 -cu -lc
 #$python_exe $test_exe -i input_file_repressilator.xml
 
 #qsub [-keo] -q long -lnodes=cuda07:gpus=1 bash_script
+
+#$python_exe $test_exe -a 0 -of=results -i1 rep_test.xml rep_test.xml -i2 test_data.txt test_data.txt -p 10 -ic 10 -s 01 -lc 11

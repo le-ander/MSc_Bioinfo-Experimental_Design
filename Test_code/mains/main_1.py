@@ -1,115 +1,98 @@
-#!/usr/bin/python2.5
-
-#from numpy import *
-#from numpy.random import *
-#import abcsysbio
-#import sys
-#import re
-#import time, os
-
-#import cudasim
-#import cudasim.SBMLParser as Parser
-#import cudasim.Lsoda as Lsoda
-
-
-#from pycuda import compiler, driver
-#from pycuda import autoinit
-
-
-#from abcsysbio import model_py
-#from abcsysbio import model_cu
-#from abcsysbio import model_c
-#from abcsysbio import data
-#from abcsysbio import input_output
-
 import sys
 import os
 from shutil import copyfile
+
 sys.path.insert(0, '/cluster/home/saw112/work/Test_code/error_checks')
-#sys.path.insert(0, '/cluster/home/saw112/work/Test_code/abcsysbio_parser')
-
-
-#import abcsysbio_parser
-#from abcsysbio_parser import ParseAndWrite
-#import generateTemplate
 import error_check
 import cudacodecreater
 import SBML_check
-#xmlModel="rep_test.xml"
-#paramChange="test_data.txt"
-#generateTemplate.generateTemplate([xmlModel],"input_file.xml","summary_file.txt")
-
-
-
-
-#integrationType = "CUDA ODE"
-#name = "test_model"
-#ParseAndWrite.ParseAndWrite([xmlModel],[integrationType],[name],inputPath="",outputPath="",method=None)
-
-
-#SBML_check.SBML_initialcond(xmlModel,[[1.0,2.0,3.0,4.0,5.0,6.0],[2.0,3.0,4.0,5.0,6.0,7.0]],names=["test_1.xml","test_2.xml"])
-#SBML_check.SBML_initialcond(input_file=xmlModel,init_cond=paramChange,outputpath="_results_")
-#SBML_check.SBML_reactionchanges(xmlModel,"_results_",paramChange)
-
+import input_file_parser
 
 def main():
-	input_file_SBML, input_file_data, analysis, fname, usesbml, which_species, parameter_change, init_condit = error_check.input_checker(sys.argv,0)
-	SBML_check.SBML_checker(input_file_SBML)
-	
-	if len(input_file_SBML) == 1:
-		input_file_SBML = input_file_SBML[0]
-	
-	if usesbml == True and parameter_change == True and init_condit == True and type(input_file_SBML) == str:
-		print "-----Creating SBML files for experiments-----"
-		if not(os.path.isdir("./"+fname+"/exp_xml")):
-			os.mkdir(fname+"/exp_xml")
-		SBML_check.SBML_initialcond(nu=1,input_file=input_file_SBML,init_cond=input_file_data,outputpath=fname)
-		no_exp = SBML_check.SBML_reactionchanges(input_file_SBML,fname,input_file_data,init_cond=True)
-	elif usesbml == True and parameter_change == False and init_condit == True and type(input_file_SBML) == str:
-		print "-----Creating SBML files for experiments-----"
-		if not(os.path.isdir("./"+fname+"/exp_xml")):
-			os.mkdir(fname+"/exp_xml")
-		SBML_check.SBML_initialcond(nu=1,input_file=input_file_SBML,init_cond=input_file_data,outputpath=fname)
-	elif usesbml == True and parameter_change == True and init_condit == False and type(input_file_SBML) == str:
-		print "-----Creating SBML files for experiments-----"
-		if not(os.path.isdir("./"+fname+"/exp_xml")):
-			os.mkdir(fname+"/exp_xml")
-		copyfile(input_file_SBML,fname + "/exp_xml/Exp_1.xml")
-		no_exp = 1 + SBML_check.SBML_reactionchanges(input_file_SBML,fname,input_file_data,init_cond=False)
-	elif usesbml == True and parameter_change == False and init_condit == False and type(input_file_SBML) == str and which_species == True:
-		print "-----Creating SBML files for experiments-----"
-		if not(os.path.isdir("./"+fname+"/exp_xml")):
-			os.mkdir(fname+"/exp_xml")		
-		copyfile(input_file_SBML,fname + "/exp_xml/Exp_1.xml")
+	# Calls error_checker - reads in command line arguments and does some basic error checks
+	input_file_SBMLs, input_file_datas, analysis, fname, usesbml, which_species, parameter_change, init_condit = error_check.input_checker(sys.argv,0)
+	# Calls SBML_checker - checks all the SBML files that have been inputted
+	SBML_check.SBML_checker([input_file_SBMLs[i] for i in usesbml if usesbml=="0"])
+	# Unpacks the following four command line arguments - each element corresponds to each SBML and data file pair 
+	usesbml=[not(bool(int(i))) for i in list(usesbml)]
+	which_species=[int(i) for i in list(which_species)]
+	parameter_change=[int(i) for i in list(parameter_change)]
+	init_condit=[int(i) for i in list(init_condit)]
+	# Calls sorting_files which creates new SBML files for new experiments and creates CUDA code from SBML files if necessary
+	for i in range(0,len(input_file_SBMLs)):
+		sorting_files(input_file_SBMLs[i],input_file_datas[i],analysis,fname,usesbml[i], which_species[i], parameter_change[i], init_condit[i])
 
+def sorting_files(input_file_SBML, input_file_data, analysis, fname, usesbml, which_species, parameter_change, init_condit):
+	# Used to remove the .xml at the end of the file if present to name directories
+	input_file_SBML_name = input_file_SBML
+	if input_file_SBML_name[-4:]==".xml":
+		input_file_SBML_name = input_file_SBML_name[:-4]
+	# Following set of if statements takes SBML files and depending on the way it needs to be changed carries out parsers to create new SBML files for each experiment
+	
 	if usesbml == True:
-		if not(os.path.isdir("./"+fname+"/cudacodes")):
-			os.mkdir(fname+"/cudacodes")
-		outPath=fname+"/cudacodes"
-		print "-----Creating CUDA code-----"
+		# Creates CUDA code if local code not used
+		# Sets the outpath for where CUDA code is stored
+		if not(os.path.isdir("./"+fname+"/cudacodes_"+input_file_SBML_name)):
+			os.mkdir(fname+"/cudacodes_"+input_file_SBML_name)
+		outPath=fname+"/cudacodes_"+input_file_SBML_name
+		# Depending on the way changes have been made to the SBML files only require certain versions
 		input_files_SBML=[]
-		if parameter_change == True:
-			if init_condit == True:
-				for i in range(0,no_exp):
-					input_files_SBML.append("Exp_" + repr(i+1) + "_1.xml")
-			else:
-				for i in range(0,no_exp):
-					input_files_SBML.append("Exp_" + repr(i+1) + ".xml")
+
+		if parameter_change == True and init_condit == True:
+			# Creates SBML files corresponding to changes in parameters and initial conditions
+			print "-----Creating SBML files for experiments-----"
+			if not(os.path.isdir("./"+fname+"/exp_xml_"+input_file_SBML_name)):
+				os.mkdir(fname+"/exp_xml_"+input_file_SBML_name)
+			inPath = fname + "/exp_xml_" + input_file_SBML_name
+			SBML_check.SBML_initialcond(nu=1,input_file=input_file_SBML,init_cond=input_file_data,outputpath=inPath)
+			no_exp = 1 + SBML_check.SBML_reactionchanges(input_file_SBML, inPath,input_file_data,init_cond=True)
+			print "-----Creating CUDA code-----"
+			for i in range(0,no_exp):
+				input_files_SBML.append("Exp_" + repr(i+1) + "_1.xml")
 		elif parameter_change == False and init_condit == True:
+			# Creates SBML files corresponding to changes in initial conditions but not parameters
+			print "-----Creating SBML files for experiments-----"
+			if not(os.path.isdir("./"+fname+"/exp_xml_"+input_file_SBML_name)):
+				os.mkdir(fname+"/exp_xml_"+input_file_SBML_name)
+			inPath = fname + "/exp_xml_" + input_file_SBML_name
+			SBML_check.SBML_initialcond(nu=1,input_file=input_file_SBML,init_cond=input_file_data,outputpath=inPath)
+			print "-----Creating CUDA code-----"
 			input_files_SBML.append("Exp_" + repr(1) + "_1.xml")
-		elif parameter_change == False and init_condit == False and which_species == True:
-			input_files_SBML.append("Exp_" + repr(1) + ".xml")
+		elif parameter_change == True and init_condit == False:
+			# Creates SBML files corresponding to changes in parameters but not initial conditions
+			print "-----Creating SBML files for experiments-----"
+			if not(os.path.isdir("./"+fname+"/exp_xml_"+input_file_SBML_name)):
+				os.mkdir(fname+"/exp_xml_"+input_file_SBML_name)
+			inPath = fname + "/exp_xml_" + input_file_SBML_name
+			copyfile(input_file_SBML,inPath + "/Exp_1.xml")
+			no_exp = 1 + SBML_check.SBML_reactionchanges(input_file_SBML, inPath,input_file_data,init_cond=False)
+			print "-----Creating CUDA code-----"
+			for i in range(0,no_exp):
+				input_files_SBML.append("Exp_" + repr(i+1) + "_1.xml")
+		elif parameter_change == False and init_condit == False:
+			# Creates one SBML file if only the species measured is changed
+			print "-----Creating SBML files for experiments-----"
+			if not(os.path.isdir("./"+fname+"/exp_xml_"+input_file_SBML_name)):
+				os.mkdir(fname+"/exp_xml_"+input_file_SBML_name)
+			inPath = fname + "/exp_xml_" + input_file_SBML_name	
+			copyfile(input_file_SBML,inPath + "/Exp_1_1.xml")
+			print "-----Creating CUDA code-----"
+			input_files_SBML.append("Exp_" + repr(1) + "_1.xml")
 
-	cudacodecreater.cudacodecreater(input_files_SBML,inPath=fname+"/exp_xml/",outPath=outPath)
+		# Creates the required CUDA code if an SBML is used and CUDA code not provided
+		cudacodecreater.cudacodecreater(input_files_SBML,inPath=inPath+"/",outPath=outPath)
 
-#cudaCode="test_model.cu"
-#timepoints=array(range(100+1),dtype=float32)*50.0/100.0
-#params=[[2,10,1000,5]]
-#species=[[0,1,0,0,0,0]]
-#modeInstance=Lsoda.Lsoda(timepoints,cudaCode,1)
-#result=modeInstance.run(params,species)
-#print result
+		if not(os.path.isdir("./"+fname+"/input_xml_"+input_file_SBML_name)):
+			os.mkdir(fname+"/input_xml_"+input_file_SBML_name)
+		xml_out=fname+"/input_xml_"+input_file_SBML_name
 
-#xmlModel="rep_test.
+		input_xml_files = os.listdir(inPath)
+		print "-----Input XML file-----"
+		input_file_parser.generateTemplate(input_xml_files, "input_xml", "summmary", input_file_data, inputpath = inPath, outputpath= xml_out)
+
+	if usesbml == False:
+		print "----Using local code-----"
+
+
 main()
 
