@@ -14,22 +14,17 @@ def SBML_checker(input_files):
 	if tot_errors > 0:
 		sys.exit()
 
-def SBML_initialcond(nu="", input_file="", SBML_obj="", init_cond="", outputpath=""):
-	if type(init_cond)!=list:
+def SBML_initialcond(nu="", input_file="", SBML_obj="", init_cond="", outputpath="",indicate=False):
+	if indicate==True:
 		data = open(init_cond,'r')
-		init_cond = [i.rstrip() for i in data.readlines()]
+		init_cond = data.read()
 		data.close()
 
-	start_index = re.compile(r'>Initial Conditions')
-	end_index = re.compile(r'<Initial Conditions')
-	for i, line in enumerate(init_cond):
-		if start_index.search(line):
-			index_start = i
-		if end_index.search(line):
-			index_end = i
-	init_lines = init_cond[index_start+1:index_end]
-	for i, values in enumerate(init_lines):
-		init_lines[i]=[float(j) for j in init_lines[i].split(" ")] 
+	start_index = re.compile(r'>Initial Conditions\s*\n(.+?)\n<Initial Conditions+?', re.DOTALL)
+	init_lines = start_index.findall(init_cond)
+	init_lines = init_lines[0].split("\n")
+	for i, ic in enumerate(init_lines):
+		init_lines[i] = [float(j) for j in ic.split(" ")]
 
 	if SBML_obj!="":
 		if outputpath == "":
@@ -66,54 +61,44 @@ def SBML_initialcond(nu="", input_file="", SBML_obj="", init_cond="", outputpath
 			else:
 				writeSBML(SBML_master,"./" + outputpath + "/Exp" + "_" + repr(nu) + "_" + repr(i+2) + ".xml")
 
-
 def SBML_reactionchange(input_file, lines, param_to_change, mult_fact, param_reaction, nu, init_condit=False, dest=""):
 	reader = SBMLReader()
 	SBML_master = reader.readSBML(input_file)
 	for i, reaction_no in enumerate(param_reaction):
 		reaction = formulaToString(SBML_master.getModel().getListOfReactions()[reaction_no-1].getKineticLaw().getMath())
-		temp = re.sub(param_to_change[i],mult_fact[i]+" * "+param_to_change[i],reaction)
-		SBML_master.getModel().getListOfReactions()[reaction_no-1].getKineticLaw().setMath(parseFormula(temp))
+		temp = re.sub(param_to_change[i] + " ",mult_fact[i]+" * "+param_to_change[i] + " ",reaction + " ")
+		SBML_master.getModel().getListOfReactions()[reaction_no-1].getKineticLaw().setMath(parseFormula(temp[:-1]))
 	if init_condit == False:
 		if dest=="":
 			writeSBML(SBML_master, "Exp_" + repr(nu) + "_1" + ".xml")
 		else:
-			writeSBML(SBML_master, "./" + dest + "/Exp_" + repr(nu) + ".xml")
+			writeSBML(SBML_master, "./" + dest + "/Exp_" + repr(nu) + "_1.xml")
 	else:
 		SBML_initialcond(nu, input_file,SBML_master,lines,dest)
 
 
 def SBML_reactionchanges(input_file, fname="", param_changes="",init_cond=False):
 	change_params=open(param_changes,'r')
-	start_index = re.compile(r'>Parameter - Experiment (\d+)')
-	end_index = re.compile(r'<Parameter - Experiment (\d+)')
-	lines = [i.rstrip() for i in change_params.readlines()]
-	start_list = []
-	end_list = []
-	exp_list = []
-	
-	for i, line in enumerate(lines):
-		if start_index.search(line):
-			start_list.append(i)
-			exp_list.append(int(start_index.search(line).group(1)))
-		if end_index.search(line):
-			end_list.append(i)
+	data = change_params.read()
+	#change_params.seek(0)
+	#all_lines = [i.rstrip() for i in change_params.readlines()]
+	change_params.close()
 
-	for i, start in enumerate(start_list):
-		start_temp = start
-		stop_temp = end_list[i]
-		sub_lines = [j for j in lines[start:stop_temp]]
-		sub_lines = [j for j in sub_lines if j!='']
-		sub_lines = sub_lines[1:]
+	start_index = re.compile(r'>Parameter - Experiment (\d+)\s*\n(.+?)\n<Parameter - Experiment (\d+)+?', re.DOTALL)
+	lines = start_index.findall(data)
+	exp_list = [int(lines[i][0]) for i in range(0,len(lines))]
+	lines = [lines[i][1] for i in range(0,len(lines))]
+
+	for i, start in enumerate(lines):
+		line = start.split("\n")
 		param_to_change=[]
 		mult_fact=[]
-		param_reaction=[]                                                                                     
-		for element in sub_lines:
-			el_temp=element.split(' ')
+		param_reaction=[]  
+		for end in line:
+			el_temp=end.split(' ')
 			param_to_change.append(el_temp[0])
 			mult_fact.append(el_temp[1])
-
 			param_reaction.append(int(el_temp[2]))
-		SBML_reactionchange(input_file, lines, param_to_change,mult_fact,param_reaction,exp_list[i],init_condit=init_cond, dest=fname)
-	change_params.close()
-	return len(start_list)
+		SBML_reactionchange(input_file, data, param_to_change,mult_fact,param_reaction,exp_list[i],init_condit=init_cond, dest=fname)
+
+	return len(lines)
