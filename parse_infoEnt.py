@@ -127,6 +127,7 @@ class algorithm_info:
 		self.nparameters = []
 		self.nspecies = []
 		self.name = []
+		self.cuda = []
 		self.source = []
 		self.type = []
 		self.prior = []
@@ -180,7 +181,13 @@ class algorithm_info:
 					self.source.append( str(m.getElementsByTagName('source')[0].firstChild.data).strip() )
 				except:
 					print "Please provide an string value for <source> for model ", self.nmodels
-					sys.exit() 
+					sys.exit()
+				try:
+					self.cuda.append( str(m.getElementsByTagName('cuda')[0].firstChild.data).strip() )
+				except:
+					print "Please provide an string value for <cuda> for model ", self.nmodels
+					sys.exit()
+
 				try:
 					self.type.append( str(m.getElementsByTagName('type')[0].firstChild.data).strip() )
 				except:
@@ -210,6 +217,17 @@ class algorithm_info:
 						self.fitParams[self.nmodels-1].append(tmp)
 
 				nparameter = 0
+				
+				compref = m.getElementsByTagName('compartments')[0]
+				for p in compref.childNodes:
+					if p.nodeType == p.ELEMENT_NODE:
+						nparameter += 1
+						prior_tmp = [0,0,0]
+						tmp = str( p.firstChild.data ).split()
+						self.prior[self.nmodels-1].append( process_prior( tmp ) )
+
+
+
 				paramref = m.getElementsByTagName('parameters')[0]
 				for p in paramref.childNodes:
 					if p.nodeType == p.ELEMENT_NODE:
