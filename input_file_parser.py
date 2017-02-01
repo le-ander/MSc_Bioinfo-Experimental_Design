@@ -76,13 +76,22 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 	###regex for corresponding cuda file
 	cudaid = re.compile(r'Exp_\d+')
 
+	###regex for input file
+
+	prior_regex = re.compile(r'>prior\s*\n(.*)\n<prior', re.DOTALL)
+	fit_regex = re.compile(r'>fit\s*\n(.*)\n<fit', re.DOTALL)
+	comp_regex = re.compile(r'>compartment\s*\n(.*)\n<compartment', re.DOTALL)
+	times_regex = re.compile('\>timepoint\n(.*)\n<timepoint', re.DOTALL)
+	particles_regex = re.compile('\>particles\n(.*)\n<particles', re.DOTALL)
+ 	dt_regex = re.compile('\>dt\n(.*)\n<dt', re.DOTALL)
+
+	
 
 
 
 	have_data = False
 	times = []
 	fit_species = []
-#    vars = []
 	prior =[]
 	comps=[]
 	nvar = 0
@@ -96,39 +105,54 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 		info = data_file.read()
 		data_file.close()
 
-		prior_list = re.sub('\n', " ", re.search('(\>prior\n)(.*)\n<prior', info, re.DOTALL).group(2)).split(" ")
-		for i in range(0, len(prior_list), 3):
-			prior.append(prior_list[i:i+3])
-		for j in range(len(prior)):
-			prior[j]=prior[j][:1]+ [float(i) for i in prior[j][1:]]
+
+		####obtain dt value
+		dt = dt_regex.search(info).group(1)
+		dt = float(dt)
+		####
 
 
-		particles_list = re.sub('\n', " ", re.search('(\>particles\n)(.*)\n<particles', info, re.DOTALL).group(2)).split(" ")
-		particles=float(particles_list[0])
+		####obtain number of particles
+		particles = particles_regex.search(info).group(1)
+		particles = float(particles)
+		####
 
 
-
-		times = re.sub('\n', " ", re.search('(\>timepoint\n)(.*)\n<timepoint', info, re.DOTALL).group(2)).split(" ")
+		#####obtain timepoint for cudasim
+		times = times_regex.search(info).group(1).split(" ")
 		times = [float(i) for i in times]
+		####
+
+		
+		####obtain prior distribution of model parameter
+		prior = prior_regex.search(info).group(1).split("\n")
+#		prior_list = prior_regex.search(info).group(1).split("\n")
+#		for i in prior_list:
+#			prior.append(i.split(" "))
+		
+#		for j in range(len(prior)):
+#			prior[j]=prior[j][:1]+ [float(i) for i in prior[j][1:]]
+		####
 
 
-		fit_list = re.search('(\>fit\n)(.*)\n<fit', info, re.DOTALL).group(2).split("\n")
-		print fit_list
+		####obtain fit information
+		fit_list = fit_regex.search(info).group(1).split("\n")
 		if (len(fit_list)==0):
 			fit_species.append("None")
 		else:
 			fit_species = fit_list
+		####
 
 
-		dt_list = re.sub('\n', " ", re.search('(\>dt\n)(.*)\n<dt', info, re.DOTALL).group(2)).split(" ")
-		dt=float(dt_list[0])
-
-
-		comps_list = re.sub('\n', " ", re.search('(\>compartments\n)(.*)\n<compartments', info, re.DOTALL).group(2)).split(" ")
-		for i in range(0, len(comps_list), 3):
-			comps.append(comps_list[i:i+3])
-		for j in range(len(comps)):
-			comps[j]=comps[j][:1]+ [float(i) for i in prior[j][1:]]
+		####obtain prior distributions for compartment parameters
+		comps_list = comp_regex.search(info).group(1).split("\n")
+		comps = comps_list
+#		for i in comps_list:
+#			comps.append(i.split(" "))
+#		
+#		for j in range(len(comps)):
+#			comps[j]=comps[j][:1]+ [float(i) for i in prior[j][1:]]
+		####
 
 	print models_nparameters[0]
 
@@ -174,9 +198,6 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 	else:
 		out_file.write("<particles> 100 </particles>\n\n")
 
-	out_file.write("######################## beta\n\n")
-	out_file.write("# Beta is the number of times to simulate each sampled parameter set.\n# This is only applicable for models simulated using Gillespie and SDE\n")
-	out_file.write("<beta> 1 </beta>\n\n")
 
 	out_file.write("######################## dt\n\n")
 	out_file.write("# Internal timestep for solver.\n# Make this small for a stiff model.\n")
@@ -352,17 +373,19 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 			counter=0
 			if have_data==True:
 				for k in range(len(comps)):
-					print k
 					counter=counter+1
 #					sum_file.write("P"+repr(counter)+":\t"+parameterId[k]+"\t"+parameterId2[k]+"\t("+repr(parameter[k])+")\n")
+#					out_file.write("<compartment"+repr(counter)+"> ")
+#					out_file.write(comps[k][0] + " ")
+#					out_file.write(repr(comps[k][1]) + " " + repr(comps[k][2]) + " </compartment" + repr(counter)+">\n")
 					out_file.write("<compartment"+repr(counter)+"> ")
-					out_file.write(comps[k][0] + " ")
-					out_file.write(repr(comps[k][1]) + " " + repr(comps[k][2]) + " </compartment" + repr(counter)+">\n")
+					out_file.write(comps[k])
+					out_file.write(" </compartment" + repr(counter)+">\n")
 
 	
 			else:	
 				out_file.write("<compartment1> ")
-				out_file.write("constant 1 0")
+				out_file.write("constant 1")
 				out_file.write(" </compartment1>\n")
 
 			out_file.write("</compartments>\n\n")
@@ -387,12 +410,13 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 
 			if have_data==True:
 				for k in range(models_nparameters[i]):
-					print k
 					counter=counter+1
 					sum_file.write("P"+repr(counter)+":\t"+parameterId[k]+"\t"+parameterId2[k]+"\t("+repr(parameter[k])+")\n")
 					out_file.write("<parameter"+repr(counter)+"> ")
-					out_file.write(prior[k][0] + " ")
-					out_file.write(repr(prior[k][1]) + " " + repr(prior[k][2]) + " </parameter" + repr(counter)+">\n")
+					out_file.write(prior[k])
+					out_file.write(" </parameter" + repr(counter)+">\n")
+#					out_file.write(prior[k][0] + " ")
+#					out_file.write(repr(prior[k][1]) + " " + repr(prior[k][2]) + " </parameter" + repr(counter)+">\n")
 
 	#            Print = True
 	#            if k<len(listOfParameter):
@@ -425,4 +449,4 @@ input_xml_files = ["Exp_1_1.xml",  "Exp_1_2.xml",  "Exp_1_3.xml",  "Exp_2_1.xml"
 
 #input_xml_files = ["E"]
    
-generateTemplate(input_xml_files, "output_xml", "sum2", "new_file2")
+generateTemplate(input_xml_files, "output1_xml", "sum2", "new_file2")
