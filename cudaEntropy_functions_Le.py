@@ -54,7 +54,7 @@ def get_mutinf_all_param(m_object, ftheta, modelTraj, maxDistTraj, sigma):
 	MutInfo1 = []
 	# For each model in turn....
 	for mod in range(m_object.nmodels):
-		# Run function to get the mutual information for all parameters inference
+		# Run function to get the mutual information for all parameters
 		MutInfo1.append(getEntropy1(ftheta[mod],sigma,array(modelTraj[mod]),maxDistTraj[mod]))
 
 	return MutInfo1
@@ -75,7 +75,7 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 
 	}
 
-	__global__ void distance1(int Ni, int Nj, int M, int P, float sigma, float pi, double a, double *d1, double *d2, double *res1)
+	__global__ void distance1(int Ni, int Nj, int M, int P, float sigma, double a, double *d1, double *d2, double *res1)
 	{
 	int i = threadIdx.x + blockDim.x * blockIdx.x;
 	int j = threadIdx.y + blockDim.y * blockIdx.y;
@@ -173,7 +173,7 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 				bj = R
 
 			# Invoke GPU calculations (takes data1 and data2 as input, outputs res1)
-			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float32(pi), float64(a), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(a), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 
 			#print "SHAPE RES1", shape(res1)
 			for k in range(si):
@@ -182,29 +182,17 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 
 		countsi = countsi+si
 
-
 	sum1 = 0.0
 	counter = 0  # counts number of nan in matrix
 	counter2 = 0 # counts number of inf sums in matrix
 
-
 	for i in range(N1):
 		if(isnan(sum(result2[i,:]))): counter=counter+1
-		if(isinf(log(sum(result2[i,:])))): counter2=counter2+1
+		elif(isinf(log(sum(result2[i,:])))): counter2=counter2+1
 		else:
 			sum1 = sum1 - log(sum(result2[i,:])) + log(float(N2)) + M*P*log(a) +  M*P*log(2.0*pi*sigma*sigma)
 
-	Info = sum1/float(N1)
-
-	Info = Info - M*P/2.0*log(2.0*pi*sigma*sigma*exp(1))
-
-	print "counter: ",counter,"counter2: ",counter2
-
-	out = open('results','w')
-
-	print >>out, "counter: ",counter2
-	print >>out, "mutual info: ", Info
-
-	out.close()
+	Info = sum1 / float(N1-counter-counter2)
+	Info = Info - M*P/2.0*(log(2.0*pi*sigma*sigma)+1)
 
 	return(Info)
