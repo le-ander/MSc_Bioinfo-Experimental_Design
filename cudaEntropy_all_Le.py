@@ -179,9 +179,9 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
 	# prepare data
 
 #was 100000
-	N1 = 1000
+	N1 = 3000
 #was 4500000
-	N2 = 9000
+	N2 = 27000
 
 	d1 = data[0:N1,:,:].astype(float64)
 	d2 = array(theta)[N1:(N1+N2),:,:].astype(float64)
@@ -280,13 +280,13 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
 
 	for i in range(N1):
 		if(isnan(sum(result2[i,:]))): counter=counter+1
-		if(isinf(log(sum(result2[i,:])))): counter2=counter2+1
+		elif(isinf(log(sum(result2[i,:])))): counter2=counter2+1
 		else:
 			sum1 = sum1 - log(sum(result2[i,:])) + log(float(N2)) + M*P*log(a) +  M*P*log(2.0*pi*sigma*sigma)
 
-	Info = sum1/float(N1)
+	Info = sum1/float(N1-counter-counter2)
 
-	Info = Info - M*P/2.0*log(2.0*pi*sigma*sigma*exp(1))
+	Info = Info - M*P/2.0*(log(2.0*pi*sigma*sigma)+1)
 
 	print "counter: ",counter,"counter2: ",counter2
 	'''
