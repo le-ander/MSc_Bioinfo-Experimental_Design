@@ -59,6 +59,14 @@ def get_mutinf_all_param(m_object, ftheta, modelTraj, maxDistTraj, sigma):
 
 	return MutInfo1
 
+def optimise_grid_structure_gE1():
+	# Read total global memory of device
+	avail_mem = driver.mem_get_info()[1]
+	# Calculate maximum number of threads, assuming global memory usage of 100 KB per thread
+	max_threads = floor(avail_mem / 102400)
+	# Determine ideal block size
+
+
 def getEntropy1(data,sigma,theta,maxDistTraj):
 
 	#kernel declaration
@@ -101,9 +109,6 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 	d1 = data.astype(float64)
 	d2 = array(theta)[N1:(N1+N2),:,:].astype(float64)
 
-	#print "shape d1:", shape(d1)
-	#print "shape d2:", shape(d2)
-
 	# Split data to correct size to run on GPU
 	Max = 10.0 # max number of threads on whole gpu
 
@@ -128,7 +133,6 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 	countsi = 0
 
 	for i in range(numRuns):
-		#print "Runs left:", numRuns - i
 
 		countsj = 0
 
@@ -146,7 +150,6 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 
 			data1 = d1[(i*int(Max)):(i*int(Max)+si),:,:] # d1 subunit for this run (same vector 9 times)
 			data2 = d2[(j*int(Max)):(j*int(Max)+sj),:,:] # d2 subunit for this run (9 different verctors)
-			#print shape(data1), shape(data2)
 
 			Ni = data1.shape[0] # Number of particels in data1 (<= Max)
 			Nj = data2.shape[0] # Number of particels in data2 (<= Max)
@@ -157,7 +160,7 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 			res1 = zeros([Ni,Nj]).astype(float64) # results vector [shape(data1)*shape(data2)]
 
 			# Define square root of maximum threads per block
-			R = sqrt(driver.Device(0).max_threads_per_block)
+			R = 16.0
 
 			if(Ni<R):
 				gi = 1  # grid width  (no of blocks in i direction, i.e. gi * gj gives number of blocks)
@@ -175,14 +178,13 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 			# Invoke GPU calculations (takes data1 and data2 as input, outputs res1)
 			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(a), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 
-			#print "SHAPE RES1", shape(res1)
 			for k in range(si):
 				result2[(i*int(Max)+k),j] = sum(res1[k,:])
 			countsj = countsj+sj
 
 		countsi = countsi+si
 
-	sum1 = 0.0
+	sum1 = 0.0   # intermediate result sum
 	counter = 0  # counts number of nan in matrix
 	counter2 = 0 # counts number of inf sums in matrix
 
