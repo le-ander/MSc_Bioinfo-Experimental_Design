@@ -245,7 +245,7 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
 
 			# invoke kernel
 			R = 15.0 #square root off minimum threads per block
-#           print "Ni:",Ni,"Nj:",Nj
+
 			if(Ni<R):
 				gi = 1
 				bi = Ni
