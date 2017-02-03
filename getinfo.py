@@ -31,5 +31,4 @@ for devicenum in range(driver.Device.count()):
 
 # NOT WORKING
 #print pycuda.tools.OccupancyRecord().tb_per_mp
-
-print driver.cudaGetDevice(0)
+#print driver.cudaGetDevice(0)
