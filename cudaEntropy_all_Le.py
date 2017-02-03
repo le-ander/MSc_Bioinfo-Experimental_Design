@@ -179,9 +179,9 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
 	# prepare data
 
 #was 100000
-	N1 = 3000
+	N1 = 1000
 #was 4500000
-	N2 = 27000
+	N2 = 9000
 
 	d1 = data[0:N1,:,:].astype(float64)
 	d2 = array(theta)[N1:(N1+N2),:,:].astype(float64)
@@ -194,7 +194,7 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
 
 	# split data to correct size to run on GPU
 	#was 1000.0
-	Max = 40000.0 # max number of threads on whole gpu
+	Max = 50000.0 # max number of threads on whole gpu
 	dist_gpu1 = mod.get_function("distance1")
 	print "registers: ", dist_gpu1.num_regs
 
@@ -287,7 +287,10 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
 	Info = sum1/float(N1-counter-counter2)
 
 	Info = Info - M*P/2.0*(log(2.0*pi*sigma*sigma)+1)
+	print driver.mem_get_info()
+	print driver.Device(0).max_threads_per_block
 
+	print "DEVICE", driver.get_device()
 	print "counter: ",counter,"counter2: ",counter2
 	'''
 	out = open('results','w')
