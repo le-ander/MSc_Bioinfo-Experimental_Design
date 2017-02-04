@@ -289,8 +289,9 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
 	Info = Info - M*P/2.0*(log(2.0*pi*sigma*sigma)+1)
 	print driver.mem_get_info()
 	print driver.Device(0).max_threads_per_block
-
-	print "DEVICE", driver.get_device()
+	print "DEVICE", autoinit.device.max_threads_per_block
+	print "DEVICE", autoinit.device.name()
+	#print "DEVICE", driver.get_device()
 	print "counter: ",counter,"counter2: ",counter2
 	'''
 	out = open('results','w')
