@@ -59,12 +59,31 @@ def get_mutinf_all_param(m_object, ftheta, modelTraj, maxDistTraj, sigma):
 
 	return MutInfo1
 
-def optimise_grid_structure_gE1():
+def round_down(num, divisor):
+	return num - (num%divisor)
+
+def round_up(num, divisor):
+	return num - (num%divisor) + divisor
+
+def optimise_grid_structure(gmem_per_thread=102400): #need to define correct memory requirement for kernel
 	# Read total global memory of device
-	avail_mem = driver.mem_get_info()[1]
+	avail_mem = autoinit.device.total_memory()
 	# Calculate maximum number of threads, assuming global memory usage of 100 KB per thread
-	max_threads = floor(avail_mem / 102400)
+	max_threads = floor(avail_mem / gmem_per_thread)
+
 	# Determine ideal block size
+	warp_size = autoinit.device.warp_size
+	if autoinit.device.compute_capability()[0] <= 2:
+		reg_granul = 64
+		reg_per_sm =
+	elif autoinit.device.compute_capability() = (3,7):
+		reg_granul = 256
+		reg_per_sm = 131072
+	else:
+		reg_granul = 256
+	registers = dist_gpu1.num_regs
+
+	regs_per_warp = round_up(registers * warp_size, reg_granul)
 
 
 def getEntropy1(data,sigma,theta,maxDistTraj):
@@ -106,13 +125,8 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 	N1 = 10
 	N2 = 90
 
-	d1 = data.astype(float64)
+	d1 = data.astype(float64) ##This assumes noise is only added for the first N1 particles in Ni
 	d2 = array(theta)[N1:(N1+N2),:,:].astype(float64)
-
-	# Split data to correct size to run on GPU
-	Max = 10.0 # max number of threads on whole gpu
-
-	dist_gpu1 = mod.get_function("distance1")
 
 	# Set up scaling factor to avoid working with too small numbers
 	preci = pow(10,-34)
@@ -124,43 +138,42 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 		a = pow(preci,1.0/(d1.shape[1]*d1.shape[2]))*1.0/FmaxDistTraj
 	print "preci:", preci, "a:", a
 
+	# Assigning main kernel function to a variable
+	dist_gpu1 = mod.get_function("distance1")
+
+	# Split data to correct size to run on GPU
+	# What does this number represent?, Should be defined as an int, can then clean up formulas further down#
+	Max = 10.0
+	# Define square root of maximum threads per block
+	R = 16.0
+
 	# Determine required number of runs for i and j
-	numRuns = int(ceil(N1/Max))
-	numRuns2 = int(ceil(N2/Max))
+	numRuns = int(ceil(N1/float(Max)))
+	numRuns2 = int(ceil(N2/float(Max)))
 
 	result2 = zeros([N1,numRuns2])
 
 	countsi = 0
+	Ni = int(Max)
 
 	for i in range(numRuns):
-
 		countsj = 0
+		Nj = int(Max)
 
-		si = int(Max)
-		sj = int(Max)
-		s = int(Max)
-
-		if((s*(i+1)) > N1): # If last run with less that max remaining trajectories
-			si = int(N1 - Max*i) # Set si to remaining number of particels
+		if((int(Max)*(i+1)) > N1): # If last run with less that max remaining trajectories
+			Ni = int(N1 - Max*i) # Set Ni to remaining number of particels
 
 		for j in range(numRuns2):
+			if((int(Max)*(j+1)) > N2): # If last run with less that max remaining trajectories
+				Nj = int(N2 - Max*j) # Set Nj to remaining number of particels
 
-			if((s*(j+1)) > N2): # If last run with less that max remaining trajectories
-				sj = int(N2 - Max*j) # Set sj to remaining number of particels
-
-			data1 = d1[(i*int(Max)):(i*int(Max)+si),:,:] # d1 subunit for this run (same vector 9 times)
-			data2 = d2[(j*int(Max)):(j*int(Max)+sj),:,:] # d2 subunit for this run (9 different verctors)
-
-			Ni = data1.shape[0] # Number of particels in data1 (<= Max)
-			Nj = data2.shape[0] # Number of particels in data2 (<= Max)
+			data1 = d1[(i*int(Max)):(i*int(Max)+Ni),:,:] # d1 subunit for this run (same vector 9 times)
+			data2 = d2[(j*int(Max)):(j*int(Max)+Nj),:,:] # d2 subunit for this run (9 different vecttors)
 
 			M = data1.shape[1] # number of timepoints in d1 subunit
 			P = data1.shape[2] # number of species in d1 subunit
 
 			res1 = zeros([Ni,Nj]).astype(float64) # results vector [shape(data1)*shape(data2)]
-
-			# Define square root of maximum threads per block
-			R = 16.0
 
 			if(Ni<R):
 				gi = 1  # grid width  (no of blocks in i direction, i.e. gi * gj gives number of blocks)
@@ -178,11 +191,12 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 			# Invoke GPU calculations (takes data1 and data2 as input, outputs res1)
 			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(a), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 
-			for k in range(si):
+			for k in range(Ni):
 				result2[(i*int(Max)+k),j] = sum(res1[k,:])
-			countsj = countsj+sj
 
-		countsi = countsi+si
+			countsj = countsj+Nj
+
+		countsi = countsi+Ni
 
 	sum1 = 0.0   # intermediate result sum
 	counter = 0  # counts number of nan in matrix
