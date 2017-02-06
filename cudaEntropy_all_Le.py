@@ -179,9 +179,9 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
 	# prepare data
 
 #was 100000
-	N1 = 10000
+	N1 = 100
 #was 4500000
-	N2 = 90000
+	N2 = 900
 
 	d1 = data[0:N1,:,:].astype(float64)
 	d2 = array(theta)[N1:(N1+N2),:,:].astype(float64)
@@ -194,9 +194,11 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
 
 	# split data to correct size to run on GPU
 	#was 1000.0
-	Max = 50000.0 # max number of threads on whole gpu
+	Max = 50000.0 # What does this number represent?
 	dist_gpu1 = mod.get_function("distance1")
 	print "registers: ", dist_gpu1.num_regs
+	print "mTpB: ", dist_gpu1.max_threads_per_block
+	print "shared_size", dist_gpu1.shared_size_bytes
 
 	# Set up scaling factor to avoid working with too small numbers
 	preci = pow(10,-34)
@@ -245,24 +247,29 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
 			res1 = zeros([Ni,Nj]).astype(float64) # results vector [shape(data1)*shape(data2)]
 
 			# invoke kernel
-			R = 16.0 # square root of maximum threads per block
+			Ri = 4.0
+			Rj = 24.0 # square root of maximum threads per block
 			print "Ni:",Ni,"Nj:",Nj
 
-			if(Ni<R):
+			if(Ni<Ri):
 				gi = 1  # grid width  (i.e. gi * gj gives number of blocks)
 				bi = Ni # block width (i.e. bi * bj gives size of each block (max. R*R))
 			else:
-				gi = ceil(Ni/R)
-				bi = R
-			if(Nj<R):
+				gi = ceil(Ni/Ri)
+				bi = Ri
+			if(Nj<Rj):
 				gj = 1  # grid length
 				bj = Nj # block length
 			else:
-				gj = ceil(Nj/R)
-				bj = R
+				gj = ceil(Nj/Rj)
+				bj = Rj
 			print "GI", gi
 			print "GJ", gj
-			print "BLOCK SIZE", bi*bj
+			print "BLOCK SIZE", bi,"*",bj
+			print "Max", Max
+			print "s", s
+			print "si, sj", si, sj
+			print "Ni, Nj", Ni, Nj
 			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float32(pi), float64(a), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 			# takes data1 and data2 as input, outputs res1
 			print "SHAPE RES1", shape(res1)
@@ -287,11 +294,12 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
 	Info = sum1/float(N1-counter-counter2)
 
 	Info = Info - M*P/2.0*(log(2.0*pi*sigma*sigma)+1)
-	
+
 	print driver.mem_get_info()
-	print driver.Device(0).max_threads_per_block
-	print "DEVICE mTpB", autoinit.device.max_threads_per_block
+	print "USED MEM", driver.mem_get_info()[0]
+	print "DEVICE CC", autoinit.device.compute_capability()
 	print "DEVICEpci", autoinit.device.pci_bus_id
+	print "WARP SIZE", autoinit.device.warp_size
 	# Doesn't work
 	#print "DRIVER INFO", driver.device_attribute()
 	print "counter: ",counter,"counter2: ",counter2
