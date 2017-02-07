@@ -1,6 +1,4 @@
-## Maybe not required here
-def pre_cudasim_stacking():
-
+import math
 
 def run_cudasim(m_object, parameters, species):
 	modelTraj = []
@@ -65,25 +63,96 @@ def round_down(num, divisor):
 def round_up(num, divisor):
 	return num - (num%divisor) + divisor
 
+def max_active_blocks_per_sm(device, function, blocksize, dyn_smem_per_block=0):
+	# Define variables based on device and fucntion properties
+	regs_per_thread = function.num_regs
+	smem_per_function = function.shared_size_bytes
+	warp_size = device.warp_size
+	max_threads_per_block = min(device.max_threads_per_block, function.max_threads_per_block)
+	max_threads_per_sm = device.max_threads_per_multiprocessor
+	max_regs_per_block = device.max_registers_per_block
+	max_smem_per_block = device.max_shared_memory_per_block
+	if device.compute_capability()[0] == 2:
+		reg_granul = 64
+		warp_granul = 2
+		smem_granul = 128
+		reg_per_sm = 32768
+		max_blocks_per_sm = 8
+		if regs_per_thread in [21,22,29,30,37,38,45,46]:
+			reg_granul = 128
+	elif device.compute_capability() == (3,7):
+		reg_granul = 256
+		warp_granul = 4
+		smem_granul = 256
+		reg_per_sm = 131072
+		max_blocks_per_sm = 16
+	elif device.compute_capability()[0] == 3:
+		reg_granul = 256
+		warp_granul = 4
+		smem_granul = 256
+		reg_per_sm = 65536
+		max_blocks_per_sm = 16
+	elif device.compute_capability() == (6,0):
+		reg_granul = 256
+		warp_granul = 2
+		smem_granul = 256
+		reg_per_sm = 65536
+		max_blocks_per_sm = 32
+	else:
+		reg_granul = 256
+		warp_granul = 4
+		smem_granul = 256
+		reg_per_sm = 65536
+		max_blocks_per_sm = 32
+
+	# Calculate the maximum number of blocks, limited by register count
+	if regs_per_thread > 0:
+		regs_per_warp = round_up(regs_per_thread * warp_size, reg_granul)
+		warps_per_block = round_up(ceil(blocksize / warp_size), warp_granul)
+		block_lim_regs = max_regs_per_block / (warps_per_block * regs_per_warp)
+	else:
+		block_lim_regs = max_blocks_per_sm
+ 	# Calculate the maximum number of blocks, limited by blocks/SM or threads/SM
+	if blocksize <= max_threads_per_block:
+		block_lim_tSM = max_threads_per_sm / blocksize
+	else:
+		block_lim_tSM = 0
+	block_lim_bSM = max_blocks_per_sm
+
+	# Calculate the maximum number of blocks, limited by shared memory
+	req_smem = smem_per_function + dyn_smem_per_block
+	if req_smem > 0:
+		smem_per_block = round_up(req_smem, smem_granul)
+		block_lim_smem = max_smem_per_block / smem_per_block
+	else:
+		block_lim_smem = max_blocks_per_sm
+
+	# Find the maximum number of blocks based on the limits calculated above
+	block_lim = min(block_lim_regs, block_lim_tSM, block_lim_bSM, block_lim_smem)
+
+	return block_lim
+
+def optimal_blocksize(device, function):
+	# Iterate through block sizes to find largest occupancy
+	blocksize = min(device.max_threads_per_block, function.max_threads_per_block)
+	achieved_occupancy = 0
+	while blocksize > 0:
+		occupancy = blocksize * max_active_blocks_per_sm(device, function, blocksize)
+		if occupancy >= achieved_occupancy:
+			optimal_blocksize = blocksize
+			achieved_occupancy = occupancy
+		if achieved_occupancy == device.max_threads_per_multiprocessor:
+			break
+		blocksize -= device.warp_size
+
+	return optimal_blocksize
+
 def optimise_grid_structure(gmem_per_thread=102400): #need to define correct memory requirement for kernel
+	# DETERMINE TOTAL NUMBER OF THREADS LIMITED BY GLOBAL MEMORY
 	# Read total global memory of device
 	avail_mem = autoinit.device.total_memory()
 	# Calculate maximum number of threads, assuming global memory usage of 100 KB per thread
 	max_threads = floor(avail_mem / gmem_per_thread)
-
-	# Determine ideal block size
-	warp_size = autoinit.device.warp_size
-	if autoinit.device.compute_capability()[0] <= 2:
-		reg_granul = 64
-		reg_per_sm =
-	elif autoinit.device.compute_capability() = (3,7):
-		reg_granul = 256
-		reg_per_sm = 131072
-	else:
-		reg_granul = 256
-	registers = dist_gpu1.num_regs
-
-	regs_per_warp = round_up(registers * warp_size, reg_granul)
 
 
 def getEntropy1(data,sigma,theta,maxDistTraj):
