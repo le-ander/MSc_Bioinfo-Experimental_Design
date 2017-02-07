@@ -1,0 +1,28 @@
+>dt
+0.0001
+<dt
+
+>particles
+1000
+<particles
+
+>timepoint
+10 70 80 100 110
+<timepoint
+
+>prior
+constant 1 0
+uniform 1 10
+normal 10 1000
+lognormal 10 2000
+<prior
+
+>fit
+species1+species2 species5
+species4-species5
+species2
+<fit
+
+>compartment
+constant 1 0
+<compartment

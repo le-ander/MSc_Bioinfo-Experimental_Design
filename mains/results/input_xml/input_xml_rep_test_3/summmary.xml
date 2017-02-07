@@ -1,0 +1,552 @@
+Model 1
+name: model1
+source: Exp_1.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+S1:	m1	species1	(0.0)
+S2:	p1	species2	(1.0)
+S3:	m2	species3	(0.0)
+S4:	p2	species4	(0.0)
+S5:	m3	species5	(0.0)
+S6:	p3	species6	(0.0)
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+
+Model 2
+name: model2
+source: Exp_2.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+S1:	m1	species1	(0.0)
+S2:	p1	species2	(1.0)
+S3:	m2	species3	(0.0)
+S4:	p2	species4	(0.0)
+S5:	m3	species5	(0.0)
+S6:	p3	species6	(0.0)
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+
+Model 3
+name: model3
+source: Exp_3.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+S1:	m1	species1	(0.0)
+S2:	p1	species2	(1.0)
+S3:	m2	species3	(0.0)
+S4:	p2	species4	(0.0)
+S5:	m3	species5	(0.0)
+S6:	p3	species6	(0.0)
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+
+Model 4
+name: model4
+source: Exp_4.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+S1:	m1	species1	(0.0)
+S2:	p1	species2	(1.0)
+S3:	m2	species3	(0.0)
+S4:	p2	species4	(0.0)
+S5:	m3	species5	(0.0)
+S6:	p3	species6	(0.0)
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+
+Model 5
+name: model5
+source: Exp_1.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+
+Model 6
+name: model6
+source: Exp_2.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+
+Model 7
+name: model7
+source: Exp_3.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+
+Model 8
+name: model8
+source: Exp_4.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+
+Model 9
+name: model9
+source: Exp_1.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+
+Model 10
+name: model10
+source: Exp_2.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+
+Model 11
+name: model11
+source: Exp_3.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+
+Model 12
+name: model12
+source: Exp_4.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+
+Model 13
+name: model13
+source: Exp_1.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+S1:	m1	species1	(0.0)
+S2:	p1	species2	(1.0)
+S3:	m2	species3	(0.0)
+S4:	p2	species4	(0.0)
+S5:	m3	species5	(0.0)
+S6:	p3	species6	(0.0)
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+
+Model 14
+name: model14
+source: Exp_2.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+S1:	m1	species1	(0.0)
+S2:	p1	species2	(1.0)
+S3:	m2	species3	(0.0)
+S4:	p2	species4	(0.0)
+S5:	m3	species5	(0.0)
+S6:	p3	species6	(0.0)
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+
+Model 15
+name: model15
+source: Exp_3.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+S1:	m1	species1	(0.0)
+S2:	p1	species2	(1.0)
+S3:	m2	species3	(0.0)
+S4:	p2	species4	(0.0)
+S5:	m3	species5	(0.0)
+S6:	p3	species6	(0.0)
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+
+Model 16
+name: model16
+source: Exp_4.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+S1:	m1	species1	(0.0)
+S2:	p1	species2	(1.0)
+S3:	m2	species3	(0.0)
+S4:	p2	species4	(0.0)
+S5:	m3	species5	(0.0)
+S6:	p3	species6	(0.0)
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+
+Model 17
+name: model17
+source: Exp_1.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+
+Model 18
+name: model18
+source: Exp_2.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+
+Model 19
+name: model19
+source: Exp_3.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+
+Model 20
+name: model20
+source: Exp_4.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+
+Model 21
+name: model21
+source: Exp_1.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+
+Model 22
+name: model22
+source: Exp_2.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+
+Model 23
+name: model23
+source: Exp_3.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+
+Model 24
+name: model24
+source: Exp_4.xml
+
+number of compartments: 1
+number of reactions: 12
+number of rules: 0
+number of functions: 0
+number of events: 0
+
+Species with initial values: 6
+
+Parameter: 5 (all of them are global parameters)
+(0 parameter is treated as species)
+P1:	Cell	compartment1	(1.0)
+P2:	h	parameter1	(2.0)
+P3:	alpha0	parameter2	(10.0)
+P4:	alpha	parameter3	(1000.0)
+
+############################################################
+

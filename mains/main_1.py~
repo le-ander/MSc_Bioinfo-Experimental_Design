@@ -1,0 +1,44 @@
+#!/usr/bin/python2.5
+
+#from numpy import *
+#from numpy.random import *
+#import abcsysbio
+#import sys
+#import re
+#import time, os
+
+#import cudasim
+#import cudasim.Lsoda as Lsoda
+
+
+#from pycuda import compiler, driver
+#from pycuda import autoinit
+
+
+#from abcsysbio import model_py
+#from abcsysbio import model_cu
+#from abcsysbio import model_c
+#from abcsysbio import data
+#from abcsysbio import input_output
+
+#import abcsysbio_parser
+#from abcsysbio_parser import ParseAndWrite
+import sys
+sys.path.insert(0, '/cluster/home/saw112/work/Test_code/error_checks')
+
+import error_check
+
+from abcsysbio import parse_infoEnt
+#sys.path.insert(0, ".")
+
+
+#xmlModel="rep_test.origin"
+#integrationType = "ODE"
+#name = "test_model"
+#Parser.importSBMLCUDA([xmlModel],[integrationType],ModelName=[name],method=None)
+
+def main():
+	error_check.error_checker(sys.argv,0)
+	print "hello"
+
+main()
