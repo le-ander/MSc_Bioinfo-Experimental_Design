@@ -179,9 +179,9 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
 	# prepare data
 
 #was 100000
-	N1 = 10
+	N1 = 100
 #was 4500000
-	N2 = 90
+	N2 = 900
 
 	d1 = data[0:N1,:,:].astype(float64)
 	d2 = array(theta)[N1:(N1+N2),:,:].astype(float64)
@@ -194,7 +194,7 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
 ##############EXPLAIN###########################################
 	# split data to correct size to run on GPU
 	#was 1000.0
-	Max = 10.0
+	Max = 100.0
 	dist_gpu1 = mod.get_function("distance1")
 	print "registers: ", dist_gpu1.num_regs
 
@@ -291,14 +291,16 @@ def getEntropy1(data,N,sigma,theta,maxDistTraj):
 	print "counter: ",counter,"counter2: ",counter2
 
 #    saveResults(result2,"distances.txt")
-
+	'''
 	out = open('results','w')
 
 	print >>out, "counter: ",counter2
 	print >>out, "mutual info: ", Info
 
 	out.close()
-
+	'''
+	print max_active_blocks_per_sm(autoinit.device, dist_gpu1, 256)
+	print optimal_blocksize(autoinit.device, dist_gpu1)
 	return(Info)
 
 
@@ -551,6 +553,96 @@ def get_mutinf_all_param(m_object, ftheta, modelTraj, maxDistTraj, sigma):
 				MutInfo1.append(getEntropy1(ftheta[mod],shape(modelTraj[mod])[0],sigma,array(modelTraj[mod]),maxDistTraj[mod]))
 				print "-----------ENDGETENTROPY--------------"
 		return MutInfo1
+
+def round_down(num, divisor):
+	return num - (num%divisor)
+
+def round_up(num, divisor):
+	return num - (num%divisor) + divisor
+
+def max_active_blocks_per_sm(device, function, blocksize, dyn_smem_per_block=0):
+	# Define variables based on device and fucntion properties
+	regs_per_thread = function.num_regs
+	smem_per_function = function.shared_size_bytes
+	warp_size = device.warp_size
+	max_threads_per_block = min(device.max_threads_per_block, function.max_threads_per_block)
+	max_threads_per_sm = device.max_threads_per_multiprocessor
+	max_regs_per_block = device.max_registers_per_block
+	max_smem_per_block = device.max_shared_memory_per_block
+	if device.compute_capability()[0] == 2:
+		reg_granul = 64
+		warp_granul = 2
+		smem_granul = 128
+		reg_per_sm = 32768
+		max_blocks_per_sm = 8
+		if regs_per_thread in [21,22,29,30,37,38,45,46]:
+			reg_granul = 128
+	elif device.compute_capability() == (3,7):
+		reg_granul = 256
+		warp_granul = 4
+		smem_granul = 256
+		reg_per_sm = 131072
+		max_blocks_per_sm = 16
+	elif device.compute_capability()[0] == 3:
+		reg_granul = 256
+		warp_granul = 4
+		smem_granul = 256
+		reg_per_sm = 65536
+		max_blocks_per_sm = 16
+	elif device.compute_capability() == (6,0):
+		reg_granul = 256
+		warp_granul = 2
+		smem_granul = 256
+		reg_per_sm = 65536
+		max_blocks_per_sm = 32
+	else:
+		reg_granul = 256
+		warp_granul = 4
+		smem_granul = 256
+		reg_per_sm = 65536
+		max_blocks_per_sm = 32
+
+	# Calculate the maximum number of blocks, limited by register count
+	if regs_per_thread > 0:
+		regs_per_warp = round_up(regs_per_thread * warp_size, reg_granul)
+		warps_per_block = round_up(ceil(blocksize / warp_size), warp_granul)
+		block_lim_regs = max_regs_per_block / (warps_per_block * regs_per_warp)
+	else:
+		block_lim_regs = max_blocks_per_sm
+ 	# Calculate the maximum number of blocks, limited by blocks/SM or threads/SM
+	if blocksize <= max_threads_per_block:
+		block_lim_tSM = max_threads_per_sm / blocksize
+	else:
+		block_lim_tSM = 0
+	block_lim_bSM = max_blocks_per_sm
+
+	# Calculate the maximum number of blocks, limited by shared memory
+	req_smem = smem_per_function + dyn_smem_per_block
+	if req_smem > 0:
+		smem_per_block = round_up(req_smem, smem_granul)
+		block_lim_smem = max_smem_per_block / smem_per_block
+	else:
+		block_lim_smem = max_blocks_per_sm
+
+	# Find the maximum number of blocks based on the limits calculated above
+	block_lim = min(block_lim_regs, block_lim_tSM, block_lim_bSM, block_lim_smem)
+
+	return block_lim
+
+def optimal_blocksize(device, function):
+	# Iterate through block sizes to find largest occupancy
+	blocksize = min(device.max_threads_per_block, function.max_threads_per_block)
+	achieved_occupancy = 0
+	while blocksize > 0:
+		occupancy = blocksize * max_active_blocks_per_sm(device, function, blocksize)
+		if occupancy >= achieved_occupancy:
+			optimal_blocksize = blocksize
+			achieved_occupancy = occupancy
+		if achieved_occupancy == device.max_threads_per_multiprocessor:
+			break
+		blocksize -= device.warp_size
+
+	return optimal_blocksize
 
 def main():
 
