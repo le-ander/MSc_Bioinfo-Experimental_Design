@@ -108,7 +108,7 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 
 		####obtain number of particles
 		particles = particles_regex.search(info).group(1)
-		particles = float(particles)
+		particles = int(particles)
 		####
 
 

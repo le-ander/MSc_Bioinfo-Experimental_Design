@@ -117,7 +117,6 @@ class algorithm_info:
 
 		self.modelnumber = 0
 		self.particles = 0
-		self.globalnparameters = 0
 		self.beta = 0
 		self.dt = 0
 		self.times = []
@@ -128,12 +127,14 @@ class algorithm_info:
 		self.nparameters = []
 		self.nspecies = []
 		self.name = []
+		self.cuda = []
 		self.source = []
 		self.type = []
 		self.prior = []
 		self.x0prior = []
 		self.fitSpecies = []
 		self.fitParams = []
+		self.globalnparameters = 0
 
 
 		##################################################
@@ -141,10 +142,6 @@ class algorithm_info:
 
 		### get number of models
 		self.modelnumber = parse_required_single_value( xmldoc, "modelnumber", "Please provide an integer value for <modelnumber>", int )
-
-		self.globalnparameters = parse_required_single_value( xmldoc, "globalnparameters", "Please provide an integer value for <modelnumber>", int )
-		
-		self.nspecies = parse_required_single_value( xmldoc, "nspecies", "Please provide an integer value for <modelnumber>", int )
 
 		### get number of samples
 		self.particles = parse_required_single_value( xmldoc, "particles", "Please provide an integer value for <particles>", int )
@@ -159,6 +156,10 @@ class algorithm_info:
 		# times
 		self.times = parse_required_vector_value( dataref, "times", "Please provide a whitespace separated list of values for <data><times>" , float )
 		self.ntimes = len(self.times)
+
+		### get global number of parameters
+
+		self.globalnparameters = parse_required_single_value(dataref, "globalnparameters", "Please provide an integer value for <data><globalnparameters>", int)
 
 		   
 		### get model attributes
@@ -180,7 +181,13 @@ class algorithm_info:
 					self.source.append( str(m.getElementsByTagName('source')[0].firstChild.data).strip() )
 				except:
 					print "Please provide an string value for <source> for model ", self.nmodels
-					sys.exit() 
+					sys.exit()
+				try:
+					self.cuda.append( str(m.getElementsByTagName('cuda')[0].firstChild.data).strip() )
+				except:
+					print "Please provide an string value for <cuda> for model ", self.nmodels
+					sys.exit()
+
 				try:
 					self.type.append( str(m.getElementsByTagName('type')[0].firstChild.data).strip() )
 				except:
@@ -193,23 +200,34 @@ class algorithm_info:
 				#self.nspecies.append( len( self.init[self.nmodels-1] ) )
 
 				nfitSpecies = 0
-				fitSpeciesref = m.getElementsByTagName('fits')[0]
+				fitSpeciesref = m.getElementsByTagName('fit')[0]
 				for s in fitSpeciesref.childNodes:
 					if s.nodeType == s.ELEMENT_NODE:
 						nfitSpecies += 1
 						tmp = str(s.firstChild.data).split()
 						self.fitSpecies[self.nmodels-1].append(tmp)
 
-
+				'''
 				nfitParams = 0
-				fitParamsref = m.getElementsByTagName('fit1s')[0]
+				fitParamsref = m.getElementsByTagName('paramfit')[0]
 				for fp in fitParamsref.childNodes:
 					if fp.nodeType == fp.ELEMENT_NODE:
 						nfitParams += 1
 						tmp = str(fp.firstChild.data).split()
 						self.fitParams[self.nmodels-1].append(tmp)
-
+				'''
+				
 				nparameter = 0
+				compref = m.getElementsByTagName('compartments')[0]
+				for p in compref.childNodes:
+					if p.nodeType == p.ELEMENT_NODE:
+						nparameter += 1
+						prior_tmp = [0,0,0]
+						tmp = str( p.firstChild.data ).split()
+						self.prior[self.nmodels-1].append( process_prior( tmp ) )
+
+
+
 				paramref = m.getElementsByTagName('parameters')[0]
 				for p in paramref.childNodes:
 					if p.nodeType == p.ELEMENT_NODE:
@@ -240,7 +258,7 @@ class algorithm_info:
 					print "\nNo initial conditions specified in model ", self.name[self.nmodels-1]
 					sys.exit()
 				self.nparameters.append( nparameter )
-				#self.nspecies.append( ninit )
+				self.nspecies.append( ninit )
 				
 		if self.nmodels == 0:
 			print "\nNo models specified"
@@ -251,6 +269,7 @@ class algorithm_info:
 		print "modelnumber:", self.modelnumber
 		print "samples:", self.particles
 		print "dt:", self.dt
+		print "parameters:", self.globalnparameters
 
 		
 		print "\ttimes:", self.times
@@ -259,7 +278,7 @@ class algorithm_info:
 		print "MODELS:", self.nmodels
 		for i in range(self.nmodels):
 			print "\t", "npar:", self.nparameters[i]
-			print "\t", "nspecies:", self.nspecies
+			print "\t", "nspecies:", self.nspecies[i]
 			print "\t", "name:", self.name[i]
 			print "\t", "source:", self.source[i]
 			print "\t", "type:", self.type[i]

@@ -28,6 +28,8 @@ abcSysBio_exe=$REPRESSILATOR/abc-sysbio/scripts/run-abc-sysbio
 entBio_exe=$REPRESSILATOR/abc-sysbio/scripts/cudaEntropy_all_Scott.py
 test_exe=$TESTCODE/mains/main_1.py
 
+test_temp=$REPRESSILATOR/abc-sysbio/scripts/test_SCOTT.py
+
 #cd $REPRESSILATOR/entropy/Model_set1/all
 
 if [ -n "$PBS_O_WORKDIR" ]; then

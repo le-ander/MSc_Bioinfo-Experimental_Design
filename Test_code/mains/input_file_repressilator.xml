@@ -14,6 +14,8 @@
 # Was 4600000
 <particles> 100 </particles>
 
+<globalnparameters> 4 </globalnparameters>
+<nspecies> 6 </nspecies>
 
 <beta> 1 </beta>
 
@@ -46,12 +48,12 @@
 			<fit1> theta1 theta2  </fit1>
 		</fit1s>
 		<initial>
- 			<ic1> constant 0.0 </ic1>
- 			<ic2> constant 1.0 </ic2>
+ 			<ic1> uniform 0 10 </ic1>
+ 			<ic2> uniform 0 20 </ic2>
  			<ic3> constant 0.0 </ic3>
- 			<ic4> constant 0.0 </ic4>
+ 			<ic4> uniform 2 80 </ic4>
  			<ic5> constant 0.0 </ic5>
- 			<ic6> constant 0.0 </ic6>
+ 			<ic6> uniform 100 200 </ic6>
 		</initial>
 
 		<parameters>
