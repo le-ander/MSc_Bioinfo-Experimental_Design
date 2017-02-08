@@ -4,7 +4,7 @@ def THETAS(model_object, sampleFromPost):
 
 
 	if sampleFromPost==False:
-		parameters = zeros( [model_object.particles,len(model_object.prior[0])] ) #we might  want to change prior[0] to a globally defined prior in the object
+		parameters = zeros( [model_object.particles,len(model_object.globalnparameters)] ) #we might  want to change prior[0] to a globally defined prior in the object
 
 		#obtain Thetas from prior distributions, wich are either constant, uniform, normal or lognormal
 
@@ -71,13 +71,43 @@ def THETAS(model_object, sampleFromPost):
 
 
 
-		####Obtain Theta from posterior samples through weigths####
-		if(counter==counter2 and len(model_object.nparameters[0])==len(param[0])): ### model object needs to include nparameters information
-			parameters = zeros( [model_object.particles,len(param[0])] )
-						
+		####Obtain Theta from posterior samples through weigths + compartments####
+		if(counter==counter2) # and len(model_object.nparameters[0])==len(param[0])): ### model object needs to include nparameters information
+			parameters = zeros( [model_object.particles,len(param[0])+model_object.globalnparameters] )
+			
+			####Fill in compartment parameters
+			for j in range(len(model_object.prior[0])): # loop through number of parameter
+				
+				#####Constant prior#####
+				if(model_object.prior[0][j][0]==0):  # j paramater index
+					parameters[:,j] = model_object.prior[0][j][1]
+				
+
+				#####Uniform prior#####
+				elif(model_object.prior[0][j][0]==2):   
+					parameters[:,j] = uniform(low=model_object.prior[0][j][1], high=model_object.prior[0][j][2], size=(model_object.particles))
+				
+
+				#####Normal prior#####
+				elif(model_object.prior[0][j][0]==1):       
+					parameters[:,j] = normal(loc=model_object.prior[0][j][1], scale=model_object.prior[0][j][2], size=(model_object.particles))
+
+
+				#####Lognormal prior#####
+				elif(model_object.prior[0][j][0]==3):       
+					parameters[:,j] = lognormal(mean=model_object.prior[mod][j][1], sigma=model_object.prior[mod][j][2], size=(model_object.particles))
+
+				####
+				else:
+					print " Prior distribution not defined "
+					sys.exit()
+
+
+			####Fill in the rest through sample from posterior					
 			for i in range(model_object.particles): #repeats
 				index = getWeightedSample(weights)  #manually defined function
-				parameters[i,:] = param[index] #index indefies list which is used to assign parameter value.  j corresponds to different parameters defines column 
+				parameters[i,model_object.globalnparameters:] = param[index] #index indefies list which is used to assign parameter value.  j corresponds to different parameters defines column 
+		
 		else:
 			print "Please provide equal number of particles and weights in model!"
 			sys.exit()

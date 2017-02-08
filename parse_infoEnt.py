@@ -132,9 +132,12 @@ class algorithm_info:
 		self.type = []
 		self.prior = []
 		self.x0prior = []
+		self.compprior = []
 		self.fitSpecies = []
 		self.fitParams = []
 		self.globalnparameters = 0
+		self.nparameters_all = 0
+		self.ncompparams = []
 
 
 		##################################################
@@ -159,7 +162,10 @@ class algorithm_info:
 
 		### get global number of parameters
 
-		self.globalnparameters = parse_required_single_value(dataref, "globalnparameters", "Please provide an integer value for <data><globalnparameters>")
+		self.nparameters_all = parse_required_single_value(dataref, "nparameters_all", "Please provide an integer value for <data><nparameters_all>", int)
+
+		### get parameter fit information
+		self.fitParams = parse_required_vector_value(dataref, "paramfit", "Please provide whitespace seperated list of subset of parameter <data><paramfit>", str)
 
 		   
 		### get model attributes
@@ -187,7 +193,6 @@ class algorithm_info:
 				except:
 					print "Please provide an string value for <cuda> for model ", self.nmodels
 					sys.exit()
-
 				try:
 					self.type.append( str(m.getElementsByTagName('type')[0].firstChild.data).strip() )
 				except:
@@ -200,7 +205,7 @@ class algorithm_info:
 				#self.nspecies.append( len( self.init[self.nmodels-1] ) )
 
 				nfitSpecies = 0
-				fitSpeciesref = m.getElementsByTagName('fits')[0]
+				fitSpeciesref = m.getElementsByTagName('fit')[0]
 				for s in fitSpeciesref.childNodes:
 					if s.nodeType == s.ELEMENT_NODE:
 						nfitSpecies += 1
@@ -208,25 +213,16 @@ class algorithm_info:
 						self.fitSpecies[self.nmodels-1].append(tmp)
 
 
-				nfitParams = 0
-				fitParamsref = m.getElementsByTagName('fit1s')[0]
-				for fp in fitParamsref.childNodes:
-					if fp.nodeType == fp.ELEMENT_NODE:
-						nfitParams += 1
-						tmp = str(fp.firstChild.data).split()
-						self.fitParams[self.nmodels-1].append(tmp)
-
 				nparameter = 0
+				ncompparam = 0
 				
 				compref = m.getElementsByTagName('compartments')[0]
 				for p in compref.childNodes:
 					if p.nodeType == p.ELEMENT_NODE:
-						nparameter += 1
+						ncompparam += 1
 						prior_tmp = [0,0,0]
 						tmp = str( p.firstChild.data ).split()
-						self.prior[self.nmodels-1].append( process_prior( tmp ) )
-
-
+						self.compprior[self.nmodels-1].append( process_prior( tmp ) )
 
 				paramref = m.getElementsByTagName('parameters')[0]
 				for p in paramref.childNodes:
@@ -259,6 +255,7 @@ class algorithm_info:
 					sys.exit()
 				self.nparameters.append( nparameter )
 				self.nspecies.append( ninit )
+				self.ncompparams.append( ncompparam )
 				
 		if self.nmodels == 0:
 			print "\nNo models specified"
@@ -269,7 +266,7 @@ class algorithm_info:
 		print "modelnumber:", self.modelnumber
 		print "samples:", self.particles
 		print "dt:", self.dt
-		print "parameters:" slef.globalnparameters
+		print "parameters:" self.globalnparameters
 
 		
 		print "\ttimes:", self.times
