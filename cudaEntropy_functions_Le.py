@@ -57,11 +57,17 @@ def get_mutinf_all_param(m_object, ftheta, modelTraj, maxDistTraj, sigma):
 
 	return MutInfo1
 
-def round_down(num, divisor):
-	return num - (num%divisor)
+#def round_down(num, divisor):
+	#return num - (num%divisor)
 
 def round_up(num, divisor):
-	return num - (num%divisor) + divisor
+	if num == divisor:
+		return 1
+	else:
+		return num - (num%divisor) + divisor
+
+#def round_up(num, divisor):
+	#return num - (num%divisor) + divisor
 
 def max_active_blocks_per_sm(device, function, blocksize, dyn_smem_per_block=0):
 	# Define variables based on device and fucntion properties
@@ -76,7 +82,7 @@ def max_active_blocks_per_sm(device, function, blocksize, dyn_smem_per_block=0):
 		reg_granul = 64
 		warp_granul = 2
 		smem_granul = 128
-		reg_per_sm = 32768
+		max_regs_per_sm = 32768
 		max_blocks_per_sm = 8
 		if regs_per_thread in [21,22,29,30,37,38,45,46]:
 			reg_granul = 128
@@ -84,39 +90,41 @@ def max_active_blocks_per_sm(device, function, blocksize, dyn_smem_per_block=0):
 		reg_granul = 256
 		warp_granul = 4
 		smem_granul = 256
-		reg_per_sm = 131072
+		max_regs_per_sm = 131072
 		max_blocks_per_sm = 16
 	elif device.compute_capability()[0] == 3:
 		reg_granul = 256
 		warp_granul = 4
 		smem_granul = 256
-		reg_per_sm = 65536
+		max_regs_per_sm = 65536
 		max_blocks_per_sm = 16
 	elif device.compute_capability() == (6,0):
 		reg_granul = 256
 		warp_granul = 2
 		smem_granul = 256
-		reg_per_sm = 65536
+		max_regs_per_sm = 65536
 		max_blocks_per_sm = 32
 	else:
 		reg_granul = 256
 		warp_granul = 4
 		smem_granul = 256
-		reg_per_sm = 65536
+		max_regs_per_sm = 65536
 		max_blocks_per_sm = 32
 
 	# Calculate the maximum number of blocks, limited by register count
 	if regs_per_thread > 0:
+		#regs_per_warp = round_up(regs_per_thread * warp_size, reg_granul)
+		#warps_per_block = round_up(int(ceil(blocksize / warp_size)), warp_granul)
+		#block_lim_regs = max_regs_per_block / (warps_per_block * regs_per_warp)
 		regs_per_warp = round_up(regs_per_thread * warp_size, reg_granul)
-		warps_per_block = round_up(ceil(blocksize / warp_size), warp_granul)
-		block_lim_regs = max_regs_per_block / (warps_per_block * regs_per_warp)
+		max_warps_per_sm = round_up(max_regs_per_block / regs_per_warp, warp_granul)
+		warps_per_block = int(ceil(blocksize / warp_size))
+		block_lim_regs = int(max_warps_per_sm / warps_per_block) * int(max_regs_per_sm / max_regs_per_block)
 	else:
 		block_lim_regs = max_blocks_per_sm
- 	# Calculate the maximum number of blocks, limited by blocks/SM or threads/SM
-	if blocksize <= max_threads_per_block:
-		block_lim_tSM = max_threads_per_sm / blocksize
-	else:
-		block_lim_tSM = 0
+
+	# Calculate the maximum number of blocks, limited by blocks/SM or threads/SM
+	block_lim_tSM = max_threads_per_sm / blocksize
 	block_lim_bSM = max_blocks_per_sm
 
 	# Calculate the maximum number of blocks, limited by shared memory
@@ -141,8 +149,8 @@ def optimal_blocksize(device, function):
 		if occupancy >= achieved_occupancy:
 			optimal_blocksize = blocksize
 			achieved_occupancy = occupancy
-		if achieved_occupancy == device.max_threads_per_multiprocessor:
-			break
+		#if achieved_occupancy == device.max_threads_per_multiprocessor:
+			#break
 		blocksize -= device.warp_size
 
 	return optimal_blocksize
