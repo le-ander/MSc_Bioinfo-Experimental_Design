@@ -27,7 +27,7 @@ def remove_na(m_object, modelTraj):
 
 	return modelTraj
 
-def add_noise_to_traj(m_object, modelTraj, sigma, N1):
+def add_noise_to_traj(m_object, modelTraj, sigma, N1):##Need to ficure out were to get N1 from
 	ftheta = []
 	# For each model in turn...
 	for mod in range(m_object.nmodels):
@@ -57,17 +57,14 @@ def get_mutinf_all_param(m_object, ftheta, modelTraj, maxDistTraj, sigma):
 
 	return MutInfo1
 
-#def round_down(num, divisor):
-	#return num - (num%divisor)
+def round_down(num, divisor):
+	return num - (num%divisor)
 
 def round_up(num, divisor):
 	if num == divisor:
 		return 1
 	else:
 		return num - (num%divisor) + divisor
-
-#def round_up(num, divisor):
-	#return num - (num%divisor) + divisor
 
 def max_active_blocks_per_sm(device, function, blocksize, dyn_smem_per_block=0):
 	# Define variables based on device and fucntion properties
@@ -113,17 +110,14 @@ def max_active_blocks_per_sm(device, function, blocksize, dyn_smem_per_block=0):
 
 	# Calculate the maximum number of blocks, limited by register count
 	if regs_per_thread > 0:
-		#regs_per_warp = round_up(regs_per_thread * warp_size, reg_granul)
-		#warps_per_block = round_up(int(ceil(blocksize / warp_size)), warp_granul)
-		#block_lim_regs = max_regs_per_block / (warps_per_block * regs_per_warp)
 		regs_per_warp = round_up(regs_per_thread * warp_size, reg_granul)
-		max_warps_per_sm = round_up(max_regs_per_block / regs_per_warp, warp_granul)
-		warps_per_block = int(ceil(blocksize / warp_size))
+		max_warps_per_sm = round_down(max_regs_per_block / regs_per_warp, warp_granul)
+		warps_per_block = int(ceil(float(blocksize) / warp_size))
 		block_lim_regs = int(max_warps_per_sm / warps_per_block) * int(max_regs_per_sm / max_regs_per_block)
 	else:
 		block_lim_regs = max_blocks_per_sm
 
-	# Calculate the maximum number of blocks, limited by blocks/SM or threads/SM
+ 	# Calculate the maximum number of blocks, limited by blocks/SM or threads/SM
 	block_lim_tSM = max_threads_per_sm / blocksize
 	block_lim_bSM = max_blocks_per_sm
 
@@ -138,20 +132,27 @@ def max_active_blocks_per_sm(device, function, blocksize, dyn_smem_per_block=0):
 	# Find the maximum number of blocks based on the limits calculated above
 	block_lim = min(block_lim_regs, block_lim_tSM, block_lim_bSM, block_lim_smem)
 
+	#print "block_lims", [block_lim_regs, block_lim_tSM, block_lim_bSM, block_lim_smem]
+	#print "BLOCK_LIM", block_lim
+	#print "BLOCKSIZE", blocksize
+
 	return block_lim
 
 def optimal_blocksize(device, function):
 	# Iterate through block sizes to find largest occupancy
-	blocksize = min(device.max_threads_per_block, function.max_threads_per_block)
+	max_blocksize = min(device.max_threads_per_block, function.max_threads_per_block)
 	achieved_occupancy = 0
-	while blocksize > 0:
+	blocksize = device.warp_size
+	while blocksize <= max_blocksize:
 		occupancy = blocksize * max_active_blocks_per_sm(device, function, blocksize)
-		if occupancy >= achieved_occupancy:
+		#print "OCCUPANCY", occupancy, "\n---------------------"
+		if occupancy > achieved_occupancy:
 			optimal_blocksize = blocksize
 			achieved_occupancy = occupancy
-		#if achieved_occupancy == device.max_threads_per_multiprocessor:
-			#break
-		blocksize -= device.warp_size
+		if achieved_occupancy == device.max_threads_per_multiprocessor:
+			break
+		blocksize += device.warp_size
+	#print "OPTIMAL BLOCKSIZE", optimal_blocksize
 
 	return optimal_blocksize
 
@@ -161,7 +162,6 @@ def optimise_grid_structure(gmem_per_thread=102400): #need to define correct mem
 	avail_mem = autoinit.device.total_memory()
 	# Calculate maximum number of threads, assuming global memory usage of 100 KB per thread
 	max_threads = floor(avail_mem / gmem_per_thread)
-
 
 def getEntropy1(data,sigma,theta,maxDistTraj):
 
@@ -199,10 +199,10 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 	""")
 
 	# Prepare data
-	N1 = 10
-	N2 = 90
+	N1 = 100##Change this in add noise function call as well!
+	N2 = 900
 
-	d1 = data.astype(float64) ##This assumes noise is only added for the first N1 particles in Ni
+	d1 = data.astype(float64)
 	d2 = array(theta)[N1:(N1+N2),:,:].astype(float64)
 
 	# Set up scaling factor to avoid working with too small numbers
@@ -220,9 +220,9 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 
 	# Split data to correct size to run on GPU
 	# What does this number represent?, Should be defined as an int, can then clean up formulas further down#
-	Max = 10.0
+	Max = 100.0
 	# Define square root of maximum threads per block
-	R = 16.0
+	R = 15.0
 
 	# Determine required number of runs for i and j
 	numRuns = int(ceil(N1/float(Max)))
