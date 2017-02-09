@@ -148,6 +148,7 @@ class algorithm_info:
 		self.nspecies_all=0
 		self.ncompparams_all=0
 		self.nparameters_all = 0
+		self.sampleFromPost = False
 
 
 
@@ -195,6 +196,9 @@ class algorithm_info:
 		fitParams_temp = parse_required_vector_value(dataref, "paramfit", "Please provide whitespace seperated list of subset of parameter <data><paramfit>", str)
 		fitParams_regex= re.compile(r'param(\d+)')
 		self.fitParams = [int(fitParams_regex.match(tppp).group(1)) for tppp in fitParams_temp]
+
+		### get information about sample from posterior
+		self.sampleFromPost = parse_required_single_value( xmldoc, "samplefrompost", "Please provide a boolean value for <samplefrompost>", int )
 
 
 
@@ -256,8 +260,9 @@ class algorithm_info:
 						prior_tmp = [0,0,0]
 						tmp = str( p.firstChild.data ).split()
 						self.compprior[self.nmodels-1].append( process_prior( tmp ) )
-
+				
 				paramref = m.getElementsByTagName('parameters')[0]
+				
 				for p in paramref.childNodes:
 					if p.nodeType == p.ELEMENT_NODE:
 						nparameter += 1
@@ -315,6 +320,13 @@ class algorithm_info:
 			sys.exit()
 
 
+#	def post_cudasim(self, array):
+#		self.maxDist = 
+#		self.scalefactor =
+#		self.fTheta =
+#		self.m =
+#
+
 
 
 	def print_info(self):
@@ -326,6 +338,7 @@ class algorithm_info:
 		print "fitParams:", self.fitParams
 		print "nspecies:", self.nspecies_all
 		print "ncompparams:", self.ncompparams_all
+		print "sample from posterior:", bool(self.sampleFromPost)
 
 
 		print "times:", self.times

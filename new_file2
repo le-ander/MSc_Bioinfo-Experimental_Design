@@ -11,10 +11,7 @@
 <timepoint
 
 >prior
-constant 1 0
-uniform 1 10
-normal 10 1000
-lognormal 10 2000
+provided
 <prior
 
 >initials
