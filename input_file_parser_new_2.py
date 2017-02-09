@@ -1,5 +1,7 @@
 import libsbml
 import re
+import sys
+import numpy
 
 def getSpeciesValue(species):
 	"""
@@ -20,7 +22,7 @@ def getSpeciesValue(species):
 
 
 
-def generateTemplate(source, filename="input_file", sumname="summary_file", dataname=None, inpath="", outpath=""):
+def generateTemplate(source, filename="input_file", sumname="summary_file", dataname=None, inpath="", outpath="", init_prior=False):
 
 	"""
 
@@ -135,6 +137,20 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 		####obtain prior distribution of model parameter
 		prior = prior_regex.search(info).group(1).split("\n")
 		#####
+		#####check for "Provided"
+		prior_samplefrompost = False
+
+		if (prior[0] == "provided") and (len(prior)==1):
+			prior_samplefrompost = True
+			print prior
+#			sys.exit()
+
+		
+
+
+#			prior = [ for i in range(0, nparameters_all)]
+		####
+
 
 
 		####obtain constants of initial condition
@@ -202,6 +218,7 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 #    print vars
 
 	out_file.write("<input>\n\n")
+	print "hello"
 	out_file.write("######################## number of models\n\n")
 	out_file.write("# Number of models for which details are described in this input file\n")
 	out_file.write("<modelnumber> "+repr(len(source)*len(fit_species)*len(init_con))+ " </modelnumber>\n\n")
@@ -244,6 +261,12 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 	out_file.write("<paramfit> ")
 	out_file.write(fit_param[0])
 	out_file.write(" </paramfit>\n\n")
+
+
+	out_file.write("# Defines if a sample from a posterior + associated weights are provided \n")
+	out_file.write("<samplefrompost> ")
+	out_file.write(repr(int(prior_samplefrompost)))
+	out_file.write(" </samplefrompost>\n\n")
 
 
 
@@ -467,22 +490,38 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 				counter=0
 
 				if have_data==True:
-					for k in range(models_nparameters[i]):
-						counter=counter+1
-						sum_file.write("P"+repr(counter)+":\t"+parameterId[k]+"\t"+parameterId2[k]+"\t("+repr(parameter[k])+")\n")
-						out_file.write("<parameter"+repr(counter)+"> ")
-						out_file.write(prior[k])
-						out_file.write(" </parameter" + repr(counter)+">\n")
-	#					out_file.write(prior[k][0] + " ")
-	#					out_file.write(repr(prior[k][1]) + " " + repr(prior[k][2]) + " </parameter" + repr(counter)+">\n")
+					if prior_samplefrompost==False:
+						for k in range(models_nparameters[i]):
+							counter=counter+1
+							sum_file.write("P"+repr(counter)+":\t"+parameterId[k]+"\t"+parameterId2[k]+"\t("+repr(parameter[k])+")\n")
+							out_file.write("<parameter"+repr(counter)+"> ")
+							out_file.write(prior[k])
+							out_file.write(" </parameter" + repr(counter)+">\n")
+		#					out_file.write(prior[k][0] + " ")
+		#					out_file.write(repr(prior[k][1]) + " " + repr(prior[k][2]) + " </parameter" + repr(counter)+">\n")
 
-		#            Print = True
-		#            if k<len(listOfParameter):
-		#                if listOfParameter[k].getConstant()==False:
-		#                    for j in range(0, len(listOfRules)):
-		#                        if listOfRules[j].isRate():
-		#                            if parameterId[k]==listOfRules[j].getVariable(): Print = False
-		#            else: Print == True
+			#            Print = True
+			#            if k<len(listOfParameter):
+			#                if listOfParameter[k].getConstant()==False:
+			#                    for j in range(0, len(listOfRules)):
+			#                        if listOfRules[j].isRate():
+			#                            if parameterId[k]==listOfRules[j].getVariable(): Print = False
+			#            else: Print == True
+
+					elif prior_samplefrompost==True:
+						for k in range(models_nparameters[i]):
+							counter=counter+1
+							sum_file.write("P"+repr(counter)+":\t"+parameterId[k]+"\t"+parameterId2[k]+"\t("+repr(parameter[k])+")\n")
+							out_file.write("<parameter"+repr(counter)+"> ")
+							out_file.write("constant 1")
+							out_file.write(" </parameter" + repr(counter)+">\n")
+
+
+
+
+
+
+
 
 				else:
 					for k in range(numParameters-paramAsSpecies):
