@@ -214,16 +214,11 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 
 		if((int(Max)*(i+1)) > N1): # If last run with less that max remaining trajectories
 			Ni = int(N1 - Max*i) # Set Ni to remaining number of particels
-		print "----NI----", Ni
 		for j in range(numRuns2):
 			if((int(Max)*(j+1)) > N2): # If last run with less that max remaining trajectories
 				Nj = int(N2 - Max*j) # Set Nj to remaining number of particels
-			print "---NJ----", Nj
-			print "(i*int(Max)),(i*int(Max)+Ni)", (i*int(Max)),(i*int(Max)+Ni)
 			data1 = d1[(i*int(Max)):(i*int(Max)+Ni),:,:] # d1 subunit for this run (same vector 9 times)
 			data2 = d2[(j*int(Max)):(j*int(Max)+Nj),:,:] # d2 subunit for this run (9 different vecttors)
-			print "shape(data1)", shape(data1)
-			print "shape(d1)", shape(data1)
 
 			M = data1.shape[1] # number of timepoints in d1 subunit
 			P = data1.shape[2] # number of species in d1 subunit
@@ -242,10 +237,8 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 			else:
 				gj = ceil(Nj/R)
 				bj = R
-			print "gi, gj, bi, bj", gi, gj, bi, bj
+
 			# Invoke GPU calculations (takes data1 and data2 as input, outputs res1)
-			print "Ni,Nj,M,P,sigma,a,data1,data2,int(bi),int(bj),int(gi),int(gj)"
-			print Ni,Nj,M,P,sigma,a,pi,shape(data1),shape(data2),int(bi),int(bj),int(gi),int(gj)
 			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(a), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 
 			for k in range(Ni):
