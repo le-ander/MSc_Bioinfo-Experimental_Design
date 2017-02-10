@@ -9,6 +9,7 @@ To do list:
   - Need to finalise sampling from post with Juliane
   - Scott to combine all elements of parsing once Jonas is done
   - Scott to do local code and input.xml files
+  - Add N (N1&N2) to model objectat beginning
   
 - CUDA-sim
   - Leander to combine first CUDA-sim function after Scott has finished with parsing
