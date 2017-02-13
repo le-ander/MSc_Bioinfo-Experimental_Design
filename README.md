@@ -1,39 +1,40 @@
 # Experimental-Design
 
-9/2/2017
+10/2/2017
 To do list:
 
 # Important
 - Parsing
-  - Jonas to finish some final parts
-  - Need to finalise sampling from post with Juliane
-  - Scott to combine all elements of parsing once Jonas is done
-  - Scott to do local code and input.xml files
-  - Add N (N1&N2) to model objectat beginning
+  - Implement changes from today's meeting
+  - Combine all elements of parsing
+  - Local code and input.xml files
+  - Add N (N1&N2) to model object at start
   
-- CUDA-sim
-  - Leander to combine first CUDA-sim function after Scott has finished with parsing
-  - Tidy up output for CUDA-sim
-    - Using 5D output
+- Simulation and Data Processing
+  - Update functions to be used with parsing output
   - Jonas to add attributes to model object
   - Pickle object after correct trajectories assigned to each experiment
-
-- GPU stuff
-  - Leander to finish launch configuration
-    - Looking at block shape
-    - Scott to look at calculating block shape
+  - Include scaling factor funtion and madxdisttraj function (Scott) and change NA removal function
   
-# Not as important
-- Tidy and improve Python and CUDA
-  - Commenting code
-  - Improving speed
-  - Scott to see if improvements can be made to current kernel
-  - Scott to see if summation improvements can be made
-  - Runnable on both Python 2 and 3
+- Entropy calculations
+  - Include launch configuration in getEntropy functions
+  - Look at and rewrite getEntropy2 in Repressilator and getEntropy 1.5 in Hes1 folder
 
-- Improve CUDA-sim implementation
+- Combine all parts together
 
-- Julia wrapper
+# Next steps
+- Time original code
+
+- Stochastic implementation
+  - Reuse code from MEANS package
+  - Adapt CUDAsim SDE solver to handle multiple models
+
+- Error-checking
+  - Catch user input errors
+  - Only load packages when required (libsbml and means)
+  - To be done at the end
+  
+- Comment code extensively
 
 - Presentation of results
   - Terminal output
@@ -41,11 +42,24 @@ To do list:
   - Graphs
 
 - Group report
-  - Discuss what each individual writes
-  - What is included
+  - Split work (assign sections)
+  - Write it
   
-- Stochastic implementation (potential publication)
-  - Change CUDA-sim accordingly
+# Extra
+  
+- GPU optimisations
+  - Optimize Block shape (and Grid shape)
+  - Move first summations to GPU
+  - Reduce bottleneck of shuttling files between device and host by reducing grid size and copying data for n runs onto GPU
+  - Add third dimension to blocks/grid to improve performance, use smem?
 
-- Error-checking
-  - To be done at the end
+- Improve CUDA-sim implementation
+  - Scott's for-loop to be pushed to new update
+  - Fix CUDAsim device detection
+  - Using launch configuration in CUDAsim to optimise block size and grid size
+  
+- Convert to Python 3.5
+  - Modernize package
+  - Use Six package for compatibility
+
+- Julia wrapper
