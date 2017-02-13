@@ -48,12 +48,12 @@ def get_max_dist(m_object, ftheta):
 
 	return maxDistTraj
 
-def get_mutinf_all_param(m_object, ftheta, modelTraj, maxDistTraj, sigma):
+def get_mutinf_all_param(m_object, ftheta, N1, N2, sigma, modelTraj, maxDistTraj):
 	MutInfo1 = []
 	# For each model in turn....
 	for mod in range(m_object.nmodels):
 		# Run function to get the mutual information for all parameters
-		MutInfo1.append(getEntropy1(ftheta[mod],sigma,array(modelTraj[mod]),maxDistTraj[mod]))
+		MutInfo1.append(getEntropy1(ftheta[mod],N1,N2,sigma,array(modelTraj[mod]),maxDistTraj[mod]))
 
 	return MutInfo1
 
@@ -163,7 +163,7 @@ def optimise_grid_structure(gmem_per_thread=102400): #need to define correct mem
 	# Calculate maximum number of threads, assuming global memory usage of 100 KB per thread
 	max_threads = floor(avail_mem / gmem_per_thread)
 
-def getEntropy1(data,sigma,theta,maxDistTraj):
+def getEntropy1(data,N1,N2,sigma,theta,maxDistTraj):
 
 	#kernel declaration
 	mod = compiler.SourceModule("""
@@ -199,9 +199,6 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 	""")
 
 	# Prepare data
-	N1 = 100##Change this in add noise function call as well!
-	N2 = 900
-
 	d1 = data.astype(float64)
 	d2 = array(theta)[N1:(N1+N2),:,:].astype(float64)
 
@@ -225,6 +222,7 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 	R = 15.0
 
 	# Determine required number of runs for i and j
+	##need float here?
 	numRuns = int(ceil(N1/float(Max)))
 	numRuns2 = int(ceil(N2/float(Max)))
 
