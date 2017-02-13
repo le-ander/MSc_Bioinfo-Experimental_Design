@@ -2,32 +2,19 @@
 
 from numpy import *
 from numpy.random import *
-import abcsysbio
-import sys
 import re
-import time, os
 
-import cudasim
-import cudasim.EulerMaruyama as EulerMaruyama
-import cudasim.Gillespie as Gillespie
 import cudasim.Lsoda as Lsoda
 
 from pycuda import compiler, driver
 from pycuda import autoinit
 
 from abcsysbio import parse_infoEnt
-from abcsysbio import model_py
-from abcsysbio import model_cu
-from abcsysbio import model_c
-from abcsysbio import data
-from abcsysbio import input_output
-
-import abcsysbio_parser
 from abcsysbio_parser import ParseAndWrite
 
+import time
 import sys
 sys.path.insert(0, ".")
-
 
 
 def getWeightedSample(weights):
@@ -43,100 +30,6 @@ def getWeightedSample(weights):
 	for i, total in enumerate(totals):
 		if rnd < total:
 			return i
-
-
-def checkNAs(result):
-
-	index = []
-	for i in range(len(result)):
-		# loop over species
-		l = 0
-		isok = True
-		while (isok and (l<(len(result[i][0])-1))):
-			# loop over timepoints
-			for k in range(len(result[i][0][l])):
-				if isnan(result[i][0][l][k]) ==True:
-					index.append(i)
-					isok = False
-					break
-			l = l+1
-	return(index)
-
-def removeNAs(result, parameter,index):
-	p = parameter
-	x = result
-	xKeep = []
-	pKeep = []
-	xRemove = []
-	pRemove = []
-
-	for i in range(len(p)):
-		rem = False
-		for j in range(len(index)):
-			if index[j] == i:
-				pRemove.append(p[i])
-				xRemove.append(x[i][0])
-				rem = True
-		if rem == False:
-			pKeep.append(p[i])
-			xKeep.append(x[i][0])
-
-	return(xKeep,pKeep,xRemove,pRemove)
-
-
-def print_results(result, outfile,timepoints):
-
-	print result[0]
-	out = open(outfile,'w')
-	print >>out, 0, 0, 0,
-	for i in range(len(timepoints)):
-		print >>out, timepoints[i],
-	print >>out, ""
-	# loop over threads
-	for i in range(len(result)):
-		# loop over species
-		for l in range(len(result[i][0])):
-
-			print >>out, i,"0",l,
-			for k in range(len(timepoints)):
-				print >>out, result[i][k][l],
-			print >>out, ""
-
-	out.close()
-
-
-
-
-
-def print_parameters(param, outfile):
-
-	out = open(outfile,'w')
-
-	for i in range(len(param)):
-		for j in range(len(param[i])):
-			print >>out, param[i][j],
-		print >>out, ""
-
-	out.close()
-
-def prod( iterable ):
-	p= 1
-	for n in iterable:
-		p *= n
-	return p
-
-
-
-def saveResults(result,outfile):
-
-	out = open(outfile,'w')
-
-	for i in range(shape(result)[0]):
-		for j in range(shape(result)[1]):
-			print >>out, result[i,j],
-		print >>out, ""
-
-	out.close()
 
 def getEntropy1(data,sigma,theta,maxDistTraj):
 
@@ -174,8 +67,8 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 	""")
 
 	# Prepare data
-	N1 = 10000##Change this in add noise function call as well!
-	N2 = 90000
+	N1 = 100000##Change this in add noise function call as well!
+	N2 = 4600000
 
 	d1 = data.astype(float64)
 	d2 = array(theta)[N1:(N1+N2),:,:].astype(float64)
@@ -195,9 +88,9 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 
 	# Split data to correct size to run on GPU
 	# What does this number represent?, Should be defined as an int, can then clean up formulas further down#
-	Max = 100.0
+	Max = 50000.0
 	# Define square root of maximum threads per block
-	R = 15.0
+	R = 16.0
 
 	# Determine required number of runs for i and j
 	numRuns = int(ceil(N1/float(Max)))
@@ -250,7 +143,7 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 
 	sum1 = 0.0   # intermediate result sum
 	counter = 0  # counts number of nan in matrix
-	counter2 = 0 # counts number of inf sums in matrix
+	counter2 = 0 # counts number of inf in matrix
 
 	for i in range(N1):
 		if(isnan(sum(result2[i,:]))): counter=counter+1
@@ -417,9 +310,8 @@ def getEntropy2(dataRef,dataY,N,sigma,theta1,theta2):
 
 	Info = sum1/float(N1)
 	print "counter: ", counter
+
 	return(Info)
-
-
 
 def printOptions():
 
@@ -508,8 +400,10 @@ def get_mutinf_all_param(m_object, ftheta, modelTraj, maxDistTraj, sigma):
 	# For each model in turn....
 	for mod in range(m_object.nmodels):
 		# Run function to get the mutual information for all parameters
+		t1=time.time()
 		MutInfo1.append(getEntropy1(ftheta[mod],sigma,array(modelTraj[mod]),maxDistTraj[mod]))
-
+		t2=time.time()
+		print "TIME_gE1_call", t2-t1
 	return MutInfo1
 
 def round_down(num, divisor):
@@ -869,7 +763,7 @@ def main():
 
 	modelTraj = remove_na(info_new, modelTraj)
 
-	ftheta = add_noise_to_traj(info_new, modelTraj, 5.0, 10000)
+	ftheta = add_noise_to_traj(info_new, modelTraj, 5.0, 100000)
 
 	maxDistTraj = get_max_dist(info_new, ftheta)
 
