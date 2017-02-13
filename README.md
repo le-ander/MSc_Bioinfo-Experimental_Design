@@ -13,12 +13,10 @@ To do list:
 - Simulation and Data Processing
   - Update functions to be used with parsing output
   - Jonas to add attributes to model object
-  - Pickle object after correct trajectories assigned to each experiment
-  - Include scaling factor funtion and madxdisttraj function (Scott) and change NA removal function
   
 - Entropy calculations
   - Include launch configuration in getEntropy functions
-  - Look at and rewrite getEntropy2 in Repressilator and getEntropy 1.5 in Hes1 folder
+  - Rewrite getEntropy2 in Repressilator and getEntropy 1.5 in Hes1 folder
 
 - Combine all parts together
 
