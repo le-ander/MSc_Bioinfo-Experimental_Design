@@ -2,6 +2,7 @@
 
 from numpy import *
 from numpy.random import *
+import math
 import re
 
 import cudasim.Lsoda as Lsoda
@@ -15,7 +16,7 @@ from abcsysbio_parser import ParseAndWrite
 import time
 import sys
 sys.path.insert(0, ".")
-
+t3 = time.time()
 
 def getWeightedSample(weights):
 
@@ -68,7 +69,7 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 
 	# Prepare data
 	N1 = 100000##Change this in add noise function call as well!
-	N2 = 4600000
+	N2 = 4500000
 
 	d1 = data.astype(float64)
 	d2 = array(theta)[N1:(N1+N2),:,:].astype(float64)
@@ -88,7 +89,7 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 
 	# Split data to correct size to run on GPU
 	# What does this number represent?, Should be defined as an int, can then clean up formulas further down#
-	Max = 50000.0
+	Max = 23000.0
 	# Define square root of maximum threads per block
 	R = 16.0
 
@@ -104,7 +105,7 @@ def getEntropy1(data,sigma,theta,maxDistTraj):
 	for i in range(numRuns):
 		countsj = 0
 		Nj = int(Max)
-
+		print "Runs left:", numRuns - i
 		if((int(Max)*(i+1)) > N1): # If last run with less that max remaining trajectories
 			Ni = int(N1 - Max*i) # Set Ni to remaining number of particels
 		for j in range(numRuns2):
@@ -786,3 +787,5 @@ def main():
 
 '''
 main()
+t4=time.time()
+print "TIME_total", t4-t3
