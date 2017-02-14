@@ -10,8 +10,21 @@
 10 70 80 100 110
 <timepoint
 
+>samplefromposterior
+True
+sample.txt
+weights.txt
+<samplefromposterior
+
+>initprior
+True
+<initprior
+
 >prior
-provided
+constant 1 0
+uniform 1 10
+normal 10 1000
+lognormal 10 2000
 <prior
 
 >initials
@@ -31,8 +44,17 @@ All
 <fit
 
 >paramfit
-param1 param2
+All
 <paramfit
+
+>initialfit
+None
+<initialfit
+
+>compfit
+None
+<compfit
+
 
 >compartment
 constant 1
@@ -85,5 +107,10 @@ alpha0 0.2 3
 alpha0 1.8 5
 alpha 7 5
 <Parameter - Experiment 4
+
+
+>combination
+All
+<combination
 
 
