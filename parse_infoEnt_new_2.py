@@ -1,10 +1,7 @@
 # Algorithm information
 
 import re, sys, numpy
-
 from numpy.random import *
-import itertools
-
 from xml.dom import minidom
 
 # implemented priors
