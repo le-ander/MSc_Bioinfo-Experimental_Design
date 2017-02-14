@@ -180,7 +180,7 @@ class algorithm_info:
 
 	"""
 
-	def __init__(self, filename, mode):
+	def __init__(self, filename, mode, combination_list):
 		xmldoc = minidom.parse(filename)
 		self.mode = mode
 		### mode is 0  inference, 1 simulate, 2 design
@@ -196,6 +196,13 @@ class algorithm_info:
 		self.comp_fit= []
 		self.init_fit= []
 		self.param_fit = []
+		self.sigma= 0
+		self.N1sample = 0
+		self.N2sample = 0
+		self.N3sample = 0
+		self.N4sample = 0
+		self.combination = combination_list
+
 
 
 		self.nspecies_all=0
@@ -245,19 +252,34 @@ class algorithm_info:
 		### get global number of parameters
 		self.nparameters_all = parse_required_single_value(dataref, "nparameters_all", "Please provide an integer value for <data><nparameters_all>", int)
 
+		### sigma
+		self.sigma = parse_required_single_value(dataref, "sigma", "Please provide an integer value for <data><sigma>", float)
+
 		### get information about sample from posterior
-		if parse_required_single_value( xmldoc, "samplefrompost", "Please provide a boolean value for <samplefrompost>", str ).strip()=="True":
+		if parse_required_single_value( dataref, "samplefrompost", "Please provide a boolean value for <samplefrompost>", str ).strip()=="True":
 			
 			self.sampleFromPost = True
-			self.post_sample_file = parse_required_single_value( xmldoc, "samplefrompost_file", "Please provide a file name for <samplefrompost_file>", str ).strip()
-			self.post_weight_file = parse_required_single_value( xmldoc, "samplefrompost_weights", "Please provide a file name for <samplefrompost_weights>", str ).strip()
+			self.post_sample_file = parse_required_single_value( dataref, "samplefrompost_file", "Please provide a file name for <samplefrompost_file>", str ).strip()
+			self.post_weight_file = parse_required_single_value( dataref, "samplefrompost_weights", "Please provide a file name for <samplefrompost_weights>", str ).strip()
 		else: 
 			self.sampleFromPost = False
 		
-		if parse_required_single_value( xmldoc, "initialprior", "Please provide a boolean value for <initialprior>", str ).strip()=="True":
+		if parse_required_single_value( dataref, "initialprior", "Please provide a boolean value for <initialprior>", str ).strip()=="True":
 			self.initialprior = True
 		else:
 			self.initialprior = False
+
+		####nsamples
+		nsampleref = xmldoc.getElementsByTagName('nsamples')[0]
+
+		self.N1sample = parse_required_single_value( dataref, "N1", "Please provide an integer value for <nsamples><N1>", int )
+		self.N2sample = parse_required_single_value( dataref, "N2", "Please provide an integer value for <nsamples><N2>", int )
+		self.N3sample = parse_required_single_value( dataref, "N3", "Please provide an integer value for <nsamples><N3>", int )
+		self.N4sample = parse_required_single_value( dataref, "N4", "Please provide an integer value for <nsamples><N4>", int )
+
+		if (self.N1sample+self.N2sample+self.N3sample+self.N4sample)>self.particles:
+			print "The sum of N1, N2, N3 and N4 is bigger than given particle number"
+			sys.exit()
 
 
 
@@ -417,6 +439,11 @@ class algorithm_info:
 		print "initial condition fit:", self.init_fit
 		print "compartment fit:", self.comp_fit
 		print "initial prior:", self.initialprior
+		print "sigma:", self.sigma
+		print "N1:", self.N1sample
+		print "N2:", self.N2sample
+		print "N3:", self.N3sample
+		print "N4:", self.N4sample
 
 
 
@@ -642,6 +669,10 @@ class algorithm_info:
 	
 	def getAnalysisType(self,analysisType):
 		self.analysisType = analysisType
+
+#	def getCombination(self, combination_list):
+#		self.combination = combination_list
+
 
 	def getSampleSizes(self,N1=0,N2=0,N3=0,N4=0):
 		if N1+N2+N3+N4==self.particles:
