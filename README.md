@@ -46,7 +46,8 @@ To do list:
 # Extra
   
 - GPU optimisations
-  - Optimize Block shape (and Grid shape)
+  - Optimize grid shape and adaptive grid size
+  - Optimize Block shape and Grid shape
   - Move first summations to GPU
   - Reduce bottleneck of shuttling files between device and host by reducing grid size and copying data for n runs onto GPU
   - Add third dimension to blocks/grid to improve performance, use smem?
