@@ -102,6 +102,13 @@ def parseint(str):
     except ValueError:
         return str
 
+def parseint_index(str):
+    try:
+    	out=int(str)-1
+        return out
+    except ValueError:
+        return str
+
 
 def parse_fitting_information( mod_str, node, species_number ):
 	fitref = node.getElementsByTagName(mod_str)[0]
@@ -117,15 +124,39 @@ def parse_fitting_information( mod_str, node, species_number ):
 		ret1.append(ret_temp)
 
 	else:
-		for index, i in enumerate(tmp):
+		for i in tmp:
 			ttmp = re.sub('species','', i )
 			ttmp = re.sub(r'\+', ' + ', ttmp)
 			ttmp = re.sub(r'\-', ' - ', ttmp)
 			ttmp = ttmp.split(" ")
-			ttmp_int = [ parseint(y) for y in ttmp]
+			ttmp_int = [ parseint_index(y) for y in ttmp]
 			ret1.append(ttmp_int)
 
 	return( ret1 )
+
+
+
+def parse_fitting_information_parameters(mod_str, node, item, parameter_number):
+	fitref = node.getElementsByTagName(mod_str)[0]
+	tmp = str( fitref.firstChild.data ).split()
+	ret1 = []
+
+	if (tmp[0]=="All") and (len(tmp)==1):
+
+		for i in range(0,parameter_number):
+			ret1.append(i)
+
+	elif(tmp[0]=="None") and (len(tmp)==1):
+		ret1=[]
+
+	else:
+		for i in tmp:
+			ttmp = re.sub(item,'', i )
+			ret1.append(int(ttmp)-1)
+
+	return( ret1 )
+
+
 
 class algorithm_info:
 	"""
@@ -144,11 +175,17 @@ class algorithm_info:
 		self.dt = 0
 		self.times = []
 		self.ntimes = 0
+		self.post_sample_file = ""
+		self.post_weight_file = ""
+		self.comp_fit= []
+		self.init_fit= []
+		self.param_fit = []
 
 		self.nspecies_all=0
 		self.ncompparams_all=0
 		self.nparameters_all = 0
 		self.sampleFromPost = False
+		self.initialprior = False
 
 
 
@@ -163,7 +200,7 @@ class algorithm_info:
 		self.x0prior = []
 		self.compprior = []
 		self.fitSpecies = []
-		self.fitParams = 0
+		
 		self.ncompparams = []
 
 
@@ -192,13 +229,20 @@ class algorithm_info:
 		### get global number of parameters
 		self.nparameters_all = parse_required_single_value(dataref, "nparameters_all", "Please provide an integer value for <data><nparameters_all>", int)
 
-		### get parameter fit information
-		fitParams_temp = parse_required_vector_value(dataref, "paramfit", "Please provide whitespace seperated list of subset of parameter <data><paramfit>", str)
-		fitParams_regex= re.compile(r'param(\d+)')
-		self.fitParams = [int(fitParams_regex.match(tppp).group(1)) for tppp in fitParams_temp]
-
 		### get information about sample from posterior
-		self.sampleFromPost = parse_required_single_value( xmldoc, "samplefrompost", "Please provide a boolean value for <samplefrompost>", int )
+		if parse_required_single_value( xmldoc, "samplefrompost", "Please provide a boolean value for <samplefrompost>", str ).strip()=="True":
+			
+			self.sampleFromPost = True
+			self.post_sample_file = parse_required_single_value( xmldoc, "samplefrompost_file", "Please provide a file name for <samplefrompost_file>", str ).strip()
+			self.post_weight_file = parse_required_single_value( xmldoc, "samplefrompost_weights", "Please provide a file name for <samplefrompost_weights>", str ).strip()
+		else: 
+			self.sampleFromPost = False
+		
+		if parse_required_single_value( xmldoc, "initialprior", "Please provide a boolean value for <initialprior>", str ).strip()=="True":
+			self.initialprior = True
+		else:
+			self.initialprior = False
+
 
 
 
@@ -312,12 +356,22 @@ class algorithm_info:
 		else:
 			print "Models don't have the same number of compartments"
 			sys.exit()
-
-
-
 		if (len(set(self.nparameters))!=1) or (self.nparameters_all != list(set(self.nparameters))[0]):
 			print "Models don't have the same number of parameters"
 			sys.exit()
+
+
+		### paramter fit
+		self.param_fit =( parse_fitting_information_parameters('paramfit', dataref, 'parameter' ,self.nparameters_all )  )
+		###
+
+		### initial fit
+		self.init_fit =( parse_fitting_information_parameters('initfit', dataref, 'initial' ,self.nspecies_all )  )
+		###
+
+		### compartment fit
+		self.comp_fit=( parse_fitting_information_parameters('compfit', dataref, 'compartment' ,self.ncompparams_all )  )
+		###
 
 
 #	def post_cudasim(self, array):
@@ -335,10 +389,16 @@ class algorithm_info:
 		print "samples:", self.particles
 		print "dt:", self.dt
 		print "parameters:", self.nparameters_all
-		print "fitParams:", self.fitParams
 		print "nspecies:", self.nspecies_all
 		print "ncompparams:", self.ncompparams_all
 		print "sample from posterior:", bool(self.sampleFromPost)
+		print "sample file:", self.post_sample_file
+		print "weight file:", self.post_weight_file
+		print "parameter fit:", self.param_fit
+		print "initial condition fit:", self.init_fit
+		print "compartment fit:", self.comp_fit
+		print "initial prior:", self.initialprior
+
 
 
 		print "times:", self.times
