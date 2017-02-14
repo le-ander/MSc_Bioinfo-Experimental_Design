@@ -20,6 +20,8 @@ To do list:
 
 - Prepare presentation
 
+- Check that scaling function still gives same results as before
+
 - Stochastic implementation
   - Reuse code from MEANS package
   - Adapt CUDAsim SDE solver to handle multiple models
