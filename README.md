@@ -1,18 +1,14 @@
 # Experimental-Design
 
-10/2/2017
+14/2/2017
 To do list:
 
 # Important
 - Parsing
-  - Implement changes from today's meeting
   - Combine all elements of parsing
-  - Local code and input.xml files
-  - Add N (N1&N2) to model object at start
-  
+
 - Simulation and Data Processing
   - Update functions to be used with parsing output
-  - Jonas to add attributes to model object
   
 - Entropy calculations
   - Include launch configuration in getEntropy functions
@@ -21,7 +17,8 @@ To do list:
 - Combine all parts together
 
 # Next steps
-- Time original code
+
+- Prepare presentation
 
 - Stochastic implementation
   - Reuse code from MEANS package
@@ -44,6 +41,8 @@ To do list:
   - Write it
   
 # Extra
+
+- Update abcsysbio parser to take local parameters
   
 - GPU optimisations
   - Optimize grid shape and adaptive grid size
@@ -51,6 +50,9 @@ To do list:
   - Move first summations to GPU
   - Reduce bottleneck of shuttling files between device and host by reducing grid size and copying data for n runs onto GPU
   - Add third dimension to blocks/grid to improve performance, use smem?
+  
+- getEntropy optimisations
+  - Convert part B of getEntropy2 to 2 dimensions
 
 - Improve CUDA-sim implementation
   - Scott's for-loop to be pushed to new update
