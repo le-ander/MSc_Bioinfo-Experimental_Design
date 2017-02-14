@@ -13,398 +13,80 @@ from pycuda import autoinit
 from abcsysbio import parse_infoEnt
 from abcsysbio_parser import ParseAndWrite
 
+try:
+	import cPickle as pickle
+except:
+	import pickle
+
 import time
 import sys
 sys.path.insert(0, ".")
 t3 = time.time()
 
-def getWeightedSample(weights):
 
-	totals = []
-	running_total = 0
-
-	for w in weights:
-		running_total = running_total + w[0]
-		totals.append(running_total)
-
-	rnd = random() * running_total
-	for i, total in enumerate(totals):
-		if rnd < total:
-			return i
-
-def getEntropy1(data,sigma,theta,maxDistTraj):
-
-	#kernel declaration
-	mod = compiler.SourceModule("""
-	__device__ unsigned int idx3d(int i, int k, int l, int M, int P)
-	{
-		return k*P + i*M*P + l;
-
-	}
-
-	__device__ unsigned int idx2d(int i, int j, int M)
-	{
-		return i*M + j;
-
-	}
-
-	__global__ void distance1(int Ni, int Nj, int M, int P, float sigma, double a, double *d1, double *d2, double *res1)
-	{
-	int i = threadIdx.x + blockDim.x * blockIdx.x;
-	int j = threadIdx.y + blockDim.y * blockIdx.y;
-
-	if((i>=Ni)||(j>=Nj)) return;
-
-	double x1;
-	x1 = 0.0;
-	for(int k=0; k<M; k++){
-			for(int l=0; l<P; l++){
-				   x1 = x1 +log(a) - (d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*(d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])/(2.0*sigma*sigma);
-			}
-	}
-
-	res1[idx2d(i,j,Nj)] = exp(x1);
-	}
-	""")
-
-	# Prepare data
-	N1 = 100000##Change this in add noise function call as well!
-	N2 = 4500000
-
-	d1 = data.astype(float64)
-	d2 = array(theta)[N1:(N1+N2),:,:].astype(float64)
-
-	# Set up scaling factor to avoid working with too small numbers
-	preci = pow(10,-34)
-	FmaxDistTraj = 1.0*exp(-(maxDistTraj*maxDistTraj)/(2.0*sigma*sigma))
-	print "FmaxDistTraj:",FmaxDistTraj
-	if(FmaxDistTraj<preci):
-		a = pow(1.79*pow(10,300),1.0/(d1.shape[1]*d1.shape[2]))
-	else:
-		a = pow(preci,1.0/(d1.shape[1]*d1.shape[2]))*1.0/FmaxDistTraj
-	print "preci:", preci, "a:", a
-
-	# Assigning main kernel function to a variable
-	dist_gpu1 = mod.get_function("distance1")
-
-	# Split data to correct size to run on GPU
-	# What does this number represent?, Should be defined as an int, can then clean up formulas further down#
-	Max = 23000.0
-	# Define square root of maximum threads per block
-	R = 16.0
-
-	# Determine required number of runs for i and j
-	numRuns = int(ceil(N1/float(Max)))
-	numRuns2 = int(ceil(N2/float(Max)))
-
-	result2 = zeros([N1,numRuns2])
-
-	countsi = 0
-	Ni = int(Max)
-
-	for i in range(numRuns):
-		countsj = 0
-		Nj = int(Max)
-		print "Runs left:", numRuns - i
-		if((int(Max)*(i+1)) > N1): # If last run with less that max remaining trajectories
-			Ni = int(N1 - Max*i) # Set Ni to remaining number of particels
-		for j in range(numRuns2):
-			if((int(Max)*(j+1)) > N2): # If last run with less that max remaining trajectories
-				Nj = int(N2 - Max*j) # Set Nj to remaining number of particels
-			data1 = d1[(i*int(Max)):(i*int(Max)+Ni),:,:] # d1 subunit for this run (same vector 9 times)
-			data2 = d2[(j*int(Max)):(j*int(Max)+Nj),:,:] # d2 subunit for this run (9 different vecttors)
-
-			M = data1.shape[1] # number of timepoints in d1 subunit
-			P = data1.shape[2] # number of species in d1 subunit
-
-			res1 = zeros([Ni,Nj]).astype(float64) # results vector [shape(data1)*shape(data2)]
-
-			if(Ni<R):
-				gi = 1  # grid width  (no of blocks in i direction, i.e. gi * gj gives number of blocks)
-				bi = Ni # block width (no of threads in i direction, i.e. bi * bj gives size of each block (max. R*R))
-			else:
-				gi = ceil(Ni/R)
-				bi = R
-			if(Nj<R):
-				gj = 1  # grid length
-				bj = Nj # block length
-			else:
-				gj = ceil(Nj/R)
-				bj = R
-
-			# Invoke GPU calculations (takes data1 and data2 as input, outputs res1)
-			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(a), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
-
-			for k in range(Ni):
-				result2[(i*int(Max)+k),j] = sum(res1[k,:])
-
-			countsj = countsj+Nj
-
-		countsi = countsi+Ni
-
-	sum1 = 0.0   # intermediate result sum
-	counter = 0  # counts number of nan in matrix
-	counter2 = 0 # counts number of inf in matrix
-
-	for i in range(N1):
-		if(isnan(sum(result2[i,:]))): counter=counter+1
-		elif(isinf(log(sum(result2[i,:])))): counter2=counter2+1
-		else:
-			sum1 = sum1 - log(sum(result2[i,:])) + log(float(N2)) + M*P*log(a) +  M*P*log(2.0*pi*sigma*sigma)
-
-	Info = sum1 / float(N1-counter-counter2)
-	Info = Info - M*P/2.0*(log(2.0*pi*sigma*sigma)+1)
-
-	return(Info)
-
-def getEntropy2(dataRef,dataY,N,sigma,theta1,theta2):
-
-	#kernel declaration
-	mod = compiler.SourceModule("""
-	__device__ unsigned int idx3d(int i, int k, int l, int M, int P)
-	{
-		return k*P + i*M*P + l;
-
-	}
-
-	__device__ unsigned int idx2d(int i, int j, int M)
-	{
-		return i + j*M;d3
-
-	}
-
-	__global__ void distance2(int N, int M, int P, float sigma, float pi, float *d1, float *d2, float *d3, float *d4, float *res2, float *res3)
-	{
-	int i = threadIdx.x + blockDim.x * blockIdx.x;
-	int j = threadIdx.y + blockDim.y * blockIdx.y;
-
-	if((i>=N)||(j>=N)) return;
-
-	float x2;
-	float x3;
-	x2 = 1.0;
-	x3 = 1.0;
-
-	for(int k=0; k<M; k++){
-			for(int l=0; l<P; l++){
-				   x2 = x2 * 1.0/sqrt(2.0*pi*sigma*sigma)*exp(-( d2[idx3d(i,k,l,M,P)]-d1[idx3d(j,k,l,M,P)])*( d2[idx3d(i,k,l,M,P)]-d1[idx3d(j,k,l,M,P)])/(2.0*sigma*sigma));
-				   x3 = x3 * 1.0/sqrt(2.0*pi*sigma*sigma)*exp(-( d4[idx3d(i,k,l,M,P)]-d3[idx3d(j,k,l,M,P)])*( d4[idx3d(i,k,l,M,P)]-d3[idx3d(j,k,l,M,P)])/(2.0*sigma*sigma));
-			}
-	}
-
-	res2[idx2d(i,j,N)] = x2;
-	res3[idx2d(i,j,N)] = x3;
-
-
-	}
-
-	__global__ void distance1(int N, int M, int P, float sigma, float pi, float *d1, float *d2, float *d3, float *d4, float *res1)
-	{
-	int i = threadIdx.x + blockDim.x * blockIdx.x;
-	int j = threadIdx.y + blockDim.y * blockIdx.y;
-
-	if((i>=N)||(j>=N)) return;
-
-	float x1;
-	x1 = 1.0;
-
-	for(int k=0; k<M; k++){
-			for(int l=0; l<P; l++){
-				   x1 = x1 * 1.0/sqrt(2.0*pi*sigma*sigma)*exp(-( d2[idx3d(i,k,l,M,P)]-d1[idx3d(j,k,l,M,P)])*( d2[idx3d(i,k,l,M,P)]-d1[idx3d(j,k,l,M,P)])/(2.0*sigma*sigma))* 1.0/sqrt(2.0*pi*sigma*sigma)*exp(-( d4[idx3d(i,k,l,M,P)]-d3[idx3d(j,k,l,M,P)])*( d4[idx3d(i,k,l,M,P)]-d3[idx3d(j,k,l,M,P)])/(2.0*sigma*sigma));
-			}
-	}
-
-	res1[idx2d(i,j,N)] = x1;
-
-
-	}
-	""")
-
-
-
-	# prepare data
-
-	N1 = 400
-	N2 = N1
-	N3 = N1
-	N4 = N1
-
-	d1 = dataRef[0:N1,:,:].astype(float32)
-	d2 = array(theta1)[N1:(N1+N2),:,:].astype(float32)
-	d3 = dataY[0:N1,:,:].astype(float32)
-	d4 = array(theta2)[N1:(N1+N2),:,:].astype(float32)
-
-	d5 = dataRef[0:N1,:,:].astype(float32)
-	d6 = array(theta1)[(N1+N2):(N1+N2+N3),:,:].astype(float32)
-	d7 = dataY[0:N1,:,:].astype(float32)
-	d8 = array(theta2)[(N1+N2+N3):(N1+N2+N3+N4),:,:].astype(float32)
-
-	result1 = zeros([N1,N1]).astype(float32)
-	result2 = zeros([N1,N1]).astype(float32)
-	result3 = zeros([N1,N1]).astype(float32)
-
-	# split data to correct size to run on GPU
-	Max = 256.0
-	dist_gpu1 = mod.get_function("distance1")
-	dist_gpu2 = mod.get_function("distance2")
-
-	print dist_gpu1.num_regs
-
-	numRuns = int(ceil(N1/Max))
-	print "numRuns: ", numRuns
-
-	for i in range(numRuns):
-		for j in range(numRuns):
-
-			s = N1/numRuns
-			data1 = d1[(i*s):(i*s+s),:,:]
-			data2 = d2[(j*s):(j*s+s),:,:]
-			data3 = d3[(i*s):(i*s+s),:,:]
-			data4 = d4[(j*s):(j*s+s),:,:]
-
-			data5 = d5[(i*s):(i*s+s),:,:]
-			data6 = d6[(j*s):(j*s+s),:,:]
-			data7 = d7[(i*s):(i*s+s),:,:]
-			data8 = d8[(j*s):(j*s+s),:,:]
-
-
-			N=data1.shape[0]
-			M=data1.shape[1]
-			P=data1.shape[2]
-			res1 = zeros([N,N]).astype(float32)
-			res2 = zeros([N,N]).astype(float32)
-			res3 = zeros([N,N]).astype(float32)
-
-			# invoke kernel
-			if(N<15):
-				dist_gpu1(int32(N), int32(M), int32(P), float32(sigma), float32(pi), driver.In(data1), driver.In(data2), driver.In(data3), driver.In(data4), driver.Out(res1), block=(N,N,1), grid=(1,1))
-				dist_gpu2(int32(N), int32(M), int32(P), float32(sigma), float32(pi), driver.In(data5), driver.In(data6), driver.In(data7), driver.In(data8), driver.Out(res2), driver.Out(res3), block=(N,N,1), grid=(1,1))
-			else:
-				g = ceil(N/15.0)
-				dist_gpu1(int32(N), int32(M), int32(P), float32(sigma), float32(pi), driver.In(data1), driver.In(data2), driver.In(data3), driver.In(data4), driver.Out(res1), block=(15,15,1), grid=(int(g),int(g)))
-				dist_gpu2(int32(N), int32(M), int32(P), float32(sigma), float32(pi), driver.In(data5), driver.In(data6), driver.In(data7), driver.In(data8), driver.Out(res2), driver.Out(res3), block=(15,15,1), grid=(int(g),int(g)))
-
-
-			result1[(i*s):(i*s+s),(j*s):(j*s+s)] = res1
-			result2[(i*s):(i*s+s),(j*s):(j*s+s)] = res2
-			result3[(i*s):(i*s+s),(j*s):(j*s+s)] = res3
-
-
-	sum1 = 0.0
-	a1 = 0.0
-	a2 = 0.0
-	a3 = 0.0
-
-	counter = 0
-	for i in range(N1):
-		if(isinf(log(sum(result1[i,:])/N2)) or isinf(log(sum(result2[i,:])/N3)) or isinf(log(sum(result3[i,:])/N4))): counter=counter+1
-		else: sum1 = sum1 + log(sum(result1[i,:])/N2) - log(sum(result2[i,:])/N3) - log(sum(result3[i,:])/N4)
-
-		a1 = a1 + log(sum(result1[i,:])/N2)
-		a2 = a2 + log(sum(result2[i,:])/N3)
-		a3 = a3 + log(sum(result3[i,:])/N4)
-
-
-
-	print "a1: ", a1/float(i+1) , "a2: ", a2/float(i+1), "a3: ", a3/float(i+1)
-	print "all: ",  a1/float(i+1) - a2/float(i+1) - a3/float(i+1)
-
-	Info = sum1/float(N1)
-	print "counter: ", counter
-
-	return(Info)
-
-def printOptions():
-
-	print "\nList of possible options:"
-
-	print "\n Input options:"
-	print "-i\t--infile\t declaration of the input file. This input file has to be provided to run the program!"
-	print "-lc\t--localcode\t do not import model from sbml intead use a local .py, .hpp/.cpp or .cu file"
-
-	print "\n Algorithmic options:"
-	print "-sd\t--setseed\t seed the random number generator in numpy with an integer eg -sd=2, --setseed=2"
-	print "-tm\t--timing\t print timing information"
-	print "--c++\t\t\t use C++ implementation"
-	print "-cu\t--cuda\t\t use CUDA implementation"
-
-	print "\n Output options:"
-	print "-of\t--outfolder\t write results to folder eg -of=/full/path/to/folder (default is _results_ in current directory)"
-	print "-f\t--fulloutput\t print epsilon, sampling steps and acceptence rates after each population"
-	print "-s\t--save\t\t no backup after each population"
-	print "-db\t--debug\t set the debug mode"
-
-	print "\n Simulate options:"
-	print "-S\t--simulate\t simulate the model over the range of timepoints, using paramters sampled from the priors"
-
-	print "\n Design options:"
-	print "-D\t--design\t run ABC-SysBio in design mode"
-
-	print "\n Plotting options:"
-	print "-d\t--diagnostic\t no printing of diagnostic plots"
-	print "-t\t--timeseries\t no plotting of simulation results after each population"
-	print "-p\t--plotdata\t no plotting of given data points"
-	print "\n-h\t--help\t\t print this list of options."
-
-	print "\n"
 
 def run_cudasim(m_object, parameters, species):
 	modelTraj = []
-	# For each model in turn...
 	##Should run over cudafiles
-	for mod in range(m_object.nmodels):
-		# Define CUDA filename for cudasim
-		cudaCode = m_object.name[mod] + '.cu'
-		# Create ODEProblem object
-		modelInstance = Lsoda.Lsoda(m_object.times, cudaCode, dt=m_object.dt)
-		# Solve ODEs using Lsoda algorithm
-		##Different parameters and species matrices for i in nmodels?
-		result = modelInstance.run(parameters, species)
-		modelTraj.append(result[:,0])
+	# Define CUDA filename for cudasim
+	cudaCode = m_object.name[0] + '.cu'
+	# Create ODEProblem object
+	modelInstance = Lsoda.Lsoda(m_object.times, cudaCode, dt=m_object.dt)
+	# Solve ODEs using Lsoda algorithm
+	##Different parameters and species matrices for i in nmodels?
+	result = modelInstance.run(parameters, species)
+	modelTraj.append(result[:,0])
+
 	return modelTraj
 
 def remove_na(m_object, modelTraj):
-	# For each model in turn...
-	for mod in range(m_object.nmodels):
-		# Create a list of indices of particles that have an NA in their row
-		##Why using 7:8 when summing? -> Change this
-		index = [p for p, i in enumerate(isnan(sum(asarray(modelTraj[mod])[:,7:8,:],axis=2))) if i==True]
-		# Delete row of 1. results and 2. parameters from the output array for which an index exists
-		for i in index:
-			delete(modelTraj[mod], (i), axis=0)
+	# Create a list of indices of particles that have an NA in their row
+	##Why using 7:8 when summing? -> Change this
+	index = [p for p, i in enumerate(isnan(sum(asarray(modelTraj[0])[:,7:8,:],axis=2))) if i==True]
+	# Delete row of 1. results and 2. parameters from the output array for which an index exists
+	for i in index:
+		delete(modelTraj[mod], (i), axis=0)
 
 	return modelTraj
 
-def add_noise_to_traj(m_object, modelTraj, sigma, N1):
+def add_noise_to_traj(m_object, modelTraj, sigma, N1):##Need to ficure out were to get N1 from
 	ftheta = []
-	# For each model in turn...
-	for mod in range(m_object.nmodels):
-		# Create array with noise of same size as the trajectory array (only the first N1 particles)
-		noise = normal(loc=0.0, scale=sigma,size=shape(modelTraj[mod][0:N1,:,:]))
-		# Add noise to trajectories and output new 'noisy' trajectories
-		traj = array(modelTraj[mod][0:N1,:,:]) + noise
-		ftheta.append(traj)
+	# Create array with noise of same size as the trajectory array (only the first N1 particles)
+	noise = normal(loc=0.0, scale=sigma,size=shape(modelTraj[0][0:N1,:,:]))
+	# Add noise to trajectories and output new 'noisy' trajectories
+	traj = array(modelTraj[0][0:N1,:,:]) + noise
+	ftheta.append(traj)
+
 	# Return final trajectories for 0:N1 particles
 	return ftheta
 
-def get_max_dist(m_object, ftheta):
-	maxDistTraj = []
-	# For each model in turn...
-	for mod in range(m_object.nmodels):
-		# Calculate the maximum distance for each model and store it in array
-		maxDistTraj.append(amax(ftheta[mod]) - amin(ftheta[mod]))
+def scaling(modelTraj, ftheta, sigma):
 
-	return maxDistTraj
+	maxDistTraj = max([math.fabs(amax(modelTraj) - amin(ftheta)),math.fabs(amax(ftheta) - amin(modelTraj))])
 
-def get_mutinf_all_param(m_object, ftheta, modelTraj, maxDistTraj, sigma):
+	preci = pow(10,-34)
+	FmaxDistTraj = 1.0*exp(-(maxDistTraj*maxDistTraj)/(2.0*sigma*sigma))
+
+	if(FmaxDistTraj<preci):
+		scale = pow(1.79*pow(10,300),1.0/(ftheta[0].shape[1]*ftheta[0].shape[2]))
+	else:
+		scale = pow(preci,1.0/(ftheta[0].shape[1]*ftheta[0].shape[2]))*1.0/FmaxDistTraj
+
+	return scale
+
+def pickle_object(object):
+	pickle.dump(object, open("save_point.pkl", "wb"))
+
+def unpickle_object(filename="savepoint.pkl"):
+	object = pickle.load(open(filename, "rb"))
+
+	return object
+
+def get_mutinf_all_param(m_object, ftheta, N1, N2, sigma, modelTraj, scale):
 	MutInfo1 = []
-	# For each model in turn....
-	for mod in range(m_object.nmodels):
-		# Run function to get the mutual information for all parameters
-		t1=time.time()
-		MutInfo1.append(getEntropy1(ftheta[mod],sigma,array(modelTraj[mod]),maxDistTraj[mod]))
-		t2=time.time()
-		print "TIME_gE1_call", t2-t1
+	# Run function to get the mutual information for all parameters
+	MutInfo1.append(getEntropy1(ftheta[0],N1,N2,sigma,array(modelTraj[0]),scale))
+
 	return MutInfo1
 
 def round_down(num, divisor):
@@ -505,6 +187,180 @@ def optimal_blocksize(device, function):
 	#print "OPTIMAL BLOCKSIZE", optimal_blocksize
 
 	return optimal_blocksize
+
+def optimise_grid_structure(gmem_per_thread=8.59): ##need to define correct memory requirement for kernel (check for other cards)
+	# DETERMINE TOTAL NUMBER OF THREADS LIMITED BY GLOBAL MEMORY
+	# Read total global memory of device
+	avail_mem = autoinit.device.total_memory()
+	# Calculate maximum number of threads, assuming global memory usage of 100 KB per thread
+	max_threads = int(sqrt(avail_mem / gmem_per_thread))
+	##could change it to be a multiple of block size?
+	##should it really return sqrt here?
+	return max_threads
+
+def getEntropy1(data,N1,N2,sigma,theta,scale):
+
+	#kernel declaration
+	mod = compiler.SourceModule("""
+	__device__ unsigned int idx3d(int i, int k, int l, int M, int P)
+	{
+		return k*P + i*M*P + l;
+
+	}
+
+	__device__ unsigned int idx2d(int i, int j, int M)
+	{
+		return i*M + j;
+
+	}
+
+	__global__ void distance1(int Ni, int Nj, int M, int P, float sigma, double scale, double *d1, double *d2, double *res1)
+	{
+	int i = threadIdx.x + blockDim.x * blockIdx.x;
+	int j = threadIdx.y + blockDim.y * blockIdx.y;
+
+	if((i>=Ni)||(j>=Nj)) return;
+
+	double x1;
+	x1 = 0.0;
+	for(int k=0; k<M; k++){
+			for(int l=0; l<P; l++){
+				   x1 = x1 +log(scale) - (d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*(d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])/(2.0*sigma*sigma);
+			}
+	}
+
+	res1[idx2d(i,j,Nj)] = exp(x1);
+	}
+	""")
+
+	# Assigning main kernel function to a variable
+	dist_gpu1 = mod.get_function("distance1")
+
+	##should be defined as an int, can then clean up formulas further down
+	Max = 23000.0 # Define square root of maximum threads per grid
+	R = 16.0 # Maximum threads per block
+
+	# Determine required number of runs for i and j
+	##need float here?
+	numRuns = int(ceil(N1/float(Max)))
+	numRuns2 = int(ceil(N2/float(Max)))
+
+	result2 = zeros([N1,numRuns2])
+
+	# Prepare data
+	d1 = data.astype(float64)
+	d2 = array(theta)[N1:(N1+N2),:,:].astype(float64)
+
+	M = d1.shape[1] # number of timepoints
+	P = d1.shape[2] # number of species
+
+	Ni = int(Max)
+
+
+	for i in range(numRuns):
+		print "Runs left:", numRuns-i
+		if((int(Max)*(i+1)) > N1): # If last run with less that max remaining trajectories
+			Ni = int(N1 - Max*i) # Set Ni to remaining number of particels
+
+		if(Ni<R):
+			gi = 1  # Grid size in dim i
+			bi = Ni # Block size in dim i
+		else:
+			gi = ceil(Ni/R)
+			bi = R
+
+		data1 = d1[(i*int(Max)):(i*int(Max)+Ni),:,:] # d1 subunit for the next j runs
+
+		Nj = int(Max)
+
+
+		for j in range(numRuns2):
+			if((int(Max)*(j+1)) > N2): # If last run with less that max remaining trajectories
+				Nj = int(N2 - Max*j) # Set Nj to remaining number of particels
+
+			data2 = d2[(j*int(Max)):(j*int(Max)+Nj),:,:] # d2 subunit for this run
+
+			##could move into if statements (only if ni or nj change)
+			res1 = zeros([Ni,Nj]).astype(float64) # results vector [shape(data1)*shape(data2)]
+
+			if(Nj<R):
+				gj = 1  # Grid size in dim j
+				bj = Nj # Block size in dim j
+			else:
+				gj = ceil(Nj/R)
+				bj = R
+
+			# Invoke GPU calculations (takes data1 and data2 as input, outputs res1)
+			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+
+			# First summation (could be done on GPU?)
+			for k in range(Ni):
+				result2[(i*int(Max)+k),j] = sum(res1[k,:])
+
+	sum1 = 0.0
+	count_na = 0
+	count_inf = 0
+
+	for i in range(N1):
+		if(isnan(sum(result2[i,:]))): count_na += 1
+		elif(isinf(log(sum(result2[i,:])))): count_inf += 1
+		else:
+			sum1 = sum1 - log(sum(result2[i,:])) + log(float(N2)) + M*P*log(scale) +  M*P*log(2.0*pi*sigma*sigma)
+
+	Info = (sum1 / float(N1-count_na-count_inf)) - M*P/2.0*(log(2.0*pi*sigma*sigma)+1)
+
+	return(Info)
+
+
+
+
+def getWeightedSample(weights):
+
+	totals = []
+	running_total = 0
+
+	for w in weights:
+		running_total = running_total + w[0]
+		totals.append(running_total)
+
+	rnd = random() * running_total
+	for i, total in enumerate(totals):
+		if rnd < total:
+			return i
+
+def printOptions():
+
+	print "\nList of possible options:"
+
+	print "\n Input options:"
+	print "-i\t--infile\t declaration of the input file. This input file has to be provided to run the program!"
+	print "-lc\t--localcode\t do not import model from sbml intead use a local .py, .hpp/.cpp or .cu file"
+
+	print "\n Algorithmic options:"
+	print "-sd\t--setseed\t seed the random number generator in numpy with an integer eg -sd=2, --setseed=2"
+	print "-tm\t--timing\t print timing information"
+	print "--c++\t\t\t use C++ implementation"
+	print "-cu\t--cuda\t\t use CUDA implementation"
+
+	print "\n Output options:"
+	print "-of\t--outfolder\t write results to folder eg -of=/full/path/to/folder (default is _results_ in current directory)"
+	print "-f\t--fulloutput\t print epsilon, sampling steps and acceptence rates after each population"
+	print "-s\t--save\t\t no backup after each population"
+	print "-db\t--debug\t set the debug mode"
+
+	print "\n Simulate options:"
+	print "-S\t--simulate\t simulate the model over the range of timepoints, using paramters sampled from the priors"
+
+	print "\n Design options:"
+	print "-D\t--design\t run ABC-SysBio in design mode"
+
+	print "\n Plotting options:"
+	print "-d\t--diagnostic\t no printing of diagnostic plots"
+	print "-t\t--timeseries\t no plotting of simulation results after each population"
+	print "-p\t--plotdata\t no plotting of given data points"
+	print "\n-h\t--help\t\t print this list of options."
+
+	print "\n"
 
 def main():
 
@@ -758,34 +614,24 @@ def main():
 
 			accepted = 10000000
 
+	N1 = 100000
+	N2 = 4500000
 
 	modelTraj = run_cudasim(info_new, parameters, species)
 	#print "model traj SHAPE", shape(modelTraj[0])
 
 	modelTraj = remove_na(info_new, modelTraj)
 
-	ftheta = add_noise_to_traj(info_new, modelTraj, 5.0, 100000)
+	ftheta = add_noise_to_traj(info_new, modelTraj, 5.0, N1)
 
-	maxDistTraj = get_max_dist(info_new, ftheta)
+	scale = scaling(modelTraj, ftheta, 5.0)
 
-	MutInfo1 = get_mutinf_all_param(info_new, ftheta, modelTraj, maxDistTraj, 5.0)
+	t1=time.time()
+	MutInfo1 = get_mutinf_all_param(info_new, ftheta, N1, N2, 5.0, modelTraj, scale)
+	t2=time.time()
+	print "TIME_gE1_call", t2-t1
+	print "I(theta,X,",mod+1 ,") = ", MutInfo1
 
-	for mod in range(info_new.nmodels):
-		print "I(theta,X,",mod+1 ,") = ", MutInfo1[mod]
-
-'''
-	# compute I(x,y) for reference model
-
-	if referenceModel == True:
-		MutInfo2 = []
-		print("Mutual information calculation 2... ")
-		MutInfo2.append("NA")
-		for mod in range(1,info_new.nmodels):
-			N = info_new.particles
-			MutInfo2.append(getEntropy2(ftheta[0],ftheta[mod],N,sigma,modelTraj[0][1],modelTraj[mod][1]))
-			print "I(X(reference model),X(model",mod+1,") = ", MutInfo2[mod]
-
-'''
 main()
 t4=time.time()
 print "TIME_total", t4-t3
