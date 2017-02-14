@@ -2,9 +2,9 @@ import sys
 import os
 from shutil import copyfile
 import re
-sys.path.insert(0, '/cluster/home/saw112/work/Test_code/error_checks')
+sys.path.insert(0, '/cluster/home/saw112/work/git_group_project/error_checks')
 #sys.path.insert(0, '/cluster/home/saw112/work/Test_code/sampleprior')
-import obtain_thetas
+#import obtain_thetas
 import error_check
 import cudacodecreater
 import SBML_check
@@ -23,6 +23,7 @@ def main():
 	parameter_change=[int(i) for i in list(parameter_change)]
 	init_condit=[int(i) for i in list(init_condit)]
 	# Calls sorting_files which creates new SBML files for new experiments and creates CUDA code from SBML files if necessary
+
 	for i in range(0,len(input_file_SBMLs)):
 		sorting_files(input_file_SBMLs[i],input_file_datas[i],analysis,fname,usesbml[i], parameter_change[i], init_condit[i], Nsamples)
 
