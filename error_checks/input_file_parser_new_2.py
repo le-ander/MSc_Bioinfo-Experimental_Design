@@ -24,7 +24,7 @@ def getSpeciesValue(species):
 
 
 
-def generateTemplate(source, filename="input_file", sumname="summary_file", dataname=None, inpath="", outpath=""): #, init_prior=False):
+def generateTemplate(source, filename="input_file", sumname="summary_file", dataname=None, inpath="", outpath=""):
 
 	"""
 
@@ -106,6 +106,10 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 
 	comp_fit_regex = re.compile(r'>compfit\s*\n(.+)\n<compfit')
 
+	nsample_regex = re.compile(r'>nsample\s*\n(.+)\n<nsample')
+
+	sigma_regex = re.compile(r'>sigma\n(.+)\n<sigma', re.DOTALL)
+
 
 
 
@@ -143,8 +147,18 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 
 
 		#####obtain timepoint for cudasim
-		times = times_regex.search(info).group(1).split(" ")
+		times = times_regex.search(info).group(1).rstrip().split(" ")
 		times = [float(i) for i in times]
+		####
+
+		##### nsample
+		nsample = nsample_regex.search(info).group(1).rstrip().split(" ")
+		nsample = [int(i) for i in nsample]
+		#####
+
+		#### sigma
+		sigma = sigma_regex.search(info).group(1)
+		sigma = float(sigma)
 		####
 
 		####Sample form posterior
@@ -233,6 +247,7 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 		comb_list = comb_regex.search(info).group(1).split("\n")
 		if comb_list[0]=="All":
 			all_combination = True
+			comb=[]
 		else:
 			comb = [[int(j)-1 for j in re.search(r'initset(\d+) paramexp(\d+) fit(\d+)', i).group(1,2,3)] for i in comb_list]
 			all_combination = False
@@ -297,6 +312,27 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 
 	else:
 		out_file.write("<times> 0 1 2 3 4 5 6 7 8 9 10 </times>\n\n")
+
+
+	out_file.write("# Sizes of N1, N2, N3 and N4 samples for enthropy calculation\n")
+	if (have_data==True and nsample):
+		out_file.write("<nsamples>\n");
+		for index, i in enumerate(nsample):
+			out_file.write("<N"+repr(index+1)+">")
+			out_file.write(" "+repr(i) )
+			out_file.write(" </N"+repr(index+1)+">\n")
+		out_file.write(" </nsamples>\n\n");
+
+	else:
+		out_file.write("<nsamples>\n<N1>9000</N1>\n<N2>1000</N2>\n<N3>0</N3>\n<N4>0</N4>\n</nsamples>\n\n")
+
+	out_file.write("# Sigma\n")
+	if (have_data==True and sigma):
+		out_file.write("<sigma> "+ repr(sigma) +" </sigma>\n\n")
+	else:
+		out_file.write("<sigma> 5.0 </sigma>\n\n")
+
+
 
 	out_file.write("# Numbers of parameters defined in models below \n")
 	out_file.write("<nparameters_all> ")
@@ -881,4 +917,7 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 
 	out_file.close()
 	sum_file.close()
+	return comb
+
+
 
