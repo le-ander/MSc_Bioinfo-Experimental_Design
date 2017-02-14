@@ -2,7 +2,8 @@ import libsbml
 import re
 import sys
 import numpy
-import time
+
+
 
 def getSpeciesValue(species):
 	"""
