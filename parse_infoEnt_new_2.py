@@ -2,6 +2,8 @@
 
 import re, sys, numpy
 from numpy.random import *
+import itertools
+
 
 from xml.dom import minidom
 
@@ -14,6 +16,20 @@ re_prior_logn=re.compile('lognormal')
 # True/False
 re_true=re.compile('True')
 re_none=re.compile('None')
+
+def getWeightedSample(weights):
+
+		totals = []
+		running_total = 0
+
+		for w in weights:
+			running_total = running_total + w[0]
+			totals.append(running_total)
+
+		rnd = random() * running_total
+		for i, total in enumerate(totals):
+			if rnd < total:
+				return i
 
 def parse_required_single_value( node, tagname, message, cast ):
 	try:
@@ -153,7 +169,7 @@ class algorithm_info:
 		self.samplepostfile=""
 		self.sampleweightfile=""
 		self.fitParams = []
-		self.fitIC=[]
+		self.fitICs=[]
 		self.fitComps=[]
 
 
@@ -199,8 +215,25 @@ class algorithm_info:
 		### get parameter fit information
 		fitParams_temp = parse_required_vector_value(dataref, "paramfit", "Please provide whitespace seperated list of subset of parameter <data><paramfit>", str)
 		fitParams_regex= re.compile(r'param(\d+)')
-		self.fitParams = [int(fitParams_regex.match(tppp).group(1)) - 1 for tppp in fitParams_temp]
+		if fitParams_temp[0]!="All":
+			self.fitParams = [int(fitParams_regex.match(tppp).group(1)) - 1 for tppp in fitParams_temp]
+		else:
+			self.fitParams = [i for i in range(self.nparameters_all)]
+		'''
+		fitIC_temp = parse_required_vector_value(dataref, "ICfit", "Please provide whitespace seperated list of subset of parameter <data><ICfit>", str)
+		fitIC_regex= re.compile(r'IC(\d+)')
+		if fitIC_temp[0]!="All":
+			self.fitICs = [int(fitIC_regex.match(tppp).group(1)) - 1 for tppp in fitIC_temp]
+		else:
+			self.fitICs = [i for i in range(self.nspecies_all)]
 
+		fitComp_temp = parse_required_vector_value(dataref, "compfit", "Please provide whitespace seperated list of subset of parameter <data><compfit>", str)
+		fitComp_regex= re.compile(r'comp(\d+)')
+		if fitComp_temp[0]!="All":
+			self.fitComps = [int(fitComp_regex.match(tppp).group(1)) - 1 for tppp in fitComp_temp]
+		else:
+			self.fitComps = [i for i in range(self.ncompparams_all)]
+		'''
 		### get information about sample from posterior
 		self.sampleFromPost = bool(parse_required_single_value( xmldoc, "samplefrompost", "Please provide a boolean value for <samplefrompost>", int ))
 
@@ -363,8 +396,10 @@ class algorithm_info:
 			print "\t", "comp_prior:", self.compprior[i]
 			print "\n"
 
-	def THETAS(self, sampleFromPost="", weight="", inputpath="", N1 = 0, N3 = 0, usesbml = False):
+	def THETAS(self, sampleFromPost="", weight="", inputpath="", usesbml = False, init_condit = False):
 		#create array which holds parameters
+		if self.ncompparams_all!=0:
+			usesbml = True
 
 		if self.sampleFromPost==False:
 			parameters = numpy.zeros([self.particles,self.nparameters_all]) #we might  want to change prior[0] to a globally defined prior in the object
@@ -393,31 +428,52 @@ class algorithm_info:
 				else:
 					print " Prior distribution not defined for parameters"
 					sys.exit()
-			
-			species = numpy.zeros([self.particles,self.nspecies_all])  # number of repeats x species in system
 
-			for j in range(len(self.x0prior[0])): # loop through number of parameter
+			if init_condit == True:
+
+				species = numpy.zeros([self.particles,self.nspecies_all])  # number of repeats x species in system
+
+				for j in range(len(self.x0prior[0])): # loop through number of parameter
+						
+					#####Constant prior#####
+					if(self.x0prior[0][j][0]==0):  # j paramater self.index
+						species[:,j] = self.x0prior[0][j][1]
 					
-				#####Constant prior#####
-				if(self.x0prior[0][j][0]==0):  # j paramater self.index
-					species[:,j] = self.x0prior[0][j][1]
-				
-				#####Uniform prior#####
-				elif(self.x0prior[0][j][0]==2):   
-					species[:,j] = uniform(low=self.x0prior[0][j][1], high=self.x0prior[0][j][2], size=(self.particles))
-				
-				#####Normal prior#####
-				elif(self.x0prior[0][j][0]==1):       
-					species[:,j] = normal(loc=self.x0prior[0][j][1], scale=self.x0prior[0][j][2], size=(self.particles))
+					#####Uniform prior#####
+					elif(self.x0prior[0][j][0]==2):   
+						species[:,j] = uniform(low=self.x0prior[0][j][1], high=self.x0prior[0][j][2], size=(self.particles))
+					
+					#####Normal prior#####
+					elif(self.x0prior[0][j][0]==1):       
+						species[:,j] = normal(loc=self.x0prior[0][j][1], scale=self.x0prior[0][j][2], size=(self.particles))
 
-				#####Lognormal prior#####
-				elif(self.x0prior[0][j][0]==3):       
-					species[:,j] = lognormal(mean=self.x0prior[0][j][1], sigma=self.x0prior[0][j][2], size=(self.particles))
+					#####Lognormal prior#####
+					elif(self.x0prior[0][j][0]==3):       
+						species[:,j] = lognormal(mean=self.x0prior[0][j][1], sigma=self.x0prior[0][j][2], size=(self.particles))
 
-				####
-				else:
-					print " Prior distribution not defined on initial conditions"
-					sys.exit()
+					####
+					else:
+						print " Prior distribution not defined on initial conditions"
+						sys.exit()
+
+			else:
+
+				x0prior_uniq = [self.x0prior[0]]
+				for ic in self.x0prior[1:]:
+					if ic not in x0prior_uniq:
+						x0prior_uniq.append(ic)
+
+
+				species = [numpy.zeros([self.particles,self.nspecies_all]) for x in range(len(x0prior_uniq))]  # number of repeats x species in system
+
+				for ic in range(len(x0prior_uniq)):
+					for j in range(len(x0prior_uniq[ic])): # loop through number of parameter
+						#####Constant prior#####
+						if(x0prior_uniq[ic][j][0]==0):  # j paramater self.index
+							species[ic][:,j] = x0prior_uniq[ic][j][1]
+						else:
+							print " Prior distribution not defined on initial conditions"
+							sys.exit()
 
 			if usesbml == True:
 
@@ -448,7 +504,6 @@ class algorithm_info:
 
 		elif self.sampleFromPost==True:
 			#obtain Thetas from posterior sample and associated weights
-			
 			######Reading in sample from posterior#####
 			infileName = inputpath+sampleFromPost
 			in_file=open(infileName, "r")
@@ -481,9 +536,9 @@ class algorithm_info:
 					parameters = numpy.zeros( [self.particles,self.nparameters_all] )
 					species = numpy.zeros([self.particles,self.nspecies_all])	
 					for i in range(self.particles): #repeats
-						self.getWeightedSample(weights)  #manually defined function
-						parameters[i,:] = param[self.index][:self.nparameters_all] #self.index indefies list which is used to assign parameter value.  j corresponds to different parameters defines column 
-						species[i,:] = param[self.index][-self.nspecies_all:]
+						index = getWeightedSample(weights)  #manually defined function
+						parameters[i,:] = param[index][:self.nparameters_all] #self.index indefies list which is used to assign parameter value.  j corresponds to different parameters defines column 
+						species[i,:] = param[index][-self.nspecies_all:]
 				else:
 					print "Please provide equal number of particles and weights in model!"
 					sys.exit()
@@ -495,59 +550,62 @@ class algorithm_info:
 					parameters = numpy.zeros( [self.particles,self.nparameters_all] )
 					species = numpy.zeros([self.particles,self.nspecies_all])	
 					for i in range(self.particles): #repeats
-						self.getWeightedSample(weights)  #manually defined function
-						compartments[i,:] = param[self.index][:self.ncompparams_all]
-						parameters[i,:] = param[self.index][self.ncompparams_all:self.ncompparams_all+self.nparameters_all] #self.index indefies list which is used to assign parameter value.  j corresponds to different parameters defines column 
-						species[i,:] = param[self.index][-self.nspecies_all:]
+						index = getWeightedSample(weights)  #manually defined function
+						compartments[i,:] = param[index][:self.ncompparams_all]
+						parameters[i,:] = param[index][self.ncompparams_all:self.ncompparams_all+self.nparameters_all] #self.index indefies list which is used to assign parameter value.  j corresponds to different parameters defines column 
+						species[i,:] = param[index][-self.nspecies_all:]
 				else:
 					print "Please provide equal number of particles and weights in model!"
 					sys.exit()
 
 		if self.analysisType == 1:
-			paramsN3 = parameters[(self.particles-N3):,:]
-			speciesN3 = species[(self.particles-N3):,:]
-			params_final = numpy.concatenate((paramsN3,)*N1,axis=0)
-			species_final = numpy.concatenate((speciesN3,)*N1,axis=0)
+			paramsN3 = parameters[(self.particles-self.N3sample):,:]
+			params_final = numpy.concatenate((paramsN3,)*self.N1sample,axis=0)
 			
-			for j in range(0,N1):
+			for j in range(0,self.N1sample):
 				for i in self.fitParams:
-					params_final[range((j*N3),((j+1)*N3)),i] = parameters[j,i]
+					params_final[range((j*self.N3sample),((j+1)*self.N3sample)),i] = parameters[j,i]
 
-			for j in range(0,N1):
-				for i in self.fitIC:
-					species_final[range((j*N3),((j+1)*N3)),i] = species[j,i]
+			parameters = numpy.concatenate((parameters[range(self.particles-self.N3sample),:],params_final),axis=0)
+			
+			if init_condit == True:
+				speciesN3 = species[(self.particles-self.N3sample):,:]
+				species_final = numpy.concatenate((speciesN3,)*self.N1sample,axis=0)
 
-			parameters = numpy.concatenate((parameters[range(self.particles-N3),:],params_final),axis=0)
-			species = numpy.concatenate((species[range(self.particles-N3),:],species_final),axis=0)
+				for j in range(0,self.N1sample):
+					for i in self.fitICs:
+						species_final[range((j*self.N3sample),((j+1)*self.N3sample)),i] = species[j,i]
 
+				species = numpy.concatenate((species[range(self.particles-self.N3sample),:],species_final),axis=0)
+			else:
+				for ic in range(len(species)):
+					species[ic] = numpy.tile(species[ic][0,:],(self.N1sample*self.N3sample+self.N1sample+self.N2sample,1))
+					
 			if usesbml == True:
-				compsN3 = compartments[(self.particles-N3):,:]
-				comp_final = numpy.concatenate((compsN3,)*N1,axis=0)
-				for j in range(0,N1):
+				compsN3 = compartments[(self.particles-self.N3sample):,:]
+				comp_final = numpy.concatenate((compsN3,)*self.N1sample,axis=0)
+				for j in range(0,self.N1sample):
 					for i in self.fitComps:
-						comp_final[range((j*N3),((j+1)*N3)),i] = compartments[j,i]
+						comp_final[range((j*self.N3sample),((j+1)*self.N3sample)),i] = compartments[j,i]
 
-				compartments = numpy.concatenate((compartments[range(self.particles-N3),:],comp_final),axis=0)
+				compartments = numpy.concatenate((compartments[range(self.particles-self.N3sample),:],comp_final),axis=0)
 
-		self.compsSample = compartments
+		if usesbml == True:
+			self.compsSample = compartments
+
 		self.parameterSample = parameters
 		self.speciesSample = species
-
-	def getWeightedSample(self, weights):
-
-		totals = []
-		running_total = 0
-
-		for w in weights:
-			running_total = running_total + w[0]
-			totals.append(running_total)
-
-		rnd = random() * running_total
-		for i, total in enumerate(totals):
-			if rnd < total:
-				self.index = i
-				break
 	
 	def getAnalysisType(self,analysisType):
 		self.analysisType = analysisType
+
+	def getSampleSizes(self,N1=0,N2=0,N3=0,N4=0):
+		if N1+N2+N3+N4==self.particles:
+			self.N1sample = N1
+			self.N2sample = N2
+			self.N3sample = N3
+			self.N4sample = N4
+		else:
+			print "Sum of N1, N2, N3, and N4 is not the number of particles given in the input XML file"
+			sys.exit()
 		   
