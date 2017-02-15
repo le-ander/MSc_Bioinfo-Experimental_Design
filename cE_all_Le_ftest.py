@@ -24,7 +24,6 @@ sys.path.insert(0, ".")
 t3 = time.time()
 
 
-
 def run_cudasim(m_object, parameters, species):
 	modelTraj = []
 	##Should run over cudafiles
@@ -61,7 +60,6 @@ def add_noise_to_traj(m_object, modelTraj, sigma, N1):##Need to ficure out were 
 	return ftheta
 
 def scaling(modelTraj, ftheta, sigma):
-
 	maxDistTraj = max([math.fabs(amax(modelTraj) - amin(ftheta)),math.fabs(amax(ftheta) - amin(modelTraj))])
 
 	preci = pow(10,-34)
@@ -149,7 +147,7 @@ def max_active_blocks_per_sm(device, function, blocksize, dyn_smem_per_block=0):
 	else:
 		block_lim_regs = max_blocks_per_sm
 
- 	# Calculate the maximum number of blocks, limited by blocks/SM or threads/SM
+	# Calculate the maximum number of blocks, limited by blocks/SM or threads/SM
 	block_lim_tSM = max_threads_per_sm / blocksize
 	block_lim_bSM = max_blocks_per_sm
 
@@ -185,7 +183,8 @@ def optimal_blocksize(device, function):
 			break
 		blocksize += device.warp_size
 	#print "OPTIMAL BLOCKSIZE", optimal_blocksize
-
+	print "Smallest optimal blocksize on this GPU:", optimal_blocksize
+	print "Achieved theoretical GPU occupancy", (float(achieved_occupancy)/device.max_threads_per_multiprocessor)*100, "%"
 	return optimal_blocksize
 
 def optimise_grid_structure(gmem_per_thread=8.59): ##need to define correct memory requirement for kernel (check for other cards)
@@ -224,9 +223,9 @@ def getEntropy1(data,N1,N2,sigma,theta,scale):
 	double x1;
 	x1 = 0.0;
 	for(int k=0; k<M; k++){
-			for(int l=0; l<P; l++){
-				   x1 = x1 +log(scale) - (d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*(d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])/(2.0*sigma*sigma);
-			}
+		for(int l=0; l<P; l++){
+			x1 = x1 +log(scale) - (d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*(d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])/(2.0*sigma*sigma);
+		}
 	}
 
 	res1[idx2d(i,j,Nj)] = exp(x1);
@@ -237,15 +236,15 @@ def getEntropy1(data,N1,N2,sigma,theta,scale):
 	dist_gpu1 = mod.get_function("distance1")
 
 	##should be defined as an int, can then clean up formulas further down
-	Max = 23000.0 # Define square root of maximum threads per grid
-	R = 16.0 # Maximum threads per block
+	gridmax = 23000.0 # Define square root of maximum threads per grid
+	blockmax = 16.0 # Maximum threads per block
 
 	# Determine required number of runs for i and j
 	##need float here?
-	numRuns = int(ceil(N1/float(Max)))
-	numRuns2 = int(ceil(N2/float(Max)))
+	numRuns_i = int(ceil(N1/float(gridmax)))
+	numRuns_j = int(ceil(N2/float(gridmax)))
 
-	result2 = zeros([N1,numRuns2])
+	res_t2 = zeros([N1,numRuns_j])
 
 	# Prepare data
 	d1 = data.astype(float64)
@@ -254,60 +253,62 @@ def getEntropy1(data,N1,N2,sigma,theta,scale):
 	M = d1.shape[1] # number of timepoints
 	P = d1.shape[2] # number of species
 
-	Ni = int(Max)
+	Ni = int(gridmax)
 
 
-	for i in range(numRuns):
-		print "Runs left:", numRuns-i
-		if((int(Max)*(i+1)) > N1): # If last run with less that max remaining trajectories
-			Ni = int(N1 - Max*i) # Set Ni to remaining number of particels
+	for i in range(numRuns_i):
+		print "Runs left:", numRuns_i-i
+		if((int(gridmax)*(i+1)) > N1): # If last run with less that max remaining trajectories
+			Ni = int(N1 - gridmax*i) # Set Ni to remaining number of particels
 
-		if(Ni<R):
+		if(Ni<blockmax):
 			gi = 1  # Grid size in dim i
 			bi = Ni # Block size in dim i
 		else:
-			gi = ceil(Ni/R)
-			bi = R
+			gi = ceil(Ni/blockmax)
+			bi = blockmax
 
-		data1 = d1[(i*int(Max)):(i*int(Max)+Ni),:,:] # d1 subunit for the next j runs
+		data1 = d1[(i*int(gridmax)):(i*int(gridmax)+Ni),:,:] # d1 subunit for the next j runs
 
-		Nj = int(Max)
+		Nj = int(gridmax)
 
 
-		for j in range(numRuns2):
-			if((int(Max)*(j+1)) > N2): # If last run with less that max remaining trajectories
-				Nj = int(N2 - Max*j) # Set Nj to remaining number of particels
+		for j in range(numRuns_j):
+			if((int(gridmax)*(j+1)) > N2): # If last run with less that max remaining trajectories
+				Nj = int(N2 - gridmax*j) # Set Nj to remaining number of particels
 
-			data2 = d2[(j*int(Max)):(j*int(Max)+Nj),:,:] # d2 subunit for this run
+			data2 = d2[(j*int(gridmax)):(j*int(gridmax)+Nj),:,:] # d2 subunit for this run
 
 			##could move into if statements (only if ni or nj change)
 			res1 = zeros([Ni,Nj]).astype(float64) # results vector [shape(data1)*shape(data2)]
 
-			if(Nj<R):
+			if(Nj<blockmax):
 				gj = 1  # Grid size in dim j
 				bj = Nj # Block size in dim j
 			else:
-				gj = ceil(Nj/R)
-				bj = R
+				gj = ceil(Nj/blockmax)
+				bj = blockmax
 
 			# Invoke GPU calculations (takes data1 and data2 as input, outputs res1)
 			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 
 			# First summation (could be done on GPU?)
 			for k in range(Ni):
-				result2[(i*int(Max)+k),j] = sum(res1[k,:])
+					res_t2[(i*int(gridmax)+k),j] = sum(res1[k,:])
 
 	sum1 = 0.0
 	count_na = 0
 	count_inf = 0
 
 	for i in range(N1):
-		if(isnan(sum(result2[i,:]))): count_na += 1
-		elif(isinf(log(sum(result2[i,:])))): count_inf += 1
+		if(isnan(sum(res_t2[i,:]))): count_na += 1
+		elif(isinf(log(sum(res_t2[i,:])))): count_inf += 1
 		else:
-			sum1 = sum1 - log(sum(result2[i,:])) + log(float(N2)) + M*P*log(scale) +  M*P*log(2.0*pi*sigma*sigma)
+			sum1 += - log(sum(res_t2[i,:])) + log(float(N2)) + M*P*log(scale) +  M*P*log(2.0*pi*sigma*sigma)
 
-	Info = (sum1 / float(N1-count_na-count_inf)) - M*P/2.0*(log(2.0*pi*sigma*sigma)+1)
+	Info = (sum1 / float(N1 - count_na - count_inf)) - M*P/2.0*(log(2.0*pi*sigma*sigma)+1)
+
+	optimal_blocksize(autoinit.device, dist_gpu1)
 
 	return(Info)
 
@@ -614,8 +615,8 @@ def main():
 
 			accepted = 10000000
 
-	N1 = 100000
-	N2 = 4500000
+	N1 = 1000
+	N2 = 45000
 
 	modelTraj = run_cudasim(info_new, parameters, species)
 	#print "model traj SHAPE", shape(modelTraj[0])

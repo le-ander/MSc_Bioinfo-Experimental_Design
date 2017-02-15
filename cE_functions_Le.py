@@ -180,7 +180,9 @@ def optimal_blocksize(device, function):
 		if achieved_occupancy == device.max_threads_per_multiprocessor:
 			break
 		blocksize += device.warp_size
-	#print "OPTIMAL BLOCKSIZE", optimal_blocksize
+
+	print "Smallest optimal blocksize on this GPU:", optimal_blocksize
+	print "Achieved theoretical GPU occupancy", (float(achieved_occupancy)/device.max_threads_per_multiprocessor)*100, "%"
 
 	return optimal_blocksize
 
