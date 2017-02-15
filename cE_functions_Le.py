@@ -233,15 +233,15 @@ def getEntropy1(data,N1,N2,sigma,theta,scale):
 	dist_gpu1 = mod.get_function("distance1")
 
 	##should be defined as an int, can then clean up formulas further down
-	Max = 100.0 # Define square root of maximum threads per grid
-	R = 15.0 # Maximum threads per block
+	gridmax = 100.0 # Define square root of maximum threads per grid
+	blockmax = 15.0 # Maximum threads per block
 
 	# Determine required number of runs for i and j
 	##need float here?
-	numRuns = int(ceil(N1/float(Max)))
-	numRuns2 = int(ceil(N2/float(Max)))
+	numRuns_i = int(ceil(N1/float(gridmax)))
+	numRuns_j = int(ceil(N2/float(gridmax)))
 
-	result2 = zeros([N1,numRuns2])
+	res_t2 = zeros([N1,numRuns_j])
 
 	# Prepare data
 	d1 = data.astype(float64)
@@ -250,64 +250,65 @@ def getEntropy1(data,N1,N2,sigma,theta,scale):
 	M = d1.shape[1] # number of timepoints
 	P = d1.shape[2] # number of species
 
-	Ni = int(Max)
+	Ni = int(gridmax)
 
 
-	for i in range(numRuns):
-		print "Runs left:", numRuns-i
-		if((int(Max)*(i+1)) > N1): # If last run with less that max remaining trajectories
-			Ni = int(N1 - Max*i) # Set Ni to remaining number of particels
+	for i in range(numRuns_i):
+		print "Runs left:", numRuns_i-i
+		if((int(gridmax)*(i+1)) > N1): # If last run with less that max remaining trajectories
+			Ni = int(N1 - gridmax*i) # Set Ni to remaining number of particels
 
-		if(Ni<R):
+		if(Ni<blockmax):
 			gi = 1  # Grid size in dim i
 			bi = Ni # Block size in dim i
 		else:
-			gi = ceil(Ni/R)
-			bi = R
+			gi = ceil(Ni/blockmax)
+			bi = blockmax
 
-		data1 = d1[(i*int(Max)):(i*int(Max)+Ni),:,:] # d1 subunit for the next j runs
+		data1 = d1[(i*int(gridmax)):(i*int(gridmax)+Ni),:,:] # d1 subunit for the next j runs
 
-		Nj = int(Max)
+		Nj = int(gridmax)
 
 
-		for j in range(numRuns2):
-			if((int(Max)*(j+1)) > N2): # If last run with less that max remaining trajectories
-				Nj = int(N2 - Max*j) # Set Nj to remaining number of particels
+		for j in range(numRuns_j):
+			if((int(gridmax)*(j+1)) > N2): # If last run with less that max remaining trajectories
+				Nj = int(N2 - gridmax*j) # Set Nj to remaining number of particels
 
-			data2 = d2[(j*int(Max)):(j*int(Max)+Nj),:,:] # d2 subunit for this run
+			data2 = d2[(j*int(gridmax)):(j*int(gridmax)+Nj),:,:] # d2 subunit for this run
 
 			##could move into if statements (only if ni or nj change)
 			res1 = zeros([Ni,Nj]).astype(float64) # results vector [shape(data1)*shape(data2)]
 
-			if(Nj<R):
+			if(Nj<blockmax):
 				gj = 1  # Grid size in dim j
 				bj = Nj # Block size in dim j
 			else:
-				gj = ceil(Nj/R)
-				bj = R
+				gj = ceil(Nj/blockmax)
+				bj = blockmax
 
 			# Invoke GPU calculations (takes data1 and data2 as input, outputs res1)
 			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 
 			# First summation (could be done on GPU?)
 			for k in range(Ni):
-					result2[(i*int(Max)+k),j] = sum(res1[k,:])
+					res_t2[(i*int(gridmax)+k),j] = sum(res1[k,:])
 
 	sum1 = 0.0
 	count_na = 0
 	count_inf = 0
 
 	for i in range(N1):
-		if(isnan(sum(result2[i,:]))): count_na += 1
-		elif(isinf(log(sum(result2[i,:])))): count_inf += 1
+		if(isnan(sum(res_t2[i,:]))): count_na += 1
+		elif(isinf(log(sum(res_t2[i,:])))): count_inf += 1
 		else:
-			sum1 += - log(sum(result2[i,:])) + log(float(N2)) + M*P*log(scale) +  M*P*log(2.0*pi*sigma*sigma)
+			sum1 += - log(sum(res_t2[i,:])) + log(float(N2)) + M*P*log(scale) +  M*P*log(2.0*pi*sigma*sigma)
 
 	Info = (sum1 / float(N1 - count_na - count_inf)) - M*P/2.0*(log(2.0*pi*sigma*sigma)+1)
 
 	return(Info)
 
-def getEntropy3(data,N1,N2,N3,sigma,theta,scale):
+# Used to be getEntropy3!
+def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 	#kernel declaration
 	mod = compiler.SourceModule("""
 	__device__ unsigned int idx3d(int i, int k, int l, int M, int P)
@@ -322,13 +323,14 @@ def getEntropy3(data,N1,N2,N3,sigma,theta,scale):
 
 	}
 
+	// Can remove this function?
 	__device__ unsigned int idx2d2(int k, int l, int P)
 	{
 		return k*P + l;
 
 	}
 
-	__global__ void distance1(int Ni, int Nj, int M, int P, float sigma, double a, double *d1, double *d2, double *res1)
+	__global__ void distance1(int Ni, int Nj, int M, int P, float sigma, double scale, double *d1, double *d2, double *res1)
 	{
 	int i = threadIdx.x + blockDim.x * blockIdx.x;
 	int j = threadIdx.y + blockDim.y * blockIdx.y;
@@ -339,14 +341,14 @@ def getEntropy3(data,N1,N2,N3,sigma,theta,scale):
 	x1 = 0.0;
 	for(int k=0; k<M; k++){
 			for(int l=0; l<P; l++){
-				x1 = x1 + log(a) - ( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])/(2.0*sigma*sigma);
+				x1 = x1 + log(scale) - ( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])/(2.0*sigma*sigma);
 			}
 	}
 
 	res1[idx2d(i,j,Nj)] = exp(x1);
 	}
 
-	__global__ void distance2(int Ni, int M, int P, float sigma, double a, double *d1, double *d3, double *res1)
+	__global__ void distance2(int Ni, int M, int P, float sigma, double scale, double *d1, double *d3, double *res2)
 	{
 	int i = threadIdx.x + blockDim.x * blockIdx.x;
 
@@ -356,11 +358,11 @@ def getEntropy3(data,N1,N2,N3,sigma,theta,scale):
 	x1 = 0.0;
 	for(int k=0; k<M; k++){
 			for(int l=0; l<P; l++){
-				x1 = x1 + log(a) - ( d3[idx3d(i,k,l,M,P)]-d1[idx2d2(k,l,P)])*( d3[idx3d(i,k,l,M,P)]-d1[idx2d2(k,l,P)])/(2.0*sigma*sigma);
+				x1 = x1 + log(scale) - ( d3[idx3d(i,k,l,M,P)]-d1[idx2d2(k,l,P)])*( d3[idx3d(i,k,l,M,P)]-d1[idx2d2(k,l,P)])/(2.0*sigma*sigma);
 			}
 	}
 
-	res1[i] = exp(x1);
+	res2[i] = exp(x1);
 	}
 	""")
 
@@ -368,15 +370,15 @@ def getEntropy3(data,N1,N2,N3,sigma,theta,scale):
 	dist_gpu1 = mod.get_function("distance1")
 
 	##should be defined as an int, can then clean up formulas further down
-	Max = 100.0 # Define square root of maximum threads per grid
-	R = 15.0 # Maximum threads per block
+	gridmax = 100.0 # Define square root of maximum threads per grid
+	blockmax = 15.0 # Maximum threads per block
 
 	# Determine required number of runs for i and j
 	##need float here?
-	numRuns = int(ceil(N1/float(Max)))
-	numRuns2 = int(ceil(N2/float(Max)))
+	numRuns_i = int(ceil(N1/float(gridmax)))
+	numRuns_j = int(ceil(N2/float(gridmax)))
 
-	result2 = zeros([N1,numRuns2])
+	res_t2 = zeros([N1,numRuns_j])
 
 	# Prepare data
 	d1 = data.astype(float64)
@@ -385,271 +387,114 @@ def getEntropy3(data,N1,N2,N3,sigma,theta,scale):
 	M = d1.shape[1] # number of timepoints
 	P = d1.shape[2] # number of species
 
-	Ni = int(Max)
+	Ni = int(gridmax)
 
 
-	for i in range(numRuns):
-		print "Runs left:", numRuns-i
-		if((int(Max)*(i+1)) > N1): # If last run with less that max remaining trajectories
-			Ni = int(N1 - Max*i) # Set Ni to remaining number of particels
+	for i in range(numRuns_i):
+		print "Runs left:", numRuns_i - i
+		if((int(gridmax)*(i+1)) > N1): # If last run with less that max remaining trajectories
+			Ni = int(N1 - gridmax*i) # Set Ni to remaining number of particels
 
-		if(Ni<R):
+		if(Ni<blockmax):
 			gi = 1  # Grid size in dim i
 			bi = Ni # Block size in dim i
 		else:
-			gi = ceil(Ni/R)
-			bi = R
+			gi = ceil(Ni/blockmax)
+			bi = blockmax
 
-		data1 = d1[(i*int(Max)):(i*int(Max)+Ni),:,:] # d1 subunit for the next j runs
+		data1 = d1[(i*int(gridmax)):(i*int(gridmax)+Ni),:,:] # d1 subunit for the next j runs
 
-		Nj = int(Max)
+		Nj = int(gridmax)
 
 
-		for j in range(numRuns2):
-			if((int(Max)*(j+1)) > N2): # If last run with less that max remaining trajectories
-				Nj = int(N2 - Max*j) # Set Nj to remaining number of particels
+		for j in range(numRuns_j):
+			if((int(gridmax)*(j+1)) > N2): # If last run with less that max remaining trajectories
+				Nj = int(N2 - gridmax*j) # Set Nj to remaining number of particels
 
-			data2 = d2[(j*int(Max)):(j*int(Max)+Nj),:,:] # d2 subunit for this run
+			data2 = d2[(j*int(gridmax)):(j*int(gridmax)+Nj),:,:] # d2 subunit for this run
 
 			##could move into if statements (only if ni or nj change)
 			res1 = zeros([Ni,Nj]).astype(float64) # results vector [shape(data1)*shape(data2)]
 
-			if(Nj<R):
+			if(Nj<blockmax):
 				gj = 1  # Grid size in dim j
 				bj = Nj # Block size in dim j
 			else:
-				gj = ceil(Nj/R)
-				bj = R
+				gj = ceil(Nj/blockmax)
+				bj = blockmax
 
 			# Invoke GPU calculations (takes data1 and data2 as input, outputs res1)
 			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 
 			# First summation (could be done on GPU?)
 			for k in range(Ni):
-				result2[(i*int(Max)+k),j] = sum(res1[k,:])
+				res_t2[(i*int(gridmax)+k),j] = sum(res1[k,:])
 
 	sum1 = 0.0
 	count_na = 0
 	count_inf = 0
 
 	for i in range(N1):
-		if(isnan(sum(result2[i,:]))): count_na += 1
-		elif(isinf(log(sum(result2[i,:])))): count_inf += 1
+		if(isnan(sum(res_t2[i,:]))): count_na += 1
+		elif(isinf(log(sum(res_t2[i,:])))): count_inf += 1
 		else:
-			sum1 += - log(sum(result2[i,:])) + log(float(N2)) + M*P*log(scale) +  M*P*log(2.0*pi*sigma*sigma)
+			sum1 += - log(sum(res_t2[i,:])) + log(float(N2)) + M*P*log(scale) +  M*P*log(2.0*pi*sigma*sigma)
 
 ######## part A finished with results saved in sum1
 
 	dist_gpu2 = mod.get_function("distance2")
 
 	##need this defined again here??
-	Max = 256.0
-	R = 15.0
+	gridmax = 256.0
+	blockmax = 15.0
 
-	numRuns3 = int(ceil(N3/Max))
+	numRuns_j2 = int(ceil(N3/gridmax))
 
-	result2 = zeros([N1,numRuns3])
+	res_t2 = zeros([N1,numRuns_j2])
 
 	d3 = array(theta)[(N1+N2):(N1+N2+N1*N3),:,:].astype(float64)
 
-	for N1i in range(N1):
-		for i in range(numRuns3):
-			print "runs left:", numRuns - i
-
-			si = int(Max)
-
-			s = int(Max)
-			if((s*(i+1)) > N1):
-				si = int(N1 - Max*i)
-
-
-			data3 = d3[(N1i*N3+i*int(Max)):(N1i*N3+i*int(Max)+si),:,:]
-			data1 = d1[N1i,:,:]
-
-			Ni=data3.shape[0]
-
-			resB1 = zeros([Ni]).astype(float64)
-
-			if(Ni<R):
-				gi = 1
-				bi = Ni
-			else:
-				bi = R
-				gi = ceil(Ni/R)
-
-			dist_gpu2(int32(Ni), int32(M), int32(P), float32(sigma), float64(a), driver.In(data1), driver.In(data3),  driver.Out(resB1), block=(int(bi),1,1), grid=(int(gi),1))
-
-			result2[N1i,i] = sum(resB1[:])
-
-
-	sumB1 = 0.0
-	counter = 0
-	counter2 = 0
 
 	for i in range(N1):
-		if(isnan(sum(result2[i,:]))): counter=counter+1
-		if(isinf(log(sum(result2[i,:])))): counter2=counter2+1
+
+		data1 = d1[i,:,:]
+
+		Nj = int(gridmax)
+
+		for j in range(numRuns_j2):
+			print "runs left:", numRuns_j2 - j
+
+			if((int(gridmax)*(j+1)) > N3):
+				Nj = int(N3 - gridmax*j)
+
+			data3 = d3[(i*N3+j*int(gridmax)):(i*N3+j*int(gridmax)+Nj),:,:]
+
+			res2 = zeros([Nj]).astype(float64)
+
+			if(Nj<blockmax):
+				gj = 1
+				bj = Nj
+			else:
+				gj = ceil(Nj/blockmax)
+				bj = blockmax
+
+			dist_gpu2(int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data3),  driver.Out(res2), block=(1,int(bj),1), grid=(1,int(gj)))
+
+			res_t2[i,j] = sum(res2[:])
+
+
+	sum2 = 0.0
+	count2_na = 0
+	count2_inf = 0
+
+	for i in range(N1):
+		if(isnan(sum(res_t2[i,:]))): count2_na += 1
+		elif(isinf(log(sum(res_t2[i,:])))): count2_inf += 1
 		else:
-			sumB1 = sumB1 + log(sum(result2[i,:])) - log(float(N3)) - M*P*log(a) -  M*P*log(2.0*pi*sigma*sigma)
+			sum2 += log(sum(res_t2[i,:])) - log(float(N3)) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
 
-######## part B finished with results saved in sumB1
+	######## part B finished with results saved in sum2
 
-	Info = (sumB1 - sum1)/float(N1)
+	Info = (sum2 - sum1)/float(N1 - count_na - count_inf - count2_na - count2_inf)
 
-	return(Info)
-
-def getEntropy2(dataRef,dataY,N,sigma,theta1,theta2):
-
-	#kernel declaration
-	mod = compiler.SourceModule("""
-	__device__ unsigned int idx3d(int i, int k, int l, int M, int P)
-	{
-		return k*P + i*M*P + l;
-
-	}
-
-	__device__ unsigned int idx2d(int i, int j, int M)
-	{
-		return i + j*M;d3
-
-	}
-
-	__global__ void distance2(int N, int M, int P, float sigma, float pi, float *d1, float *d2, float *d3, float *d4, float *res2, float *res3)
-	{
-	int i = threadIdx.x + blockDim.x * blockIdx.x;
-	int j = threadIdx.y + blockDim.y * blockIdx.y;
-
-	if((i>=N)||(j>=N)) return;
-
-	float x2;
-	float x3;
-	x2 = 1.0;
-	x3 = 1.0;
-
-	for(int k=0; k<M; k++){
-			for(int l=0; l<P; l++){
-				   x2 = x2 * 1.0/sqrt(2.0*pi*sigma*sigma)*exp(-( d2[idx3d(i,k,l,M,P)]-d1[idx3d(j,k,l,M,P)])*( d2[idx3d(i,k,l,M,P)]-d1[idx3d(j,k,l,M,P)])/(2.0*sigma*sigma));
-				   x3 = x3 * 1.0/sqrt(2.0*pi*sigma*sigma)*exp(-( d4[idx3d(i,k,l,M,P)]-d3[idx3d(j,k,l,M,P)])*( d4[idx3d(i,k,l,M,P)]-d3[idx3d(j,k,l,M,P)])/(2.0*sigma*sigma));
-			}
-	}
-
-	res2[idx2d(i,j,N)] = x2;
-	res3[idx2d(i,j,N)] = x3;
-
-
-	}
-
-	__global__ void distance1(int N, int M, int P, float sigma, float pi, float *d1, float *d2, float *d3, float *d4, float *res1)
-	{
-	int i = threadIdx.x + blockDim.x * blockIdx.x;
-	int j = threadIdx.y + blockDim.y * blockIdx.y;
-
-	if((i>=N)||(j>=N)) return;
-
-	float x1;
-	x1 = 1.0;
-
-	for(int k=0; k<M; k++){
-			for(int l=0; l<P; l++){
-				   x1 = x1 * 1.0/sqrt(2.0*pi*sigma*sigma)*exp(-( d2[idx3d(i,k,l,M,P)]-d1[idx3d(j,k,l,M,P)])*( d2[idx3d(i,k,l,M,P)]-d1[idx3d(j,k,l,M,P)])/(2.0*sigma*sigma))* 1.0/sqrt(2.0*pi*sigma*sigma)*exp(-( d4[idx3d(i,k,l,M,P)]-d3[idx3d(j,k,l,M,P)])*( d4[idx3d(i,k,l,M,P)]-d3[idx3d(j,k,l,M,P)])/(2.0*sigma*sigma));
-			}
-	}
-
-	res1[idx2d(i,j,N)] = x1;
-
-
-	}
-	""")
-
-
-
-	# prepare data
-
-	N1 = 400
-	N2 = N1
-	N3 = N1
-	N4 = N1
-
-	d1 = dataRef[0:N1,:,:].astype(float32)
-	d2 = array(theta1)[N1:(N1+N2),:,:].astype(float32)
-	d3 = dataY[0:N1,:,:].astype(float32)
-	d4 = array(theta2)[N1:(N1+N2),:,:].astype(float32)
-
-	d5 = dataRef[0:N1,:,:].astype(float32)
-	d6 = array(theta1)[(N1+N2):(N1+N2+N3),:,:].astype(float32)
-	d7 = dataY[0:N1,:,:].astype(float32)
-	d8 = array(theta2)[(N1+N2+N3):(N1+N2+N3+N4),:,:].astype(float32)
-
-	result1 = zeros([N1,N1]).astype(float32)
-	result2 = zeros([N1,N1]).astype(float32)
-	result3 = zeros([N1,N1]).astype(float32)
-
-	# split data to correct size to run on GPU
-	Max = 256.0
-	dist_gpu1 = mod.get_function("distance1")
-	dist_gpu2 = mod.get_function("distance2")
-
-	print dist_gpu1.num_regs
-
-	numRuns = int(ceil(N1/Max))
-	print "numRuns: ", numRuns
-
-	for i in range(numRuns):
-		for j in range(numRuns):
-
-			s = N1/numRuns
-			data1 = d1[(i*s):(i*s+s),:,:]
-			data2 = d2[(j*s):(j*s+s),:,:]
-			data3 = d3[(i*s):(i*s+s),:,:]
-			data4 = d4[(j*s):(j*s+s),:,:]
-
-			data5 = d5[(i*s):(i*s+s),:,:]
-			data6 = d6[(j*s):(j*s+s),:,:]
-			data7 = d7[(i*s):(i*s+s),:,:]
-			data8 = d8[(j*s):(j*s+s),:,:]
-
-
-			N=data1.shape[0]
-			M=data1.shape[1]
-			P=data1.shape[2]
-			res1 = zeros([N,N]).astype(float32)
-			res2 = zeros([N,N]).astype(float32)
-			res3 = zeros([N,N]).astype(float32)
-
-			# invoke kernel
-			if(N<15):
-				dist_gpu1(int32(N), int32(M), int32(P), float32(sigma), float32(pi), driver.In(data1), driver.In(data2), driver.In(data3), driver.In(data4), driver.Out(res1), block=(N,N,1), grid=(1,1))
-				dist_gpu2(int32(N), int32(M), int32(P), float32(sigma), float32(pi), driver.In(data5), driver.In(data6), driver.In(data7), driver.In(data8), driver.Out(res2), driver.Out(res3), block=(N,N,1), grid=(1,1))
-			else:
-				g = ceil(N/15.0)
-				dist_gpu1(int32(N), int32(M), int32(P), float32(sigma), float32(pi), driver.In(data1), driver.In(data2), driver.In(data3), driver.In(data4), driver.Out(res1), block=(15,15,1), grid=(int(g),int(g)))
-				dist_gpu2(int32(N), int32(M), int32(P), float32(sigma), float32(pi), driver.In(data5), driver.In(data6), driver.In(data7), driver.In(data8), driver.Out(res2), driver.Out(res3), block=(15,15,1), grid=(int(g),int(g)))
-
-
-			result1[(i*s):(i*s+s),(j*s):(j*s+s)] = res1
-			result2[(i*s):(i*s+s),(j*s):(j*s+s)] = res2
-			result3[(i*s):(i*s+s),(j*s):(j*s+s)] = res3
-
-
-	sum1 = 0.0
-	a1 = 0.0
-	a2 = 0.0
-	a3 = 0.0
-
-	counter = 0
-	for i in range(N1):
-		if(isinf(log(sum(result1[i,:])/N2)) or isinf(log(sum(result2[i,:])/N3)) or isinf(log(sum(result3[i,:])/N4))): counter=counter+1
-		else: sum1 = sum1 + log(sum(result1[i,:])/N2) - log(sum(result2[i,:])/N3) - log(sum(result3[i,:])/N4)
-
-		a1 = a1 + log(sum(result1[i,:])/N2)
-		a2 = a2 + log(sum(result2[i,:])/N3)
-		a3 = a3 + log(sum(result3[i,:])/N4)
-
-
-
-	print "a1: ", a1/float(i+1) , "a2: ", a2/float(i+1), "a3: ", a3/float(i+1)
-	print "all: ",  a1/float(i+1) - a2/float(i+1) - a3/float(i+1)
-
-	Info = sum1/float(N1)
-	print "counter: ", counter
 	return(Info)
