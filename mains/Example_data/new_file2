@@ -3,35 +3,43 @@
 <dt
 
 >particles
-1000
+10
 <particles
+
+>nsample
+2 5 3 0
+<nsample
+
+>sigma
+5.0
+<sigma
 
 >timepoint
 10 70 80 100 110
 <timepoint
 
 >samplefromposterior
-True
-sample.txt
-weights.txt
+False
+data_2.txt
+w_1.txt
 <samplefromposterior
 
 >initprior
-True
+False
 <initprior
 
 >prior
 constant 1 0
 uniform 1 10
 normal 10 1000
-lognormal 10 2000
+lognormal 2 5
 <prior
 
 >initials
 constant 1
 uniform 1 10
 normal 10 1000
-lognormal 10 2000
+lognormal 10 15
 constant 3.0
 constant 4.0
 <initials
@@ -44,7 +52,7 @@ All
 <fit
 
 >paramfit
-All
+parameter1 parameter2
 <paramfit
 
 >initialfit
@@ -75,12 +83,12 @@ constant 7.0
 <Initial Conditions 2
 
 >Initial Conditions 3
-constant 1
-uniform 1 10
-normal 10 1000
-lognormal 10 2000
-constant 3.0
+constant 2.0
+constant 9.0
 constant 4.0
+constant 5.0
+constant 6.0
+constant 7.0
 <Initial Conditions 3
 
 >Parameter - Experiment 1
@@ -112,5 +120,3 @@ alpha 7 5
 >combination
 All
 <combination
-
-

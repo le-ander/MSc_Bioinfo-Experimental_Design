@@ -24,7 +24,7 @@ def getSpeciesValue(species):
 
 
 
-def generateTemplate(source, filename="input_file", sumname="summary_file", dataname=None, inpath="", outpath=""):
+def generateTemplate(source, filename="input_file", sumname="summary_file", dataname=None, inpath="", outpath="",iname=""):
 
 	"""
 
@@ -129,7 +129,7 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 	if dataname != None:
 		have_data = True
 
-		data_file = open(dataname, 'r')
+		data_file = open(iname+"/"+dataname, 'r')
 		info = data_file.read()
 		data_file.close()
 
@@ -191,6 +191,7 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 			if init_prior == False:
 				init_list = init_regex.findall(info)
 				init_con = [k.split("\n") for k in init_list]
+				fit_init = "None"
 
 			####obtain prior distributions of initial condition
 			elif init_prior == True:
@@ -351,7 +352,7 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 	out_file.write(" </paramfit>\n\n")
 
 	out_file.write("<initfit> ")
-	
+
 	out_file.write(fit_init)
 	out_file.write(" </initfit>\n\n")
 

@@ -467,7 +467,7 @@ class algorithm_info:
 			print "\n"
 
 
-	def THETAS(self, sampleFromPost="", weight="", inputpath="", usesbml = False, init_condit = False):
+	def THETAS(self, inputpath="", usesbml = False):
 		#create array which holds parameters
 		if self.ncompparams_all!=0:
 			usesbml = True
@@ -500,7 +500,7 @@ class algorithm_info:
 					print " Prior distribution not defined for parameters"
 					sys.exit()
 
-			if init_condit == True:
+			if self.initialprior == True:
 
 				species = numpy.zeros([self.particles,self.nspecies_all])  # number of repeats x species in system
 
@@ -576,7 +576,7 @@ class algorithm_info:
 		elif self.sampleFromPost==True:
 			#obtain Thetas from posterior sample and associated weights
 			######Reading in sample from posterior#####
-			infileName = inputpath+sampleFromPost
+			infileName = inputpath+"/"+self.post_sample_file
 			in_file=open(infileName, "r")
 			param=[]
 			counter=0
@@ -589,7 +589,7 @@ class algorithm_info:
 			in_file.close
 
 			######Reading in weigths associated to sample from posterior#####
-			infileName = inputpath+weight
+			infileName = inputpath+"/"+self.post_weight_file
 			in_file=open(infileName, "r")
 			weights=[]
 			counter2=0
@@ -634,17 +634,17 @@ class algorithm_info:
 			params_final = numpy.concatenate((paramsN3,)*self.N1sample,axis=0)
 			
 			for j in range(0,self.N1sample):
-				for i in self.fitParams:
+				for i in self.param_fit:
 					params_final[range((j*self.N3sample),((j+1)*self.N3sample)),i] = parameters[j,i]
 
 			parameters = numpy.concatenate((parameters[range(self.particles-self.N3sample),:],params_final),axis=0)
 			
-			if init_condit == True:
+			if self.initialprior == True:
 				speciesN3 = species[(self.particles-self.N3sample):,:]
 				species_final = numpy.concatenate((speciesN3,)*self.N1sample,axis=0)
 
 				for j in range(0,self.N1sample):
-					for i in self.fitICs:
+					for i in self.init_fit:
 						species_final[range((j*self.N3sample),((j+1)*self.N3sample)),i] = species[j,i]
 
 				species = numpy.concatenate((species[range(self.particles-self.N3sample),:],species_final),axis=0)
@@ -656,7 +656,7 @@ class algorithm_info:
 				compsN3 = compartments[(self.particles-self.N3sample):,:]
 				comp_final = numpy.concatenate((compsN3,)*self.N1sample,axis=0)
 				for j in range(0,self.N1sample):
-					for i in self.fitComps:
+					for i in self.comp_fit:
 						comp_final[range((j*self.N3sample),((j+1)*self.N3sample)),i] = compartments[j,i]
 
 				compartments = numpy.concatenate((compartments[range(self.particles-self.N3sample),:],comp_final),axis=0)
@@ -665,7 +665,12 @@ class algorithm_info:
 			self.compsSample = compartments
 
 		self.parameterSample = parameters
-		self.speciesSample = species
+
+		if self.initialprior == False:
+			self.speciesSample = numpy.concatenate(tuple(species),axis=0)
+		else:
+			self.speciesSample = species
+
 	
 	def getAnalysisType(self,analysisType):
 		self.analysisType = analysisType

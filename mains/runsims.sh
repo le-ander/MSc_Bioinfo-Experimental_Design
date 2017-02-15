@@ -56,5 +56,12 @@ $python_exe -u $entBio_exe -i input_file_repressilator.xml -of=results_1 -cu -lc
 #$python_exe $test_exe -a 0 -of=results -i1 rep_test.xml rep_test.xml -i2 test_data.txt test_data.txt -p 10 -ic 10 -s 01 -lc 11
 #$python_exe $test_exe -a 0 -of=results -i1 rep_test_1.xml rep_test_2.xml rep_test_3.xml rep_test_4.xml -i2 new_file2 new_file2 new_file2 new_file2 -p 1010 -ic 1100 -s 0001 -lc 0000
 
-#/cluster/home/saw112/work/git_group_project/Example_data/rep_test.xml
-#/cluster/home/saw112/work/git_group_project/Example_data/new_file2
+#Example_data/rep_test.xml
+#Example_data/new_file2
+
+
+#$python_exe $test_exe -a 0 -of=results -i1 rep_test.xml -i2 new_file2 -p 1 -ic 1 -lc 0
+
+#For 2d reduction kernel
+#http://stackoverflow.com/questions/31706599/how-to-perform-reduction-on-a-huge-2d-matrix-along-the-row-direction-using-cuda
+#http://stackoverflow.com/questions/17862078/reduce-matrix-rows-with-cuda?noredirect=1&lq=1

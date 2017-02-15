@@ -15,19 +15,19 @@ from numpy import *
 
 def main():
 	# Calls error_checker - reads in command line arguments and does some basic error checks
-	input_file_SBMLs, input_file_datas, analysis, fname, usesbml, parameter_change, init_condit, Nsamples = error_check.input_checker(sys.argv,0)
+	input_file_SBMLs, input_file_datas, analysis, fname, usesbml, parameter_change, init_condit, iname = error_check.input_checker(sys.argv,0)
 	# Calls SBML_checker - checks all the SBML files that have been inputted
-	SBML_check.SBML_checker([input_file_SBMLs[i] for i, value in enumerate(usesbml) if value=="0"])
+	SBML_check.SBML_checker([iname+"/"+input_file_SBMLs[i] for i, value in enumerate(usesbml) if value=="0"])
 	# Unpacks the following four command line arguments - each element corresponds to each SBML and data file pair 
 	usesbml=[not(bool(int(i))) for i in list(usesbml)]
 	parameter_change=[int(i) for i in list(parameter_change)]
-	init_condit=[int(i) for i in list(init_condit)]
+	#init_condit=[int(i) for i in list(init_condit)]
 	# Calls sorting_files which creates new SBML files for new experiments and creates CUDA code from SBML files if necessary
 
 	for i in range(0,len(input_file_SBMLs)):
-		sorting_files(input_file_SBMLs[i],input_file_datas[i],analysis,fname,usesbml[i], parameter_change[i], init_condit[i], Nsamples)
+		sorting_files(input_file_SBMLs[i],input_file_datas[i],analysis,fname,usesbml[i], parameter_change[i], init_condit[i], iname)
 
-def sorting_files(input_file_SBML, input_file_data, analysis, fname, usesbml, parameter_change, init_condit, Nsamples):
+def sorting_files(input_file_SBML, input_file_data, analysis, fname, usesbml, parameter_change, init_condit, iname):
 	# Used to remove the .xml at the end of the file if present to name directories
 	input_file_SBML_name = input_file_SBML
 	if input_file_SBML_name[-4:]==".xml":
@@ -55,7 +55,7 @@ def sorting_files(input_file_SBML, input_file_data, analysis, fname, usesbml, pa
 
 		if parameter_change == True:
 			# Creates SBML files corresponding to changes in parameters and initial conditions
-			no_exp = SBML_check.SBML_reactionchanges(input_file_SBML, inPath,input_file_data)
+			no_exp = SBML_check.SBML_reactionchanges(input_file_SBML, iname, inPath,input_file_data)
 			print "-----Creating CUDA code-----"
 			for i in range(0,no_exp):
 				input_files_SBML.append("Exp_" + repr(i+1) + ".xml")
@@ -91,9 +91,9 @@ def sorting_files(input_file_SBML, input_file_data, analysis, fname, usesbml, pa
 		exp_xml_files = os.listdir(inPath)
 		
 		print "-----Input XML file-----"
-		input_file_parser_new_2.generateTemplate(exp_xml_files, "input_xml", "summmary", input_file_data, inpath = inPath, outpath= xml_out, init_prior=init_condit)
+		comb_list = input_file_parser_new_2.generateTemplate(exp_xml_files, "input_xml", "summmary", input_file_data, inpath = inPath, outpath= xml_out, iname=iname)
 		
-		input_xml="/input_xml.xml"
+		input_xml="/input_xml"
 
 	elif usesbml == False:
 		outPath=""
@@ -102,12 +102,10 @@ def sorting_files(input_file_SBML, input_file_data, analysis, fname, usesbml, pa
 		input_xml=input_file_SBML_name
 
 	print "-----Creating object from input XML file-----"
-	sbml_obj = parse_infoEnt_new_2.algorithm_info(xml_out+input_xml+".xml",0)
-
+	sbml_obj = parse_infoEnt_new_2.algorithm_info(xml_out+input_xml+".xml", 0, comb_list)
 	print "-----Sampling from prior-----"
 	sbml_obj.getAnalysisType(analysis)
-	sbml_obj.getSampleSizes(N1=Nsamples[0],N2=Nsamples[1],N3=Nsamples[2],N4=Nsamples[3])
-	sbml_obj.THETAS(sampleFromPost="data_2.txt",weight="w_1.txt", usesbml=usesbml, init_condit = init_condit)
+	sbml_obj.THETAS(inputpath=iname, usesbml=usesbml)
 	
 main()
 

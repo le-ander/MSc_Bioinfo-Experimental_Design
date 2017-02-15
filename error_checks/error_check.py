@@ -87,16 +87,11 @@ def input_checker(sys_arg,mode):
 				print ""
 			elif option == "params":
 				parameter_change = sys_arg[i+1]
-			elif option == "N1sample":
-				Nsamples[0] = int(sys_arg[i+1])
-			elif option == "N2sample":
-				Nsamples[1] = int(sys_arg[i+1])
-			elif option == "N3sample":
-				Nsamples[2] = int(sys_arg[i+1])
-			elif option == "N4sample":
-				Nsamples[3] = int(sys_arg[i+1])
 			elif option == "init":
 				init_condit = sys_arg[i+1]
+			elif option[0:9] == "infolder=":
+				iname = option[9:]
+				print "Input file destination: " + iname + "\n"
 			elif not(sys_arg[i-1][2:] == 'infile_SBML'): 
 				print "\nunknown option "+sys_arg[i]
 				printOptions()
@@ -150,14 +145,9 @@ def input_checker(sys_arg,mode):
 				parameter_change = sys_arg[i+1]
 			elif option == "ic":
 				init_condit = sys_arg[i+1]
-			elif option == "N1":
-				Nsamples[0] = int(sys_arg[i+1])
-			elif option == "N2":
-				Nsamples[1] = int(sys_arg[i+1])
-			elif option == "N3":
-				Nsamples[2] = int(sys_arg[i+1])
-			elif option == "N4":
-				Nsamples[3] = int(sys_arg[i+1])
+			elif option[0:3] == "if=":
+				iname = option[3:]
+				print "Input file destination: " + iname + "\n"
 			elif not(sys_arg[i-1][2:] == 'i1'): 
 				print "\nunknown option "+sys_arg[i]
 				printOptions()
@@ -178,4 +168,4 @@ def input_checker(sys_arg,mode):
 	if not(os.path.isdir("./"+fname)):
 		os.mkdir(fname)
 
-	return input_file_SBML, input_file_data, analysis, fname, usesbml, parameter_change, init_condit, Nsamples
+	return input_file_SBML, input_file_data, analysis, fname, usesbml, parameter_change, init_condit, iname

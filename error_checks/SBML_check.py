@@ -15,9 +15,9 @@ def SBML_checker(input_files):
 	if tot_errors > 0:
 		sys.exit()
 
-def SBML_reactionchange(input_file, lines, param_to_change, mult_fact, param_reaction, nu, dest=""):
+def SBML_reactionchange(input_file, lines, param_to_change, mult_fact, param_reaction, nu, dest="", inpath=""):
 	reader = SBMLReader()
-	SBML_master = reader.readSBML(input_file)
+	SBML_master = reader.readSBML(inpath+"/"+input_file)
 	for i, reaction_no in enumerate(param_reaction):
 		reaction = formulaToString(SBML_master.getModel().getListOfReactions()[reaction_no-1].getKineticLaw().getMath())
 		temp = re.sub(param_to_change[i] + " ",mult_fact[i]+" * "+param_to_change[i] + " ",reaction + " ")
@@ -31,8 +31,8 @@ def SBML_reactionchange(input_file, lines, param_to_change, mult_fact, param_rea
 	#	SBML_initialcond(nu, input_file,SBML_master,lines,dest)
 
 
-def SBML_reactionchanges(input_file, fname="", param_changes=""):
-	change_params=open(param_changes,'r')
+def SBML_reactionchanges(input_file, inpath="", fname="", param_changes=""):
+	change_params=open(inpath+"/"+param_changes,'r')
 	data = change_params.read()
 	#change_params.seek(0)
 	#all_lines = [i.rstrip() for i in change_params.readlines()]
@@ -46,7 +46,7 @@ def SBML_reactionchanges(input_file, fname="", param_changes=""):
 
 	start_point = 0
 	if lines[0]=='Unchanged':
-		copyfile(input_file,fname + "/Exp_1.xml")
+		copyfile(inpath+"/"+input_file,fname + "/Exp_1.xml")
 		start_point = 1
 
 	for i, start in enumerate(lines[start_point:]):
@@ -59,7 +59,7 @@ def SBML_reactionchanges(input_file, fname="", param_changes=""):
 			param_to_change.append(el_temp[0])
 			mult_fact.append(el_temp[1])
 			param_reaction.append(int(el_temp[2]))
-		SBML_reactionchange(input_file, data, param_to_change,mult_fact,param_reaction,exp_list[i+start_point], dest=fname)
+		SBML_reactionchange(input_file, data, param_to_change,mult_fact,param_reaction,exp_list[i+start_point], dest=fname, inpath = inpath)
 
 	return len(lines)
 
