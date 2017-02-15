@@ -648,7 +648,7 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 
 
 	else:
-		comb=[]
+		
 		for j in range (0, len(fit_species)):
 			for h  in range(0, len(init_con)):
 
