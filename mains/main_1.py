@@ -3,8 +3,10 @@ import os
 from shutil import copyfile
 import re
 sys.path.insert(0, '/cluster/home/saw112/work/git_group_project/error_checks')
-#sys.path.insert(0, '/cluster/home/saw112/work/Test_code/sampleprior')
+sys.path.insert(0, '/cluster/home/saw112/work/git_group_project/simulations')
 #import obtain_thetas
+import simulation_functions
+import organiser
 import error_check
 import cudacodecreater
 import SBML_check
@@ -105,8 +107,13 @@ def sorting_files(input_file_SBML, input_file_data, analysis, fname, usesbml, pa
 	sbml_obj = parse_infoEnt_new_2.algorithm_info(xml_out+input_xml+".xml", 0, comb_list)
 	print "-----Sampling from prior-----"
 	sbml_obj.getAnalysisType(analysis)
-	sbml_obj.THETAS(inputpath=iname, usesbml=usesbml)
-	
+	sbml_obj.THETAS(inputpath=iname, usesbml=usesbml, pairings=comb_list)
+	print "-----Running CUDA-Sim-----"
+	pairings = organiser.organisePairings(sbml_obj, comb_list)
+
+	#print sbml_obj.speciesSample
+	#print set(sbml_obj.cuda)
+	#print comb_list
 main()
 
 #info_new = error_check.parse_infoEnt.algorithm_info("input_file_repressilator.xml", 0)

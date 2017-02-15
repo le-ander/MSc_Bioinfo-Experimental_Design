@@ -118,5 +118,10 @@ alpha 7 5
 
 
 >combination
-All
+initset1 paramexp2 fit2
+initset3 paramexp4 fit3
+initset2 paramexp3 fit1
+initset3 paramexp1 fit3
+initset2 paramexp1 fit3
+initset2 paramexp4 fit3
 <combination

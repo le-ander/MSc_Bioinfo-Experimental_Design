@@ -467,7 +467,7 @@ class algorithm_info:
 			print "\n"
 
 
-	def THETAS(self, inputpath="", usesbml = False):
+	def THETAS(self, inputpath="", usesbml = False, pairings = []):
 		#create array which holds parameters
 		if self.ncompparams_all!=0:
 			usesbml = True
@@ -529,11 +529,17 @@ class algorithm_info:
 
 			else:
 
-				x0prior_uniq = [self.x0prior[0]]
-				for ic in self.x0prior[1:]:
-					if ic not in x0prior_uniq:
-						x0prior_uniq.append(ic)
+				temp = dict(zip((tuple(y) for y in pairings), self.x0prior))
+				temp_uniq = {temp.keys()[0]:temp.values()[0]}
 
+				for key, value in temp.iteritems():
+					if value not in temp_uniq.values():
+						temp_uniq[key] = value
+
+				x0prior_uniq = [""]*len(temp_uniq)
+				
+				for key ,value in temp_uniq.iteritems():
+					x0prior_uniq[key[0]]=value
 
 				species = [numpy.zeros([self.particles,self.nspecies_all]) for x in range(len(x0prior_uniq))]  # number of repeats x species in system
 
