@@ -22,61 +22,6 @@ import time
 import sys
 sys.path.insert(0, ".")
 
-def run_cudasim(m_object, parameters, species):
-	modelTraj = []
-	##Should run over cudafiles
-	# Define CUDA filename for cudasim
-	cudaCode = m_object.name[0] + '.cu'
-	# Create ODEProblem object
-	modelInstance = Lsoda.Lsoda(m_object.times, cudaCode, dt=m_object.dt)
-	# Solve ODEs using Lsoda algorithm
-	##Different parameters and species matrices for i in nmodels?
-	result = modelInstance.run(parameters, species)
-	modelTraj.append(result[:,0])
-
-	return modelTraj
-
-def remove_na(m_object, modelTraj):
-	# Create a list of indices of particles that have an NA in their row
-	##Why using 7:8 when summing? -> Change this
-	index = [p for p, i in enumerate(isnan(sum(asarray(modelTraj[0])[:,7:8,:],axis=2))) if i==True]
-	# Delete row of 1. results and 2. parameters from the output array for which an index exists
-	for i in index:
-		delete(modelTraj[mod], (i), axis=0)
-
-	return modelTraj
-
-def add_noise_to_traj(m_object, modelTraj, sigma, N1):##Need to ficure out were to get N1 from
-	ftheta = []
-	# Create array with noise of same size as the trajectory array (only the first N1 particles)
-	noise = normal(loc=0.0, scale=sigma,size=shape(modelTraj[0][0:N1,:,:]))
-	# Add noise to trajectories and output new 'noisy' trajectories
-	traj = array(modelTraj[0][0:N1,:,:]) + noise
-	ftheta.append(traj)
-
-	# Return final trajectories for 0:N1 particles
-	return ftheta
-
-def scaling(modelTraj, ftheta, sigma):
-	maxDistTraj = max([math.fabs(amax(modelTraj) - amin(ftheta)),math.fabs(amax(ftheta) - amin(modelTraj))])
-
-	preci = pow(10,-34)
-	FmaxDistTraj = 1.0*exp(-(maxDistTraj*maxDistTraj)/(2.0*sigma*sigma))
-
-	if(FmaxDistTraj<preci):
-		scale = pow(1.79*pow(10,300),1.0/(ftheta[0].shape[1]*ftheta[0].shape[2]))
-	else:
-		scale = pow(preci,1.0/(ftheta[0].shape[1]*ftheta[0].shape[2]))*1.0/FmaxDistTraj
-
-	return scale
-
-def pickle_object(object):
-	pickle.dump(object, open("save_point.pkl", "wb"))
-
-def unpickle_object(filename="savepoint.pkl"):
-	object = pickle.load(open(filename, "rb"))
-
-	return object
 
 def get_mutinf_all_param(m_object, ftheta, N1, N2, sigma, modelTraj, scale):
 	MutInfo1 = []
