@@ -648,10 +648,12 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 
 
 	else:
+		comb=[]
 		for j in range (0, len(fit_species)):
 			for h  in range(0, len(init_con)):
 
 				for i in range(0,len(source)):
+					comb.append([h,i,j])	
 					sum_file.write("Model "+repr(i+1+h*len(source)+j*len(source)*len(init_con))+"\n")
 					sum_file.write("name: model"+repr(i+1+h*len(source)+j*len(source)*len(init_con))+"\nsource: "+source[i]+"\n\n")
 
