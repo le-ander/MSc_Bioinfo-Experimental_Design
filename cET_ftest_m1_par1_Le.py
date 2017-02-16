@@ -141,8 +141,7 @@ def saveResults(result,outfile):
 
 
 
-def getEntropy3(data,N1,N2,N3,sigma,theta,maxDistTraj):
-
+def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 	#kernel declaration
 	mod = compiler.SourceModule("""
 	__device__ unsigned int idx3d(int i, int k, int l, int M, int P)
@@ -157,13 +156,7 @@ def getEntropy3(data,N1,N2,N3,sigma,theta,maxDistTraj):
 
 	}
 
-	__device__ unsigned int idx2d2(int k, int l, int P)
-	{
-		return k*P + l;
-
-	}
-
-	__global__ void distance1(int Ni, int Nj, int M, int P, float sigma, float pi, double a, double *d1, double *d2, double *res1)
+	__global__ void distance1(int Ni, int Nj, int M, int P, float sigma, double scale, double *d1, double *d2, double *res1)
 	{
 	int i = threadIdx.x + blockDim.x * blockIdx.x;
 	int j = threadIdx.y + blockDim.y * blockIdx.y;
@@ -174,224 +167,171 @@ def getEntropy3(data,N1,N2,N3,sigma,theta,maxDistTraj):
 	x1 = 0.0;
 	for(int k=0; k<M; k++){
 			for(int l=0; l<P; l++){
-				   x1 = x1 + log(a) - ( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])/(2.0*sigma*sigma);
+				x1 = x1 + log(scale) - ( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])/(2.0*sigma*sigma);
 			}
 	}
 
 	res1[idx2d(i,j,Nj)] = exp(x1);
 	}
 
-
-
-
-
-	__global__ void distance2(int Ni, int M, int P, float sigma, float pi, double a, double *d1, double *d2, double *res1)
+	__global__ void distance2(int Nj, int M, int P, float sigma, double scale, double *d1, double *d3, double *res2)
 	{
-	int i = threadIdx.x + blockDim.x * blockIdx.x;
+	int j = threadIdx.y + blockDim.y * blockIdx.y;
 
-	if(i>=Ni) return;
+	if(j>=Nj) return;
 
 	double x1;
 	x1 = 0.0;
 	for(int k=0; k<M; k++){
 			for(int l=0; l<P; l++){
-				   x1 = x1 + log(a) - ( d2[idx3d(i,k,l,M,P)]-d1[idx2d2(k,l,P)])*( d2[idx3d(i,k,l,M,P)]-d1[idx2d2(k,l,P)])/(2.0*sigma*sigma);
+				x1 = x1 + log(scale) - ( d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])*(d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])/(2.0*sigma*sigma);
 			}
 	}
 
-	res1[i] = exp(x1);
+	res2[j] = exp(x1);
 	}
 	""")
 
-
-	# prepare data for part A
-
-	d1 = data[0:N1,:,:].astype(float64)
-	print "s1:",shape(d1)
-	d3 = array(theta)[N1:(N1+N3),:,:].astype(float64)
-	print "s3:",shape(d3)
-
-	print "shape imp:", shape(d1)
-	# split data to correct size to run on GPU
-	Max = 256.0
+	# Assigning main kernel function to a variable
 	dist_gpu1 = mod.get_function("distance1")
-	print "registers: ", dist_gpu1.num_regs
 
-	preci = pow(10,-34)
-	FmaxDistTraj = 1.0*exp(-(maxDistTraj*maxDistTraj)/(2.0*sigma*sigma))
-	print "FmaxDistTraj:",FmaxDistTraj
-	if(FmaxDistTraj<preci):
-		a = pow(1.79*pow(10,300),1.0/(d1.shape[1]*d1.shape[2]))
-	else:
-		a = pow(1.79*pow(10,300),1.0/(d1.shape[1]*d1.shape[2]))
-	print "preci:", preci, "a:",a
+	##should be defined as an int, can then clean up formulas further down
+	gridmax = 256.0 # Define square root of maximum threads per grid
+	blockmax = 16.0 # Maximum threads per block
 
-	numRuns = int(ceil(N1/Max))
-	print "numRuns: ", numRuns
+	# Determine required number of runs for i and j
+	##need float here?
+	numRuns_i = int(ceil(N1/float(gridmax)))
+	numRuns_j = int(ceil(N2/float(gridmax)))
 
-	result2 = zeros([N1,numRuns])
-	countsi = 0
-	for i in range(numRuns):
-		print "runs left:", numRuns - i
+	res_t2 = zeros([N1,numRuns_j])
 
-		si = int(Max)
-		sj = int(Max)
+	# Prepare data
+	d1 = data[0:N1,:,:].astype(float64)
+	d2 = array(theta)[N1:(N1+N2),:,:].astype(float64)
 
-		s = int(Max)
-		if((s*(i+1)) > N1):
-			si = int(N1 - Max*i)
-		countsj = 0
-		for j in range(numRuns):
+	M = d1.shape[1] # number of timepoints
+	P = d1.shape[2] # number of species
 
-			if((s*(j+1)) > N1):
-				sj = int(N1 - Max*j)
+	Ni = int(gridmax)
 
-			data1 = d1[(i*int(Max)):(i*int(Max)+si),:,:]
-			data3 = d3[(j*int(Max)):(j*int(Max)+sj),:,:]
 
-			Ni=data1.shape[0]
-			Nj=data3.shape[0]
+	for i in range(numRuns_i):
+		print "Runs left:", numRuns_i - i
+		if((int(gridmax)*(i+1)) > N1): # If last run with less that max remaining trajectories
+			Ni = int(N1 - gridmax*i) # Set Ni to remaining number of particels
 
-			M=data1.shape[1]
-			P=data1.shape[2]
-			res1 = zeros([Ni,Nj]).astype(float64)
+		if(Ni<blockmax):
+			gi = 1  # Grid size in dim i
+			bi = Ni # Block size in dim i
+		else:
+			gi = ceil(Ni/blockmax)
+			bi = blockmax
 
-			# invoke kernel
-			R = 15.0
-#           print "Ni:",Ni,"Nj:",Nj
-			if(Ni<R):
-				gi = 1
-				bi = Ni
+		data1 = d1[(i*int(gridmax)):(i*int(gridmax)+Ni),:,:] # d1 subunit for the next j runs
+
+		Nj = int(gridmax)
+		print "LOGSCALE", log(scale)
+
+
+		for j in range(numRuns_j):
+			if((int(gridmax)*(j+1)) > N2): # If last run with less that max remaining trajectories
+				Nj = int(N2 - gridmax*j) # Set Nj to remaining number of particels
+
+			data2 = d2[(j*int(gridmax)):(j*int(gridmax)+Nj),:,:] # d2 subunit for this run
+
+			##could move into if statements (only if ni or nj change)
+			res1 = zeros([Ni,Nj]).astype(float64) # results vector [shape(data1)*shape(data2)]
+
+			if(Nj<blockmax):
+				gj = 1  # Grid size in dim j
+				bj = Nj # Block size in dim j
 			else:
-				bi = R
-				gi = ceil(Ni/R)
-			if(Nj<R):
-				gj = 1
-				bj = Nj
-			else:
-				bj = R
-				gj = ceil(Nj/R)
-
-			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float32(pi), float64(a), driver.In(data1), driver.In(data3),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
-
-
-
-			for k in range(si):
-				result2[(i*int(Max)+k),j] = sum(res1[k,:])
-			countsj = countsj+sj
-		countsi = countsi+si
-
-
+				gj = ceil(Nj/blockmax)
+				bj = blockmax
+			print "dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale),int(bi),int(bj),int(gi),int(gj)",int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale),int(bi),int(bj),int(gi),int(gj)
+			# Invoke GPU calculations (takes data1 and data2 as input, outputs res1)
+			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+			print res1
+			# First summation (could be done on GPU?)
+			for k in range(Ni):
+				res_t2[(i*int(gridmax)+k),j] = sum(res1[k,:])
+			#print res_t2
 	sum1 = 0.0
-	counter = 0
-	counter2 = 0
+	count_na = 0
+	count_inf = 0
 
 	for i in range(N1):
-		if(isnan(sum(result2[i,:]))): counter=counter+1
-		if(isinf(log(sum(result2[i,:])))): counter2=counter2+1
+		if(isnan(sum(res_t2[i,:]))): count_na += 1
+		elif(isinf(log(sum(res_t2[i,:])))): count_inf += 1
 		else:
-			  sum1 = sum1 + log(sum(result2[i,:])) - log(float(N3)) - M*P*log(a) -  M*P*log(2.0*pi*sigma*sigma)
-
+			sum1 += log(sum(res_t2[i,:])) - log(float(N2)) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
+	print count_na, count_inf
+	print "SUM1", sum1
 
 ######## part A finished with results saved in sum1
 
-	# prepare data for part B
-
-	d1 = data[0:N1,:,:].astype(float64)
-	print "s1:",shape(d1)
-	d2 = array(theta)[(N1+N3):(N1+N3+N1*N2),:,:].astype(float64)
-	print "s2:",shape(d2)
-
-	print "shape imp:", shape(d1)
-	# split data to correct size to run on GPU
-	Max = 256.0
 	dist_gpu2 = mod.get_function("distance2")
-	print "registers: ", dist_gpu2.num_regs
 
-	preci = pow(10,-34)
-	FmaxDistTraj = 1.0*exp(-(maxDistTraj*maxDistTraj)/(2.0*sigma*sigma))
-	print "FmaxDistTraj:",FmaxDistTraj
-	if(FmaxDistTraj<preci):
-		a = pow(1.79*pow(10,300),1.0/(d1.shape[1]*d1.shape[2]))
-	else:
-		a = pow(1.79*pow(10,300),1.0/(d1.shape[1]*d1.shape[2]))
-	print "preci:", preci, "a:",a
+	##need this defined again here??
+	gridmax = 256.0
+	blockmax = 15.0
 
+	numRuns_j2 = int(ceil(N3/gridmax))
 
-	result2 = zeros([N1,numRuns])
-	numRuns = int(ceil(N2/Max))
-	print "numRuns: ", numRuns
+	res_t2 = zeros([N1,numRuns_j2])
 
-	for N1i in range(N1):
+	d3 = array(theta)[(N1+N2):(N1+N2+N1*N3),:,:].astype(float64)
 
-
-		countsi = 0
-		for i in range(numRuns):
-  #         print "runs left:", numRuns - i
-
-			si = int(Max)
-
-			s = int(Max)
-			if((s*(i+1)) > N1):
-				si = int(N1 - Max*i)
-
-
-			data2 = d2[(N1i*N2+i*int(Max)):(N1i*N2+i*int(Max)+si),:,:]
-			data1 = d1[N1i,:,:]
-
-			Ni=data2.shape[0]
-
-			M=data2.shape[1]
-			P=data2.shape[2]
-			resB1 = zeros([Ni]).astype(float64)
-
-			# invoke kernel
-			R = 15.0
-#           print "Ni:",Ni,"Nj:",Nj
-			if(Ni<R):
-				gi = 1
-				bi = Ni
-			else:
-				bi = R
-				gi = ceil(Ni/R)
-
-
-			dist_gpu2(int32(Ni), int32(M), int32(P), float32(sigma), float32(pi), float64(a), driver.In(data1), driver.In(data2),  driver.Out(resB1), block=(int(bi),1,1), grid=(int(gi),1))
-
-
-			result2[N1i,i] = sum(resB1[:])
-			countsi = countsi+si
-
-
-	sumB1 = 0.0
-	counter = 0
-	counter2 = 0
+	print "DATA", shape(d1), shape(d3), gridmax, scale, shape(res_t2), numRuns_j2, N1
 
 	for i in range(N1):
-		if(isnan(sum(result2[i,:]))): counter=counter+1
-		if(isinf(log(sum(result2[i,:])))): counter2=counter2+1
+
+		data1 = d1[i,:,:]
+
+		Nj = int(gridmax)
+
+		for j in range(numRuns_j2):
+			#print "runs left:", numRuns_j2 - j
+
+			if((int(gridmax)*(j+1)) > N3):
+				Nj = int(N3 - gridmax*j)
+
+			data3 = d3[(i*N3+j*int(gridmax)):(i*N3+j*int(gridmax)+Nj),:,:]
+
+			res2 = zeros([Nj]).astype(float64)
+
+			if(Nj<blockmax):
+				gj = 1
+				bj = Nj
+			else:
+				gj = ceil(Nj/blockmax)
+				bj = blockmax
+
+			print int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), int(bj),int(gj)
+
+			dist_gpu2(int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data3),  driver.Out(res2), block=(1,int(bj),1), grid=(1,int(gj)))
+
+			res_t2[i,j] = sum(res2[:])
+
+	sumstatic = 0.0
+	sum2 = 0.0
+	count2_na = 0
+	count2_inf = 0
+
+	for i in range(N1):
+		if(isnan(sum(res_t2[i,:]))): count2_na += 1
+		elif(isinf(log(sum(res_t2[i,:])))): count2_inf += 1
 		else:
-			  sumB1 = sumB1 + log(sum(result2[i,:])) - log(float(N2)) - M*P*log(a) -  M*P*log(2.0*pi*sigma*sigma)
+			sum2 += log(sum(res_t2[i,:])) - log(float(N3)) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
+			sumstatic += - log(float(N3)) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
+	print "COUNTER", count2_na, count2_inf
+	print "SUM2", sum2
+	print "sumstatic", sumstatic
+	######## part B finished with results saved in sum2
 
-
-
-
-######## part B finished with results saved in sumB1
-
-	print "sumB1: ",sumB1/float(N1), "sum1: ", sum1/float(N1)
-	Info = (sumB1 - sum1)/float(N1)
-
-	print "counter: ",counter,"counter2: ",counter2
-
- #   saveResults(result2,"distances.txt")
-
-	out = open('results','w')
-
-	print >>out, "counter: ",counter
-	print >>out, "mutual info: ", Info
-
-	out.close()
-
+	Info = (sum2 - sum1)/float(N1 - count_na - count_inf - count2_na - count2_inf)
+	print "DIST_GPU2.NUM_REGS", dist_gpu2.num_regs
 	return(Info)
 
 
@@ -428,6 +368,21 @@ def printOptions():
 	print "\n-h\t--help\t\t print this list of options."
 
 	print "\n"
+
+
+def scaling(modelTraj, ftheta, sigma):
+	maxDistTraj = max([math.fabs(amax(modelTraj) - amin(ftheta)),math.fabs(amax(ftheta) - amin(modelTraj))])
+
+	preci = pow(10,-34)
+	FmaxDistTraj = 1.0*exp(-(maxDistTraj*maxDistTraj)/(2.0*sigma*sigma))
+
+	if(FmaxDistTraj<preci):
+		scale = pow(1.79*pow(10,300),1.0/(ftheta[0].shape[1]*ftheta[0].shape[2]))
+	else:
+		scale = pow(preci,1.0/(ftheta[0].shape[1]*ftheta[0].shape[2]))*1.0/FmaxDistTraj
+
+	return scale
+
 
 
 def main():
@@ -622,9 +577,9 @@ def main():
 		accepted = 0
 
 
-		N1 = 500
-		N2 = 500
-		N3 = 500
+		N1 = 100
+		N2 = 100
+		N3 = 100
 		indexTheta = 0
 
 		while(accepted<(N1+N3+N1*N2)):
@@ -752,15 +707,12 @@ def main():
 	print "sigma: ",sigma
 
 	ftheta = []
-	maxDistTraj = []
 	for mod in range(info_new.nmodels):
 		print shape(modelTraj[mod][1])
 		trajTemp = array(modelTraj[mod][1])[:,:,0:1]
 		print "shape traj:", shape(trajTemp)
 		noise = normal(loc=0.0, scale=sigma,size=((N1+N3+N1*N2),len(info_new.times),shape(trajTemp)[2]))
 		temp = trajTemp[:,:,:] + noise
-		maxDistTraj.append(amax(temp) - amin(temp))
-		print "maxDistTraj:", maxDistTraj
 		ftheta.append(temp)
 
 
@@ -768,59 +720,23 @@ def main():
 	print("Simulation done")
 	print "------------------------ "
 	print " "
+	print "SHAPE FTHETA[0]", ftheta[0].shape
+	print "SHAPE modeltraj", array(modelTraj[0][1]).shape
 
-
-	# compute I(theta,x)
-	print("Mutual information calculation 3... ")
-
-	MutInfo3 = []
-	for mod in range(info_new.nmodels):
-
-		MutInfo3.append(getEntropy3(ftheta[mod],N1,N2,N3,sigma,array(modelTraj[mod][1])[:,:,0:1],maxDistTraj[mod]))
-		print "I(theta_i,X",mod+1,") = ", MutInfo3[mod]
-
-
-	print "----------------------------------------------------------------------------------------------- "
-
-	sigma = 0.1
-	print "%%%%%%%%%%%%%%%%%%%%"
-	print "sigma: ",sigma
-
-	ftheta = []
-	maxDistTraj = []
-	for mod in range(info_new.nmodels):
-		print shape(modelTraj[mod][1])
-		trajTemp = array(modelTraj[mod][1])[:,:,0:1]
-		print "shape traj:", shape(trajTemp)
-		noise = normal(loc=0.0, scale=sigma,size=((N1+N3+N1*N2),len(info_new.times),shape(trajTemp)[2]))
-		temp = trajTemp[:,:,:] + noise
-		maxDistTraj.append(amax(temp) - amin(temp))
-		print "maxDistTraj:", maxDistTraj
-		ftheta.append(temp)
-
-
-
-	print("Simulation done")
-	print "------------------------ "
-	print " "
-
+	scale = scaling(array(modelTraj[0][1]),ftheta, sigma)
 
 	# compute I(theta,x)
 	print("Mutual information calculation 3... ")
 
-	MutInfo3 = []
+	MutInfo2 = []
 	for mod in range(info_new.nmodels):
 
-		MutInfo3.append(getEntropy3(ftheta[mod],N1,N2,N3,sigma,array(modelTraj[mod][1])[:,:,0:1],maxDistTraj[mod]))
-		print "I(theta_i,X",mod+1,") = ", MutInfo3[mod]
+		MutInfo2.append(getEntropy2(ftheta[mod],N1,N2,N3,sigma,array(modelTraj[mod][1])[:,:,0:1], scale))
+		print "I(theta_i,X",mod+1,") = ", MutInfo2[mod]
 
 
 
 
 
-
-
-
-
-
+seed(123)
 main()

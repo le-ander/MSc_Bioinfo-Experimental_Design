@@ -225,7 +225,7 @@ def getEntropy3(data,N1,N2,N3,sigma,theta,maxDistTraj):
 	else:
 		a = pow(1.79*pow(10,300),1.0/(d1.shape[1]*d1.shape[2]))
 	print "preci:", preci, "a:",a
-
+	print "LOGSCALE", log(a)
 	numRuns = int(ceil(N1/Max))
 	print "numRuns: ", numRuns
 
@@ -257,7 +257,7 @@ def getEntropy3(data,N1,N2,N3,sigma,theta,maxDistTraj):
 			res1 = zeros([Ni,Nj]).astype(float64)
 
 			# invoke kernel
-			R = 15.0
+			R = 16.0
 #           print "Ni:",Ni,"Nj:",Nj
 			if(Ni<R):
 				gi = 1
@@ -271,13 +271,15 @@ def getEntropy3(data,N1,N2,N3,sigma,theta,maxDistTraj):
 			else:
 				bj = R
 				gj = ceil(Nj/R)
-
+			print "int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float32(pi), float64(a),int(bi),int(bj),int(gi),int(gj)", int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float32(pi), float64(a),int(bi),int(bj),int(gi),int(gj)
 			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float32(pi), float64(a), driver.In(data1), driver.In(data3),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 
+			print res1
 
 
 			for k in range(si):
 				result2[(i*int(Max)+k),j] = sum(res1[k,:])
+			#print result2
 			countsj = countsj+sj
 		countsi = countsi+si
 
@@ -290,8 +292,9 @@ def getEntropy3(data,N1,N2,N3,sigma,theta,maxDistTraj):
 		if(isnan(sum(result2[i,:]))): counter=counter+1
 		if(isinf(log(sum(result2[i,:])))): counter2=counter2+1
 		else:
-			  sum1 = sum1 + log(sum(result2[i,:])) - log(float(N3)) - M*P*log(a) -  M*P*log(2.0*pi*sigma*sigma)
+			sum1 = sum1 + log(sum(result2[i,:])) - log(float(N3)) - M*P*log(a) -  M*P*log(2.0*pi*sigma*sigma)
 
+	print "SUM1", sum1
 
 ######## part A finished with results saved in sum1
 
@@ -321,6 +324,8 @@ def getEntropy3(data,N1,N2,N3,sigma,theta,maxDistTraj):
 	result2 = zeros([N1,numRuns])
 	numRuns = int(ceil(N2/Max))
 	print "numRuns: ", numRuns
+
+	print "DATA", shape(d1), shape(d2), Max, a, shape(result2), numRuns, N1
 
 	for N1i in range(N1):
 
@@ -355,6 +360,7 @@ def getEntropy3(data,N1,N2,N3,sigma,theta,maxDistTraj):
 				bi = R
 				gi = ceil(Ni/R)
 
+			print int32(Ni), int32(M), int32(P), float32(sigma), float32(pi), float64(a), int(bi),int(gi)
 
 			dist_gpu2(int32(Ni), int32(M), int32(P), float32(sigma), float32(pi), float64(a), driver.In(data1), driver.In(data2),  driver.Out(resB1), block=(int(bi),1,1), grid=(int(gi),1))
 
@@ -362,7 +368,7 @@ def getEntropy3(data,N1,N2,N3,sigma,theta,maxDistTraj):
 			result2[N1i,i] = sum(resB1[:])
 			countsi = countsi+si
 
-
+	sumstatic = 0.0
 	sumB1 = 0.0
 	counter = 0
 	counter2 = 0
@@ -371,9 +377,11 @@ def getEntropy3(data,N1,N2,N3,sigma,theta,maxDistTraj):
 		if(isnan(sum(result2[i,:]))): counter=counter+1
 		if(isinf(log(sum(result2[i,:])))): counter2=counter2+1
 		else:
-			  sumB1 = sumB1 + log(sum(result2[i,:])) - log(float(N2)) - M*P*log(a) -  M*P*log(2.0*pi*sigma*sigma)
-
-
+			sumB1 = sumB1 + log(sum(result2[i,:])) - log(float(N2)) - M*P*log(a) -  M*P*log(2.0*pi*sigma*sigma)
+			sumstatic = sumstatic - log(float(N2)) - M*P*log(a) -  M*P*log(2.0*pi*sigma*sigma)
+	print "COUNTER", counter, counter2
+	print "SUM2", sumB1
+	print "sumstatic", sumstatic
 
 
 ######## part B finished with results saved in sumB1
@@ -622,9 +630,9 @@ def main():
 		accepted = 0
 
 
-		N1 = 5000
-		N2 = 5000
-		N3 = 5000
+		N1 = 100
+		N2 = 100
+		N3 = 100
 		indexTheta = 0
 
 		while(accepted<(N1+N3+N1*N2)):
@@ -780,47 +788,5 @@ def main():
 		print "I(theta_i,X",mod+1,") = ", MutInfo3[mod]
 
 
-	print "----------------------------------------------------------------------------------------------- "
-
-	sigma = 0.1
-	print "%%%%%%%%%%%%%%%%%%%%"
-	print "sigma: ",sigma
-
-	ftheta = []
-	maxDistTraj = []
-	for mod in range(info_new.nmodels):
-		print shape(modelTraj[mod][1])
-		trajTemp = array(modelTraj[mod][1])[:,:,0:1]
-		print "shape traj:", shape(trajTemp)
-		noise = normal(loc=0.0, scale=sigma,size=((N1+N3+N1*N2),len(info_new.times),shape(trajTemp)[2]))
-		temp = trajTemp[:,:,:] + noise
-		maxDistTraj.append(amax(temp) - amin(temp))
-		print "maxDistTraj:", maxDistTraj
-		ftheta.append(temp)
-
-
-
-	print("Simulation done")
-	print "------------------------ "
-	print " "
-
-
-	# compute I(theta,x)
-	print("Mutual information calculation 3... ")
-
-	MutInfo3 = []
-	for mod in range(info_new.nmodels):
-
-		MutInfo3.append(getEntropy3(ftheta[mod],N1,N2,N3,sigma,array(modelTraj[mod][1])[:,:,0:1],maxDistTraj[mod]))
-		print "I(theta_i,X",mod+1,") = ", MutInfo3[mod]
-
-
-
-
-
-
-
-
-
-
+seed(123)
 main()

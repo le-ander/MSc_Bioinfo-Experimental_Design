@@ -64,13 +64,14 @@ def scaling(modelTraj, ftheta, sigma):
 
 	preci = pow(10,-34)
 	FmaxDistTraj = 1.0*exp(-(maxDistTraj*maxDistTraj)/(2.0*sigma*sigma))
+	print "FmaxDistTraj:",FmaxDistTraj
 
 	if(FmaxDistTraj<preci):
 		scale = pow(1.79*pow(10,300),1.0/(ftheta[0].shape[1]*ftheta[0].shape[2]))
 	else:
 		scale = pow(preci,1.0/(ftheta[0].shape[1]*ftheta[0].shape[2]))*1.0/FmaxDistTraj
 
-	return scale
+	return scale #*pow(10,-2)
 
 def pickle_object(object):
 	pickle.dump(object, open("save_point.pkl", "wb"))
@@ -291,11 +292,11 @@ def getEntropy1(data,N1,N2,sigma,theta,scale):
 
 			# Invoke GPU calculations (takes data1 and data2 as input, outputs res1)
 			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
-
+			print "RES1", res1
 			# First summation (could be done on GPU?)
 			for k in range(Ni):
 					res_t2[(i*int(gridmax)+k),j] = sum(res1[k,:])
-
+			print res_t2
 	sum1 = 0.0
 	count_na = 0
 	count_inf = 0
@@ -305,7 +306,7 @@ def getEntropy1(data,N1,N2,sigma,theta,scale):
 		elif(isinf(log(sum(res_t2[i,:])))): count_inf += 1
 		else:
 			sum1 += - log(sum(res_t2[i,:])) + log(float(N2)) + M*P*log(scale) +  M*P*log(2.0*pi*sigma*sigma)
-
+	print count_na, count_inf
 	Info = (sum1 / float(N1 - count_na - count_inf)) - M*P/2.0*(log(2.0*pi*sigma*sigma)+1)
 
 	optimal_blocksize(autoinit.device, dist_gpu1)
@@ -615,8 +616,8 @@ def main():
 
 			accepted = 10000000
 
-	N1 = 1000
-	N2 = 45000
+	N1 = 100
+	N2 = 4500
 
 	modelTraj = run_cudasim(info_new, parameters, species)
 	#print "model traj SHAPE", shape(modelTraj[0])
@@ -632,7 +633,7 @@ def main():
 	t2=time.time()
 	print "TIME_gE1_call", t2-t1
 	print "I(theta,X,",mod+1 ,") = ", MutInfo1
-
+seed(123)
 main()
 t4=time.time()
 print "TIME_total", t4-t3
