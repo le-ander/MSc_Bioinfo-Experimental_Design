@@ -9,12 +9,6 @@ number of functions: 0
 number of events: 0
 
 Species with initial values: 6
-S1:	m1	species1	(0.0)
-S2:	p1	species2	(1.0)
-S3:	m2	species3	(0.0)
-S4:	p2	species4	(0.0)
-S5:	m3	species5	(0.0)
-S6:	p3	species6	(0.0)
 
 Parameter: 5 (all of them are global parameters)
 (0 parameter is treated as species)

@@ -1,6 +1,6 @@
 # Algorithm information
 
-import re, sys, numpy
+import re, sys, numpy, copy
 from numpy.random import *
 from xml.dom import minidom
 
@@ -694,3 +694,27 @@ class algorithm_info:
 			elif self.initialprior == False:
 				for Cfile in set(self.cuda):
 					self.pairParamsICS[Cfile] = [[l[1] for l in self.x0prior[j]] for j in [i for i, x in enumerate(self.cuda) if x == Cfile]]
+
+	def sortCUDASimoutput(self,cudaorder,cudaout):
+		self.cudaout=[""]*len(self.cuda)
+		
+		if self.analysisType == 1:
+			Nparticles = self.N1sample+self.N2sample+self.N1sample*self.N3sample
+		else:
+			Nparticles = self.particles
+		
+		if self.initialprior == False:
+			for model, cudafile in enumerate(self.cuda):
+				cudaout_temp = cudaout[cudaorder.index(cudafile)]
+				pos = self.pairParamsICS.values()[cudaorder.index(cudafile)].index([x[1] for x in self.x0prior[model]])
+				self.cudaout[model] = cudaout_temp[pos*Nparticles:(pos+1)*Nparticles,:,:] 
+		else:
+			for model, cudafile in enumerate(self.cuda):
+				self.cudaout[model] = cudaout[cudaorder.index(cudafile)]
+
+
+	#def removeNAs(self):
+
+
+	#def addNoise(self):
+	#	for 

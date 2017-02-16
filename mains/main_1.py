@@ -113,8 +113,10 @@ def sorting_files(input_file_SBML, input_file_data, analysis, fname, usesbml, pa
 	print "-----Running CUDA-Sim-----"
 	#cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath)
 	cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath)
+	#sbml_obj.print_info()
 	#pairings = organiser.organisePairings(sbml_obj, comb_list)
-
+	#print [x.shape for x in sbml_obj.cudaout]
+	#print sbml_obj.cudaout
 	#print sbml_obj.speciesSample
 	#print set(sbml_obj.cuda)
 	#print comb_list

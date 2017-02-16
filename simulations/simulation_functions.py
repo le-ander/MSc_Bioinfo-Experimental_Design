@@ -17,7 +17,9 @@ except:
 
 import time
 import sys
+sys.path.insert(0, '/cluster/home/saw112/work/git_group_project/error_checks')
 sys.path.insert(0, ".")
+import parse_infoEnt_new_2
 
 
 def run_cudasim(m_object,inpath=""):
@@ -29,12 +31,9 @@ def run_cudasim(m_object,inpath=""):
 		parameters = m_object.parameterSample
 
 	result = modelInstance.run(parameters, m_object.speciesSample, constant_sets = not(m_object.initialprior), pairings=m_object.pairParamsICS)
-	print [x.shape for x in result]
-	sys.exit()
+	result = [x[:,0] for x in result]
 	
-	modelTraj.append(result[:,0])
-
-	return modelTraj
+	m_object.sortCUDASimoutput(list(set(m_object.cuda)),result)
 
 def remove_na(m_object, modelTraj):
 	# Create a list of indices of particles that have an NA in their row
@@ -45,6 +44,10 @@ def remove_na(m_object, modelTraj):
 		delete(modelTraj[mod], (i), axis=0)
 
 	return modelTraj
+
+
+
+
 
 def add_noise_to_traj(m_object, modelTraj, sigma, N1):##Need to ficure out were to get N1 from
 	ftheta = []
