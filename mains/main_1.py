@@ -98,10 +98,10 @@ def sorting_files(input_file_SBML, input_file_data, analysis, fname, usesbml, pa
 		input_xml="/input_xml"
 
 	elif usesbml == False:
-		outPath=""
+		outPath=iname
 		inPath=""
-		xml_out=""
-		input_xml=input_file_SBML_name
+		xml_out=iname
+		input_xml="/"+input_file_SBML_name
 		comb_list = []
 
 	print "-----Creating object from input XML file-----"
@@ -111,14 +111,14 @@ def sorting_files(input_file_SBML, input_file_data, analysis, fname, usesbml, pa
 	sbml_obj.getAnalysisType(analysis)
 	sbml_obj.THETAS(inputpath=iname, usesbml=usesbml)
 	print "-----Running CUDA-Sim-----"
-	print sbml_obj.speciesSample
-	print ""
-	print sbml_obj.parameterSample
+	#cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath)
+	cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath)
 	#pairings = organiser.organisePairings(sbml_obj, comb_list)
 
 	#print sbml_obj.speciesSample
 	#print set(sbml_obj.cuda)
 	#print comb_list
+random.seed(123)
 main()
 
 #info_new = error_check.parse_infoEnt.algorithm_info("input_file_repressilator.xml", 0)

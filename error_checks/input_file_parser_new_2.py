@@ -379,8 +379,6 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 	out_file.write("######################## Models\n\n")
 	out_file.write("<models>\n")
 
-
-
 	if all_combination==False:
 		for j in range(len(comb)):
 

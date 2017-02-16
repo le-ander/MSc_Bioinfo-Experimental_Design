@@ -1,4 +1,4 @@
-def organisePairings(model_object, combinationList):
+def extractConstantsPairings(model_object, combinationList):
 	#Cuda_files = [x[1] for x in combinationList]
 	Init_sets = [x[0] for x in combinationList]
 	pairings = {}

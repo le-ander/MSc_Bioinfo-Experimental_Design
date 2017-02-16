@@ -13,14 +13,14 @@
 
 # Internal timestep for solver.
 # Make this small for a stiff model.
-<dt> 0.0001 </dt>
+<dt> 1 </dt>
 
 ######################## User-supplied data
 
 <data>
 # times: For ABC SMC, times must be a whitespace delimited list
 # In simulation mode these are the timepoints for which the simulations will be output
-<times> 10.0 70.0 80.0 100.0 110.0 </times>
+<times> 0.0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 </times>
 
 # Sizes of N1, N2, N3 and N4 samples for enthropy calculation
 <nsamples>

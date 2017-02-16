@@ -34,6 +34,7 @@ def input_checker(sys_arg,mode):
 	rawout_traj=False
 	rawout_odesol=False
 	fname = "_results_"
+	iname = ""
 	analysis = 3
 	which_species = False
 	parameter_change = False

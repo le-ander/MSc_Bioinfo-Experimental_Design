@@ -20,16 +20,18 @@ import sys
 sys.path.insert(0, ".")
 
 
-def run_cudasim(m_object, parameters, species):
+def run_cudasim(m_object,inpath=""):
 	modelTraj = []
-	##Should run over cudafiles
-	# Define CUDA filename for cudasim
-	cudaCode = m_object.name[0] + '.cu'
-	# Create ODEProblem object
-	modelInstance = Lsoda.Lsoda(m_object.times, cudaCode, dt=m_object.dt)
-	# Solve ODEs using Lsoda algorithm
-	##Different parameters and species matrices for i in nmodels?
-	result = modelInstance.run(parameters, species)
+	modelInstance = Lsoda.Lsoda(m_object.times, list(set(m_object.cuda)), dt=m_object.dt, inpath=inpath)
+	if m_object.ncompparams_all > 0:
+		parameters=concatenate((m_object.compsSample,m_object.parameterSample),axis=1)
+	else:
+		parameters = m_object.parameterSample
+
+	result = modelInstance.run(parameters, m_object.speciesSample, constant_sets = not(m_object.initialprior), pairings=m_object.pairParamsICS)
+	print [x.shape for x in result]
+	sys.exit()
+	
 	modelTraj.append(result[:,0])
 
 	return modelTraj

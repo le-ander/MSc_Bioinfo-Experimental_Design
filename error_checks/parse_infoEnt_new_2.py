@@ -687,16 +687,10 @@ class algorithm_info:
 
 	def getpairingCudaICs(self):
 		self.pairParamsICS = {}
-		for Cfile in set(self.cuda):
-			self.pairParamsICS[Cfile] = [self.x0prior[j] for j in [i for i, x in enumerate(self.cuda) if x == Cfile]]
-
-
-def organisePairings(model_object, combinationList):
-	#Cuda_files = [x[1] for x in combinationList]
-	Init_sets = [x[0] for x in combinationList]
-	pairings = {}
-	for Cfile in set(model_object.cuda):
-		temp = [Init_sets[j] for j in [i for i, x in enumerate(model_object.cuda) if x == Cfile]]
-		temp.sort()
-		pairings[Cfile] = temp
-	return pairings
+		if self.sampleFromPost == False:
+			if self.initialprior == True:
+				for Cfile in set(self.cuda):
+					self.pairParamsICS[Cfile] = [self.x0prior[j] for j in [i for i, x in enumerate(self.cuda) if x == Cfile]]
+			elif self.initialprior == False:
+				for Cfile in set(self.cuda):
+					self.pairParamsICS[Cfile] = [[l[1] for l in self.x0prior[j]] for j in [i for i, x in enumerate(self.cuda) if x == Cfile]]
