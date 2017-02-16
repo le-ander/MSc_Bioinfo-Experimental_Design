@@ -102,14 +102,19 @@ def sorting_files(input_file_SBML, input_file_data, analysis, fname, usesbml, pa
 		inPath=""
 		xml_out=""
 		input_xml=input_file_SBML_name
+		comb_list = []
 
 	print "-----Creating object from input XML file-----"
 	sbml_obj = parse_infoEnt_new_2.algorithm_info(xml_out+input_xml+".xml", 0, comb_list)
+	sbml_obj.getpairingCudaICs()
 	print "-----Sampling from prior-----"
 	sbml_obj.getAnalysisType(analysis)
-	sbml_obj.THETAS(inputpath=iname, usesbml=usesbml, pairings=comb_list)
+	sbml_obj.THETAS(inputpath=iname, usesbml=usesbml)
 	print "-----Running CUDA-Sim-----"
-	pairings = organiser.organisePairings(sbml_obj, comb_list)
+	print sbml_obj.speciesSample
+	print ""
+	print sbml_obj.parameterSample
+	#pairings = organiser.organisePairings(sbml_obj, comb_list)
 
 	#print sbml_obj.speciesSample
 	#print set(sbml_obj.cuda)

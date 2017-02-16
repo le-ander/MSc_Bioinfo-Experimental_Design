@@ -528,18 +528,12 @@ class algorithm_info:
 						sys.exit()
 
 			else:
-
-				temp = dict(zip((tuple(y) for y in pairings), self.x0prior))
-				temp_uniq = {temp.keys()[0]:temp.values()[0]}
-
-				for key, value in temp.iteritems():
-					if value not in temp_uniq.values():
-						temp_uniq[key] = value
-
-				x0prior_uniq = [""]*len(temp_uniq)
 				
-				for key ,value in temp_uniq.iteritems():
-					x0prior_uniq[key[0]]=value
+				x0prior_uniq = [self.x0prior[0]]
+				for ic in self.x0prior[1:]:
+					if ic not in x0prior_uniq:
+						x0prior_uniq.append(ic)
+
 
 				species = [numpy.zeros([self.particles,self.nspecies_all]) for x in range(len(x0prior_uniq))]  # number of repeats x species in system
 
@@ -671,11 +665,7 @@ class algorithm_info:
 			self.compsSample = compartments
 
 		self.parameterSample = parameters
-
-		if self.initialprior == False:
-			self.speciesSample = numpy.concatenate(tuple(species),axis=0)
-		else:
-			self.speciesSample = species
+		self.speciesSample = species
 
 	
 	def getAnalysisType(self,analysisType):
@@ -694,3 +684,19 @@ class algorithm_info:
 		else:
 			print "Sum of N1, N2, N3, and N4 is not the number of particles given in the input XML file"
 			sys.exit()
+
+	def getpairingCudaICs(self):
+		self.pairParamsICS = {}
+		for Cfile in set(self.cuda):
+			self.pairParamsICS[Cfile] = [self.x0prior[j] for j in [i for i, x in enumerate(self.cuda) if x == Cfile]]
+
+
+def organisePairings(model_object, combinationList):
+	#Cuda_files = [x[1] for x in combinationList]
+	Init_sets = [x[0] for x in combinationList]
+	pairings = {}
+	for Cfile in set(model_object.cuda):
+		temp = [Init_sets[j] for j in [i for i, x in enumerate(model_object.cuda) if x == Cfile]]
+		temp.sort()
+		pairings[Cfile] = temp
+	return pairings
