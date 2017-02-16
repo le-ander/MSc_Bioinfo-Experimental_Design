@@ -270,13 +270,6 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 
 	}
 
-	// Can remove this function?
-	__device__ unsigned int idx2d2(int k, int l, int P)
-	{
-		return k*P + l;
-
-	}
-
 	__global__ void distance1(int Ni, int Nj, int M, int P, float sigma, double scale, double *d1, double *d2, double *res1)
 	{
 	int i = threadIdx.x + blockDim.x * blockIdx.x;
@@ -295,21 +288,21 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 	res1[idx2d(i,j,Nj)] = exp(x1);
 	}
 
-	__global__ void distance2(int Ni, int M, int P, float sigma, double scale, double *d1, double *d3, double *res2)
+	__global__ void distance2(int Nj, int M, int P, float sigma, double scale, double *d1, double *d3, double *res2)
 	{
-	int i = threadIdx.x + blockDim.x * blockIdx.x;
+	int j = threadIdx.y + blockDim.y * blockIdx.y;
 
-	if(i>=Ni) return;
+	if(j>=Nj) return;
 
 	double x1;
 	x1 = 0.0;
 	for(int k=0; k<M; k++){
 			for(int l=0; l<P; l++){
-				x1 = x1 + log(scale) - ( d3[idx3d(i,k,l,M,P)]-d1[idx2d2(k,l,P)])*( d3[idx3d(i,k,l,M,P)]-d1[idx2d2(k,l,P)])/(2.0*sigma*sigma);
+				x1 = x1 + log(scale) - ( d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])*(d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])/(2.0*sigma*sigma);
 			}
 	}
 
-	res2[i] = exp(x1);
+	res2[j] = exp(x1);
 	}
 	""")
 
@@ -317,8 +310,8 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 	dist_gpu1 = mod.get_function("distance1")
 
 	##should be defined as an int, can then clean up formulas further down
-	gridmax = 100.0 # Define square root of maximum threads per grid
-	blockmax = 15.0 # Maximum threads per block
+	gridmax = 256.0 # Define square root of maximum threads per grid
+	blockmax = 16.0 # Maximum threads per block
 
 	# Determine required number of runs for i and j
 	##need float here?
@@ -328,7 +321,7 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 	res_t2 = zeros([N1,numRuns_j])
 
 	# Prepare data
-	d1 = data.astype(float64)
+	d1 = data[0:N1,:,:].astype(float64)
 	d2 = array(theta)[N1:(N1+N2),:,:].astype(float64)
 
 	M = d1.shape[1] # number of timepoints
@@ -352,6 +345,7 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 		data1 = d1[(i*int(gridmax)):(i*int(gridmax)+Ni),:,:] # d1 subunit for the next j runs
 
 		Nj = int(gridmax)
+		print "LOGSCALE", log(scale)
 
 
 		for j in range(numRuns_j):
@@ -369,14 +363,14 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 			else:
 				gj = ceil(Nj/blockmax)
 				bj = blockmax
-
+			print "dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale),int(bi),int(bj),int(gi),int(gj)",int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale),int(bi),int(bj),int(gi),int(gj)
 			# Invoke GPU calculations (takes data1 and data2 as input, outputs res1)
 			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
-
+			print res1
 			# First summation (could be done on GPU?)
 			for k in range(Ni):
 				res_t2[(i*int(gridmax)+k),j] = sum(res1[k,:])
-
+			#print res_t2
 	sum1 = 0.0
 	count_na = 0
 	count_inf = 0
@@ -385,7 +379,9 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 		if(isnan(sum(res_t2[i,:]))): count_na += 1
 		elif(isinf(log(sum(res_t2[i,:])))): count_inf += 1
 		else:
-			sum1 += - log(sum(res_t2[i,:])) + log(float(N2)) + M*P*log(scale) +  M*P*log(2.0*pi*sigma*sigma)
+			sum1 += log(sum(res_t2[i,:])) - log(float(N2)) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
+	print count_na, count_inf
+	print "SUM1", sum1
 
 ######## part A finished with results saved in sum1
 
@@ -401,6 +397,7 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 
 	d3 = array(theta)[(N1+N2):(N1+N2+N1*N3),:,:].astype(float64)
 
+	print "DATA", shape(d1), shape(d3), gridmax, scale, shape(res_t2), numRuns_j2, N1
 
 	for i in range(N1):
 
@@ -409,7 +406,7 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 		Nj = int(gridmax)
 
 		for j in range(numRuns_j2):
-			print "runs left:", numRuns_j2 - j
+			#print "runs left:", numRuns_j2 - j
 
 			if((int(gridmax)*(j+1)) > N3):
 				Nj = int(N3 - gridmax*j)
@@ -425,11 +422,13 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 				gj = ceil(Nj/blockmax)
 				bj = blockmax
 
+			print int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), int(bj),int(gj)
+
 			dist_gpu2(int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data3),  driver.Out(res2), block=(1,int(bj),1), grid=(1,int(gj)))
 
 			res_t2[i,j] = sum(res2[:])
 
-
+	sumstatic = 0.0
 	sum2 = 0.0
 	count2_na = 0
 	count2_inf = 0
@@ -439,9 +438,13 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 		elif(isinf(log(sum(res_t2[i,:])))): count2_inf += 1
 		else:
 			sum2 += log(sum(res_t2[i,:])) - log(float(N3)) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
-
+			sumstatic += - log(float(N3)) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
+	print "COUNTER", count2_na, count2_inf
+	print "SUM2", sum2
+	print "sumstatic", sumstatic
 	######## part B finished with results saved in sum2
 
 	Info = (sum2 - sum1)/float(N1 - count_na - count_inf - count2_na - count2_inf)
+	print "DIST_GPU2.NUM_REGS", dist_gpu2.num_regs
 
 	return(Info)
