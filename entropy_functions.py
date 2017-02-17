@@ -129,17 +129,22 @@ def optimal_blocksize(device, function):
 	print "Smallest optimal blocksize on this GPU:", optimal_blocksize
 	print "Achieved theoretical GPU occupancy", (float(achieved_occupancy)/device.max_threads_per_multiprocessor)*100, "%"
 
-	return optimal_blocksize
+	return float(optimal_blocksize)
 
-def optimise_grid_structure(gmem_per_thread=8.59): ##need to define correct memory requirement for kernel (check for other cards)
+def optimise_grid_structure(gmem_per_thread): ##need to define correct memory requirement for kernel (check for other cards)
 	# DETERMINE TOTAL NUMBER OF THREADS LIMITED BY GLOBAL MEMORY
 	# Read total global memory of device
-	avail_mem = autoinit.device.total_memory()
+	avail_mem = driver.mem_get_info()[0]
 	# Calculate maximum number of threads, assuming global memory usage of 100 KB per thread
-	max_threads = int(sqrt(avail_mem / gmem_per_thread))
+	max_threads = int(avail_mem / gmem_per_thread)
 	##could change it to be a multiple of block size?
-	##should it really return sqrt here?
+
 	return max_threads
+
+def factor_partial(N):
+	for R in range(int(sqrt(N)),1,-1):
+		if N%R == 0:
+			return float(R)
 
 def getEntropy1(data,N1,N2,sigma,theta,scale):
 
@@ -179,14 +184,33 @@ def getEntropy1(data,N1,N2,sigma,theta,scale):
 	# Assigning main kernel function to a variable
 	dist_gpu1 = mod.get_function("distance1")
 
+	block = optimal_blocksize(autoinit.device, dist_gpu1)
+	block_i = factor_partial(block) # Maximum threads per block
+	block_j = block / block_i
+	print "blcok, BLOCK_I and _j",block, block_i, block_j
+
+	grid = optimise_grid_structure(8.59)
 	##should be defined as an int, can then clean up formulas further down
-	gridmax = 100.0 # Define square root of maximum threads per grid
-	blockmax = 15.0 # Maximum threads per block
+	grid_prelim_i = round_down(sqrt(grid),block_i) # Define square root of maximum threads per grid
+	grid_prelim_j = round_down(grid/grid_prelim_i,block_j)
+	print "grid, GRID_i and _j", grid, grid_prelim_i, grid_prelim_j
+
+	if N1 < grid_prelim_i:
+		grid_i = N1
+		grid_j = round_down(grid/grid_i,block_j)
+	elif N2 < grid_prelim_j:
+		grid_j = N2
+		grid_i = round_down(grid/grid_j,block_i)
+	else:
+		grid_i = grid_prelim_i
+		grid_j = grid_prelim_j
+
+	print "grid, GRID_i and _j", grid, grid_i, grid_j
 
 	# Determine required number of runs for i and j
 	##need float here?
-	numRuns_i = int(ceil(N1/float(gridmax)))
-	numRuns_j = int(ceil(N2/float(gridmax)))
+	numRuns_i = int(ceil(N1/float(grid_i)))
+	numRuns_j = int(ceil(N2/float(grid_j)))
 
 	res_t2 = zeros([N1,numRuns_j])
 
@@ -197,49 +221,49 @@ def getEntropy1(data,N1,N2,sigma,theta,scale):
 	M = d1.shape[1] # number of timepoints
 	P = d1.shape[2] # number of species
 
-	Ni = int(gridmax)
+	Ni = int(grid_i)
 
 
 	for i in range(numRuns_i):
 		print "Runs left:", numRuns_i-i
-		if((int(gridmax)*(i+1)) > N1): # If last run with less that max remaining trajectories
-			Ni = int(N1 - gridmax*i) # Set Ni to remaining number of particels
+		if((int(grid_i)*(i+1)) > N1): # If last run with less that max remaining trajectories
+			Ni = int(N1 - grid_i*i) # Set Ni to remaining number of particels
 
-		if(Ni<blockmax):
+		if(Ni<block_i):
 			gi = 1  # Grid size in dim i
 			bi = Ni # Block size in dim i
 		else:
-			gi = ceil(Ni/blockmax)
-			bi = blockmax
+			gi = ceil(Ni/block_i)
+			bi = block_i
 
-		data1 = d1[(i*int(gridmax)):(i*int(gridmax)+Ni),:,:] # d1 subunit for the next j runs
+		data1 = d1[(i*int(grid_i)):(i*int(grid_i)+Ni),:,:] # d1 subunit for the next j runs
 
-		Nj = int(gridmax)
+		Nj = int(grid_j)
 
 
 		for j in range(numRuns_j):
-			if((int(gridmax)*(j+1)) > N2): # If last run with less that max remaining trajectories
-				Nj = int(N2 - gridmax*j) # Set Nj to remaining number of particels
+			if((int(grid_j)*(j+1)) > N2): # If last run with less that max remaining trajectories
+				Nj = int(N2 - grid_j*j) # Set Nj to remaining number of particels
 
-			data2 = d2[(j*int(gridmax)):(j*int(gridmax)+Nj),:,:] # d2 subunit for this run
+			data2 = d2[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:] # d2 subunit for this run
 
 			##could move into if statements (only if ni or nj change)
 			res1 = zeros([Ni,Nj]).astype(float64) # results vector [shape(data1)*shape(data2)]
 
-			if(Nj<blockmax):
+			if(Nj<block_j):
 				gj = 1  # Grid size in dim j
 				bj = Nj # Block size in dim j
 			else:
-				gj = ceil(Nj/blockmax)
-				bj = blockmax
+				gj = ceil(Nj/block_j)
+				bj = block_j
 
 			# Invoke GPU calculations (takes data1 and data2 as input, outputs res1)
 			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
-
+			print "RES1", res1
 			# First summation (could be done on GPU?)
 			for k in range(Ni):
-					res_t2[(i*int(gridmax)+k),j] = sum(res1[k,:])
-
+					res_t2[(i*int(grid_i)+k),j] = sum(res1[k,:])
+			print res_t2
 	sum1 = 0.0
 	count_na = 0
 	count_inf = 0
@@ -249,7 +273,7 @@ def getEntropy1(data,N1,N2,sigma,theta,scale):
 		elif(isinf(log(sum(res_t2[i,:])))): count_inf += 1
 		else:
 			sum1 += - log(sum(res_t2[i,:])) + log(float(N2)) + M*P*log(scale) +  M*P*log(2.0*pi*sigma*sigma)
-
+	print count_na, count_inf
 	Info = (sum1 / float(N1 - count_na - count_inf)) - M*P/2.0*(log(2.0*pi*sigma*sigma)+1)
 
 	return(Info)
@@ -363,7 +387,7 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 			else:
 				gj = ceil(Nj/blockmax)
 				bj = blockmax
-			print "dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale),int(bi),int(bj),int(gi),int(gj)",int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale),int(bi),int(bj),int(gi),int(gj)
+
 			# Invoke GPU calculations (takes data1 and data2 as input, outputs res1)
 			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 			print res1
@@ -380,7 +404,7 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 		elif(isinf(log(sum(res_t2[i,:])))): count_inf += 1
 		else:
 			sum1 += log(sum(res_t2[i,:])) - log(float(N2)) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
-	print count_na, count_inf
+	print "COUNTER1", count_na, count_inf
 	print "SUM1", sum1
 
 ######## part A finished with results saved in sum1
@@ -422,8 +446,6 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 				gj = ceil(Nj/blockmax)
 				bj = blockmax
 
-			print int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), int(bj),int(gj)
-
 			dist_gpu2(int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data3),  driver.Out(res2), block=(1,int(bj),1), grid=(1,int(gj)))
 
 			res_t2[i,j] = sum(res2[:])
@@ -445,6 +467,7 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 	######## part B finished with results saved in sum2
 
 	Info = (sum2 - sum1)/float(N1 - count_na - count_inf - count2_na - count2_inf)
+	print "DIST_GPU1.NUM_REGS", dist_gpu1.num_regs
 	print "DIST_GPU2.NUM_REGS", dist_gpu2.num_regs
 
 	return(Info)
