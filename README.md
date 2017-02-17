@@ -4,23 +4,21 @@
 To do list:
 
 # Important
-- Parsing
-  - Combine all elements of parsing
 
 - Simulation and Data Processing
   - Update functions to be used with parsing output
   
 - Entropy calculations
   - Include launch configuration in getEntropy functions
-  - Rewrite getEntropy2 in Repressilator and getEntropy 1.5 in Hes1 folder
-
+  - Rewrite getEntropy3
+  
 - Combine all parts together
-
-# Next steps
 
 - Prepare presentation
 
-- Check that scaling function still gives same results as before
+# Next steps
+
+- Check why we get such large numbers in res1 and res_t2
 
 - Stochastic implementation
   - Reuse code from MEANS package
