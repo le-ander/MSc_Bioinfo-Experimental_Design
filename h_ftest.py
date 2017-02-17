@@ -184,7 +184,7 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 	x1 = 0.0;
 	for(int k=0; k<M; k++){
 			for(int l=0; l<P; l++){
-				x1 = x1 + log(scale) - ( d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])*(d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])/(2.0*sigma*sigma);
+				x1 = x1 + log(scale) - (d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])*(d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])/(2.0*sigma*sigma);
 			}
 	}
 
@@ -196,7 +196,7 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 	dist_gpu1 = mod.get_function("distance1")
 
 	##should be defined as an int, can then clean up formulas further down
-	gridmax = 256.0 # Define square root of maximum threads per grid
+	gridmax = 2500.0 # Define square root of maximum threads per grid
 	blockmax = 16.0 # Maximum threads per block
 
 	# Determine required number of runs for i and j
@@ -249,10 +249,9 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 			else:
 				gj = ceil(Nj/blockmax)
 				bj = blockmax
-			print "dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale),int(bi),int(bj),int(gi),int(gj)",int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale),int(bi),int(bj),int(gi),int(gj)
+
 			# Invoke GPU calculations (takes data1 and data2 as input, outputs res1)
 			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
-			print res1
 			# First summation (could be done on GPU?)
 			for k in range(Ni):
 				res_t2[(i*int(gridmax)+k),j] = sum(res1[k,:])
@@ -274,16 +273,14 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 	dist_gpu2 = mod.get_function("distance2")
 
 	##need this defined again here??
-	gridmax = 256.0
-	blockmax = 15.0
-
+	gridmax = 1500.0
+	blockmax = 96.0
+	print blockmax
 	numRuns_j2 = int(ceil(N3/gridmax))
 
 	res_t2 = zeros([N1,numRuns_j2])
 
 	d3 = array(theta)[(N1+N2):(N1+N2+N1*N3),:,:].astype(float64)
-
-	print "DATA", shape(d1), shape(d3), gridmax, scale, shape(res_t2), numRuns_j2, N1
 
 	for i in range(N1):
 
@@ -308,8 +305,6 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 				gj = ceil(Nj/blockmax)
 				bj = blockmax
 
-			print int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), int(bj),int(gj)
-
 			dist_gpu2(int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data3),  driver.Out(res2), block=(1,int(bj),1), grid=(1,int(gj)))
 
 			res_t2[i,j] = sum(res2[:])
@@ -331,6 +326,7 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 	######## part B finished with results saved in sum2
 
 	Info = (sum2 - sum1)/float(N1 - count_na - count_inf - count2_na - count2_inf)
+	print "DIST_GPU1.NUM_REGS", dist_gpu1.num_regs
 	print "DIST_GPU2.NUM_REGS", dist_gpu2.num_regs
 	return(Info)
 
@@ -577,9 +573,9 @@ def main():
 		accepted = 0
 
 
-		N1 = 100
-		N2 = 100
-		N3 = 100
+		N1 = 1000
+		N2 = 1000
+		N3 = 1000
 		indexTheta = 0
 
 		while(accepted<(N1+N3+N1*N2)):
@@ -730,8 +726,10 @@ def main():
 
 	MutInfo2 = []
 	for mod in range(info_new.nmodels):
-
+		t0 = time.time()
 		MutInfo2.append(getEntropy2(ftheta[mod],N1,N2,N3,sigma,array(modelTraj[mod][1])[:,:,0:1], scale))
+		t1 = time.time()
+		print "TIME_gE2", t1-t0
 		print "I(theta_i,X",mod+1,") = ", MutInfo2[mod]
 
 
