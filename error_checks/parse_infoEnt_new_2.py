@@ -693,8 +693,9 @@ class algorithm_info:
 					self.pairParamsICS[Cfile] = [self.x0prior[j] for j in [i for i, x in enumerate(self.cuda) if x == Cfile]]
 			elif self.initialprior == False:
 				for Cfile in set(self.cuda):
-					self.pairParamsICS[Cfile] = [[l[1] for l in self.x0prior[j]] for j in [i for i, x in enumerate(self.cuda) if x == Cfile]]
-
+					temp = [[l[1] for l in self.x0prior[j]] for j in [i for i, x in enumerate(self.cuda) if x == Cfile]]
+					self.pairParamsICS[Cfile] = [list(x) for x in set(tuple(x) for x in temp)]
+	
 	def sortCUDASimoutput(self,cudaorder,cudaout):
 		self.cudaout=[""]*len(self.cuda)
 		
@@ -703,18 +704,104 @@ class algorithm_info:
 		else:
 			Nparticles = self.particles
 		
+		cuda_NAs = dict((k, []) for k in cudaorder)
+		for i, cudafile in enumerate(cudaorder):
+			index_NA = [p for p, e in enumerate(numpy.isnan(numpy.sum(numpy.sum(cudaout[i][:,:,:],axis=2),axis=1))) if e==True]
+			#print index_NA
+			#print self.pairParamsICS.values()[i]
+			for j, IC in enumerate(self.pairParamsICS.values()[i]):
+				index_NA_IC = [s for s in index_NA if s < (j+1)*Nparticles  and s >= j*Nparticles]
+				#index_NA_IC = [p for p, e in enumerate(numpy.isnan(numpy.sum(numpy.sum(cudaout[i][j*Nparticles:(j+1)*Nparticles,:,:],axis=2),axis=1))) if e==True]
+				#print index_NA_IC
+				if self.analysisType != 1:
+					N1_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample]
+					N2_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample and x >= j*Nparticles + self.N1sample]
+					N3_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample+self.N3sample and x >= j*Nparticles + self.N1sample + self.N2sample]
+					N4_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample+self.N3sample+self.N4sample and x >= j*Nparticles + self.N1sample + self.N2sample+self.N3sample]
+					cuda_NAs[cudafile].append([self.N1sample-len(N1_NA),self.N2sample-len(N2_NA),self.N3sample-len(N3_NA),self.N4sample-len(N4_NA)])
+				
+				elif self.analysisType == 1:
+					start = j*Nparticles + self.N1sample+self.N2sample
+					end = j*Nparticles + self.N1sample+self.N2sample + self.N1sample*self.N3sample
+					N1_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample]
+					N2_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample and x >= j*Nparticles + self.N1sample]
+					new_N2 = self.N2sample-len(N2_NA)
+					additional_N1N3_NAs = [range(int(j*Nparticles + self.N1sample + self.N2sample + x*self.N3sample),int(j*Nparticles + self.N1sample + self.N2sample + (x+1)*self.N3sample)) for x in N1_NA - j*Nparticles*numpy.ones([len(N1_NA)])]
+					
+					y = []
+					
+					for temp in additional_N1N3_NAs:
+						y+=temp
+					
+					additional_N1N3_NAs = y
+					
+					index_NA_IC = list(set().union(index_NA_IC,additional_N1N3_NAs))
+
+					N1N3_NA = [x for x in index_NA_IC if x < end and x >= start]
+					#new_N1N3 = self.N1sample*self.N3sample-len(N1N3_NA)
+					remaining_N1N3 = [item for item in range(start,end) if item not in N1N3_NA]
+					
+					keep_N1N3 = [[z for z in y if z not in index_NA_IC] for y in [list(range(x,x+self.N3sample)) for x in range(start,end,self.N3sample)]]
+					new_N1N3 = [len(x) for x in keep_N1N3 if len(x)!=0]
+
+					index_NA_IC = set().union(index_NA_IC, [x+j*Nparticles for x,y in enumerate(new_N1N3) if y == 0])
+					#print remaining_N1N3
+					N1_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample]
+					new_N1 = self.N1sample-len(N1_NA)
+					#print new_N1N3%new_N1
+
+
+					#print range(j*Nparticles + self.N1sample+self.N2sample,j*Nparticles + self.N1sample+self.N2sample+ self.N1sample*self.N3sample)
+					#print ""
+					#print [item for item in range(j*Nparticles + self.N1sample+self.N2sample,j*Nparticles + self.N1sample+self.N2sample+ self.N1sample*self.N3sample) if item not in N1N3_NA]
+					#print (self.N1sample*self.N3sample-len(N1N3_NA))%(self.N1sample-len(N1_NA))
+					#print remaining_N1N3
+					cuda_NAs[cudafile].append([new_N1,new_N2,new_N1N3])
+					index_NA = list(set().union(index_NA,index_NA_IC))
+					#cuda_NAs[cudafile].append([self.N1sample-len(N1_NA),self.N2sample-len(N2_NA),self.N1sample*self.N3sample-len(N1N3_NA)])
+			cudaout[i] = numpy.delete(cudaout[i], index_NA, axis=0)
+
+		self.cudaout_structure = cuda_NAs
+
+		#print ""
+		#print cuda_NAs
+		#print ""
+		#print self.pairParamsICS 
+		#print ""
+		#print cudaorder
+		#print ""
+		#print [x.shape for x in cudaout]
+		#print ""
+		#print self.cuda
+		#print ""
+		#print [numpy.isnan(numpy.sum(numpy.sum(cudaout[i][:,:,:],axis=2),axis=1)) for i in range(2)]
+		#print cudaout[1][4,:,:]
+		#np.sum(np.sum(a, axis=-2), axis=1) 
+		#[p for p, i in enumerate(isnan(sum(asarray(modelTraj[0])[:,7:8,:],axis=2))) if i==True]
+		#print numpy.sum(cudaout[0][:,0:cudaout[0].shape[1],:],axis=2)
+
 		if self.initialprior == False:
 			for model, cudafile in enumerate(self.cuda):
 				cudaout_temp = cudaout[cudaorder.index(cudafile)]
+				#print cudaout_temp.shape
+				
 				pos = self.pairParamsICS.values()[cudaorder.index(cudafile)].index([x[1] for x in self.x0prior[model]])
-				self.cudaout[model] = cudaout_temp[pos*Nparticles:(pos+1)*Nparticles,:,:] 
+				#print cudaout_temp[pos*sum(cuda_NAs[cudafile][pos]):(pos+1)*sum(cuda_NAs[cudafile][pos]),:,:]
+				if self.analysisType!=1:
+					size_cudaout = sum(cuda_NAs[cudafile][pos])
+				else:
+					size_cudaout = sum([cuda_NAs[cudafile][pos][0]]+[cuda_NAs[cudafile][pos][1]]+cuda_NAs[cudafile][pos][2])
+				self.cudaout[model] = cudaout_temp[pos*size_cudaout:(pos+1)*size_cudaout,:,:]
+			#print cudaout
 		else:
 			for model, cudafile in enumerate(self.cuda):
 				self.cudaout[model] = cudaout[cudaorder.index(cudafile)]
 
-
+		#print ""
+		#print [x.shape for x in self.cudaout]
 	#def removeNAs(self):
-
+		#for 
 
 	#def addNoise(self):
 	#	for 
+ 

@@ -39,25 +39,9 @@
         <kineticLaw>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
-              <plus/>
-              <apply>
-                <times/>
-                <cn> 0.5 </cn>
-                <ci> alpha0 </ci>
-              </apply>
-              <apply>
-                <divide/>
-                <ci> alpha </ci>
-                <apply>
-                  <plus/>
-                  <cn type="integer"> 1 </cn>
-                  <apply>
-                    <power/>
-                    <ci> p3 </ci>
-                    <ci> h </ci>
-                  </apply>
-                </apply>
-              </apply>
+              <times/>
+              <cn> 0.5 </cn>
+              <ci> alpha </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -88,25 +72,9 @@
         <kineticLaw>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
-              <plus/>
-              <apply>
-                <times/>
-                <cn> 0.2 </cn>
-                <ci> alpha0 </ci>
-              </apply>
-              <apply>
-                <divide/>
-                <ci> alpha </ci>
-                <apply>
-                  <plus/>
-                  <cn type="integer"> 1 </cn>
-                  <apply>
-                    <power/>
-                    <ci> p1 </ci>
-                    <ci> h </ci>
-                  </apply>
-                </apply>
-              </apply>
+              <times/>
+              <cn> 0.2 </cn>
+              <ci> alpha </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -137,29 +105,9 @@
         <kineticLaw>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
-              <plus/>
-              <apply>
-                <times/>
-                <cn> 1.8 </cn>
-                <ci> alpha0 </ci>
-              </apply>
-              <apply>
-                <divide/>
-                <apply>
-                  <times/>
-                  <cn type="integer"> 7 </cn>
-                  <ci> alpha </ci>
-                </apply>
-                <apply>
-                  <plus/>
-                  <cn type="integer"> 1 </cn>
-                  <apply>
-                    <power/>
-                    <ci> p2 </ci>
-                    <ci> h </ci>
-                  </apply>
-                </apply>
-              </apply>
+              <times/>
+              <cn type="integer"> 7 </cn>
+              <ci> alph </ci>
             </apply>
           </math>
         </kineticLaw>

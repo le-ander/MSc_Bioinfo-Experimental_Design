@@ -3,11 +3,11 @@
 <dt
 
 >particles
-10
+18
 <particles
 
 >nsample
-5 5 0 0
+5 5 8 0
 <nsample
 
 >sigma
@@ -25,13 +25,13 @@ w_1.txt
 <samplefromposterior
 
 >initprior
-True
+False
 <initprior
 
 >prior
 uniform 1 10
 uniform 0 20
-uniform 500 2000
+normal 2 50
 uniform 0 10
 <prior
 
@@ -104,9 +104,10 @@ alpha 10 1
 
 >Parameter - Experiment 3
 alpha0 0.5 1
-alpha0 0.2 3
-alpha0 1.8 5
-alpha 7 5
+alpha0 0.7 3
+alpha0 2.3 5
+h 100000000000 5
+alpha 7 3
 <Parameter - Experiment 3
 
 >Parameter - Experiment 4
@@ -118,10 +119,7 @@ alpha 7 5
 
 
 >combination
-initset1 paramexp2 fit2
-initset1 paramexp4 fit2
-initset1 paramexp3 fit1
-initset1 paramexp1 fit3
-initset1 paramexp1 fit1
-initset1 paramexp4 fit3
+initset2 paramexp4 fit1
+initset2 paramexp3 fit2
+initset3 paramexp4 fit3
 <combination

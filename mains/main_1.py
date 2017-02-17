@@ -116,6 +116,8 @@ def sorting_files(input_file_SBML, input_file_data, analysis, fname, usesbml, pa
 	#sbml_obj.print_info()
 	#pairings = organiser.organisePairings(sbml_obj, comb_list)
 	#print [x.shape for x in sbml_obj.cudaout]
+	#print sum(sbml_obj.cudaout[0][:,0:sbml_obj.cudaout[0].shape[1],:],axis=2)
+
 	#print sbml_obj.cudaout
 	#print sbml_obj.speciesSample
 	#print set(sbml_obj.cuda)

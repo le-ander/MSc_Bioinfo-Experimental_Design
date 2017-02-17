@@ -30,9 +30,16 @@ def run_cudasim(m_object,inpath=""):
 	else:
 		parameters = m_object.parameterSample
 
+
 	result = modelInstance.run(parameters, m_object.speciesSample, constant_sets = not(m_object.initialprior), pairings=m_object.pairParamsICS)
-	result = [x[:,0] for x in result]
 	
+	if type(result)==list:
+		result = [x[:,0] for x in result]
+	else:
+		result = [result[:,0]]
+
+	print "----Sorting NANs from CUDA-Sim output-----"
+
 	m_object.sortCUDASimoutput(list(set(m_object.cuda)),result)
 
 def remove_na(m_object, modelTraj):
