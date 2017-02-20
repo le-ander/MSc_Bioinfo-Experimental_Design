@@ -4,6 +4,8 @@ from shutil import copyfile
 import re
 sys.path.insert(0, '/cluster/home/saw112/work/git_group_project/error_checks')
 sys.path.insert(0, '/cluster/home/saw112/work/git_group_project/simulations')
+sys.path.insert(0, '/cluster/home/saw112/work/git_group_project/mutualInfo')
+
 #import obtain_thetas
 import simulation_functions
 import organiser
@@ -12,6 +14,7 @@ import cudacodecreater
 import SBML_check
 import input_file_parser_new_2
 import parse_infoEnt_new_2
+import gE1
 from numpy import *
 #import parse_infoEnt_new
 
@@ -115,6 +118,9 @@ def sorting_files(input_file_SBML, input_file_data, analysis, fname, usesbml, pa
 	cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath)
 	print "-----Calculating scaling factor-----"
 	sbml_obj.scaling()
+	gE1.run_getEntropy1(sbml_obj)
+
+
 	#sbml_obj.print_info()
 	#pairings = organiser.organisePairings(sbml_obj, comb_list)
 	#print [x.shape for x in sbml_obj.cudaout]

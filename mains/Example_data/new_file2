@@ -3,11 +3,11 @@
 <dt
 
 >particles
-18
+46000
 <particles
 
 >nsample
-5 13 0 0
+1000 45000 0 0
 <nsample
 
 >sigma
@@ -31,7 +31,7 @@ False
 >prior
 uniform 1 10
 uniform 0 20
-normal 2 50
+uniform 500 2000
 uniform 0 10
 <prior
 
@@ -46,7 +46,7 @@ constant 4.0
 
 
 >fit
-species1-species10
+species1-species6+species3-species5
 species2+species3 species4
 All
 <fit
@@ -118,7 +118,5 @@ alpha 7 5
 
 
 >combination
-initset2 paramexp4 fit1
-initset2 paramexp3 fit2
-initset3 paramexp4 fit3
+initset1 paramexp1 fit3
 <combination

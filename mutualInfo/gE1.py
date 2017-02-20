@@ -22,14 +22,6 @@ import time
 import sys
 sys.path.insert(0, ".")
 
-
-def get_mutinf_all_param(m_object, ftheta, N1, N2, sigma, modelTraj, scale):
-	MutInfo1 = []
-	# Run function to get the mutual information for all parameters
-	MutInfo1.append(getEntropy1(ftheta[0],N1,N2,sigma,array(modelTraj[0]),scale))
-
-	return MutInfo1
-
 def round_down(num, divisor):
 	return num - (num%divisor)
 
@@ -277,3 +269,25 @@ def getEntropy1(data,N1,N2,sigma,theta,scale):
 	Info = (sum1 / float(N1 - count_na - count_inf)) - M*P/2.0*(log(2.0*pi*sigma*sigma)+1)
 
 	return(Info)
+
+def run_getEntropy1(model_obj):
+	for experiment in range(model_obj.nmodels):
+
+		#pos = model_obj.pairParamsICS.values()[cudaorder.index(cudafile)].index([x[1] for x in model_obj.x0prior[model]])
+		if model_obj.initialprior == False:
+			pos = model_obj.pairParamsICS[model_obj.cuda[experiment]].index([x[1] for x in model_obj.x0prior[experiment]])
+			N1 = model_obj.cudaout_structure[model_obj.cuda[experiment]][pos][0]
+			N2 = model_obj.cudaout_structure[model_obj.cuda[experiment]][pos][1]
+		else:
+			pos = model_obj.cudaout_structure[model_obj.cuda[experiment]][0]
+			N1 = pos[0]
+			N2 = pos[1]
+
+		print "-----Calculating Mutual Information-----", experiment
+		print model_obj.trajectories[experiment].shape
+		print model_obj.cudaout[experiment].shape
+		#print N1, N2
+		mutual_out = getEntropy1(model_obj.trajectories[experiment],N1,N2,model_obj.sigma,model_obj.cudaout[experiment],model_obj.scale[experiment])
+		print "Mutual Information:", mutual_out
+
+#def getEntropy1(data,N1,N2,sigma,theta,scale):

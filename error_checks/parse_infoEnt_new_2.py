@@ -134,10 +134,10 @@ def parse_fitting_information( mod_str, node, species_number ):
 	if (tmp[0]=="All") and (len(tmp)==1):
 		ret_temp = []
 
-		for i in range(1,species_number+1):
-			ret_temp.append(i)
+		for i in range(species_number):
+			ret_temp.append([i])
 
-		ret1.append(ret_temp)
+		ret1.extend(ret_temp)
 
 	else:
 		for i in tmp:
@@ -690,7 +690,7 @@ class algorithm_info:
 		if self.sampleFromPost == False:
 			if self.initialprior == True:
 				for Cfile in set(self.cuda):
-					self.pairParamsICS[Cfile] = [self.x0prior[j] for j in [i for i, x in enumerate(self.cuda) if x == Cfile]]
+					self.pairParamsICS[Cfile]  = [self.x0prior[j] for j in [i for i, x in enumerate(self.cuda) if x == Cfile]][0]
 			elif self.initialprior == False:
 				for Cfile in set(self.cuda):
 					temp = [[l[1] for l in self.x0prior[j]] for j in [i for i, x in enumerate(self.cuda) if x == Cfile]]
@@ -709,7 +709,12 @@ class algorithm_info:
 			index_NA = [p for p, e in enumerate(numpy.isnan(numpy.sum(numpy.sum(cudaout[i][:,:,:],axis=2),axis=1))) if e==True]
 			#print index_NA
 			#print self.pairParamsICS.values()[i]
-			for j, IC in enumerate(self.pairParamsICS.values()[i]):
+			if self.initialprior == False:
+				pairing_ICs = enumerate(self.pairParamsICS.values()[i])
+			else:
+				pairing_ICs = enumerate(range(1))
+
+			for j, IC in pairing_ICs:
 				index_NA_IC = [s for s in index_NA if s < (j+1)*Nparticles  and s >= j*Nparticles]
 				#index_NA_IC = [p for p, e in enumerate(numpy.isnan(numpy.sum(numpy.sum(cudaout[i][j*Nparticles:(j+1)*Nparticles,:,:],axis=2),axis=1))) if e==True]
 				#print index_NA_IC
@@ -763,9 +768,13 @@ class algorithm_info:
 
 		self.cudaout_structure = cuda_NAs
 
-		if self.type[0] == "ODE":
-			print "-----Adding noise to CUDA-Sim outputs-----"
-			self.addNoise(cudaorder, cudaout)
+
+		#print "-----Sorting out measurable species-----"
+		#self.fitSort()
+
+		#if self.type[0] == "ODE":
+		#	print "-----Adding noise to CUDA-Sim outputs-----"
+		#	self.addNoise(cudaorder, cudaout)
 		
 
 
@@ -776,6 +785,7 @@ class algorithm_info:
 		#print ""
 		#print cudaorder
 		#print ""
+		#print self.cudaout_structure
 		#print [x.shape for x in cudaout]
 		#print ""
 		#print self.cuda
@@ -785,6 +795,7 @@ class algorithm_info:
 		#np.sum(np.sum(a, axis=-2), axis=1) 
 		#[p for p, i in enumerate(isnan(sum(asarray(modelTraj[0])[:,7:8,:],axis=2))) if i==True]
 		#print numpy.sum(cudaout[0][:,0:cudaout[0].shape[1],:],axis=2)
+
 
 		if self.initialprior == False:
 			for model, cudafile in enumerate(self.cuda):
@@ -808,11 +819,18 @@ class algorithm_info:
 		#print self.cudaout_structure
 	#def removeNAs(self):
 		#for 
+		print "-----Sorting out measurable species-----"
+		self.fitSort()
 
-	def addNoise(self, cudaorder, cudaout_red):
+		if self.type[0] == "ODE":
+			print "-----Adding noise to CUDA-Sim outputs-----"
+			self.addNoise(cudaorder)
+
+	def addNoise(self,cudaorder):
 		#print self.sigma
 		#print [x.shape for x in cudaout_red]
 		#print self.cudaout_structure
+		'''
 		model_trajs = dict((k, []) for k in cudaorder)
 		for i, cudafile in enumerate(cudaorder):
 			
@@ -826,7 +844,7 @@ class algorithm_info:
 					size_cudaout = sum([self.cudaout_structure[cudafile][pos][0]]+[self.cudaout_structure[cudafile][pos][1]]+self.cudaout_structure[cudafile][pos][2])
 				
 				model_trajs[cudafile].append(cudaout_red[i][j*size_cudaout:j*size_cudaout+self.cudaout_structure[cudafile][j][0],:,:]+noise)
-
+		'''
 		#for m in model_trajs.values():
 		#	print [x.shape for x in m]
 
@@ -834,17 +852,40 @@ class algorithm_info:
 
 		if self.initialprior == False:
 			for model, cudafile in enumerate(self.cuda):
-				cudaout_temp = cudaout_red[cudaorder.index(cudafile)]
+				#cudaout_temp = cudaout_red[cudaorder.index(cudafile)]
 				#print cudaout_temp.shape
-				
+				#pos = self.pairParamsICS.values()[cudaorder.index(cudafile)].index([x[1] for x in self.x0prior[model]])
 				pos = self.pairParamsICS.values()[cudaorder.index(cudafile)].index([x[1] for x in self.x0prior[model]])
+				
 				#print cudaout_temp[pos*sum(cuda_NAs[cudafile][pos]):(pos+1)*sum(cuda_NAs[cudafile][pos]),:,:]
-				self.trajectories[model] = model_trajs[cudafile][pos]
+				N1_temp = self.cudaout_structure[cudafile][pos][0]
+				noise = normal(loc=0.0, scale=self.sigma, size=(N1_temp,len(self.times),len(self.fitSpecies[model])))
+				self.trajectories[model] = self.cudaout[model][:N1_temp,:,:] + noise
+			#cudaout_red[i][j*size_cudaout:j*size_cudaout+self.cudaout_structure[cudafile][j][0],:,:]+noise
 			#print cudaout
 		else:
 			for model, cudafile in enumerate(self.cuda):
-				self.trajectories[model] = model_trajs[cudafile][0]
+				N1_temp = self.cudaout_structure[cudafile][0][0]
+				noise = normal(loc=0.0, scale=self.sigma, size=(N1_temp,len(self.times),len(self.fitSpecies[model])))
+				self.trajectories[model] = self.cudaout[model][:N1_temp,:,:] + noise
 
+	def fitSort(self):
+		for i, exp_n in enumerate(self.cudaout):
+			cudaout_temp = numpy.zeros((exp_n.shape[0],exp_n.shape[1],len(self.fitSpecies[i])))
+			for j, fit in enumerate(self.fitSpecies[i]):
+				if len(fit) == 1:
+					cudaout_temp[:,:,j] = exp_n[:,:,fit[0]]
+				else:
+					if fit[1] == "+":
+						cudaout_temp[:,:,j] = exp_n[:,:,fit[0]] + exp_n[:,:,fit[2]]
+					elif fit[1] == "-":
+						cudaout_temp[:,:,j] = exp_n[:,:,fit[0]] - exp_n[:,:,fit[2]]
+					for k, part in enumerate(fit[3::2]):
+						if part == "+":
+							cudaout_temp[:,:,j] += exp_n[:,:,fit[2*k+4]]
+						elif part == "-":
+							cudaout_temp[:,:,j] -= exp_n[:,:,fit[2*k+4]]
+			self.cudaout[i] = cudaout_temp
 
 	def scaling(self):
 		self.scale = [""]*self.nmodels
