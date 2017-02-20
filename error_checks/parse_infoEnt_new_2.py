@@ -1,6 +1,6 @@
 # Algorithm information
 
-import re, sys, numpy, copy
+import re, sys, numpy, copy, math
 from numpy.random import *
 from xml.dom import minidom
 
@@ -763,6 +763,12 @@ class algorithm_info:
 
 		self.cudaout_structure = cuda_NAs
 
+		if self.type[0] == "ODE":
+			print "-----Adding noise to CUDA-Sim outputs-----"
+			self.addNoise(cudaorder, cudaout)
+		
+
+
 		#print ""
 		#print cuda_NAs
 		#print ""
@@ -799,9 +805,56 @@ class algorithm_info:
 
 		#print ""
 		#print [x.shape for x in self.cudaout]
+		#print self.cudaout_structure
 	#def removeNAs(self):
 		#for 
 
-	#def addNoise(self):
-	#	for 
- 
+	def addNoise(self, cudaorder, cudaout_red):
+		#print self.sigma
+		#print [x.shape for x in cudaout_red]
+		#print self.cudaout_structure
+		model_trajs = dict((k, []) for k in cudaorder)
+		for i, cudafile in enumerate(cudaorder):
+			
+			for j, IC in enumerate(self.pairParamsICS.values()[i]):
+				noise = normal(loc=0.0, scale=self.sigma, size=(self.cudaout_structure[cudafile][j][0],len(self.times),self.nspecies_all))
+				#model_trajs[cudafile] =  + noise 
+				pos = self.pairParamsICS.values()[cudaorder.index(cudafile)].index(IC)
+				if self.analysisType!=1:
+					size_cudaout = sum(self.cudaout_structure[cudafile][pos])
+				else:
+					size_cudaout = sum([self.cudaout_structure[cudafile][pos][0]]+[self.cudaout_structure[cudafile][pos][1]]+self.cudaout_structure[cudafile][pos][2])
+				
+				model_trajs[cudafile].append(cudaout_red[i][j*size_cudaout:j*size_cudaout+self.cudaout_structure[cudafile][j][0],:,:]+noise)
+
+		#for m in model_trajs.values():
+		#	print [x.shape for x in m]
+
+		self.trajectories=[""]*len(self.cuda)
+
+		if self.initialprior == False:
+			for model, cudafile in enumerate(self.cuda):
+				cudaout_temp = cudaout_red[cudaorder.index(cudafile)]
+				#print cudaout_temp.shape
+				
+				pos = self.pairParamsICS.values()[cudaorder.index(cudafile)].index([x[1] for x in self.x0prior[model]])
+				#print cudaout_temp[pos*sum(cuda_NAs[cudafile][pos]):(pos+1)*sum(cuda_NAs[cudafile][pos]),:,:]
+				self.trajectories[model] = model_trajs[cudafile][pos]
+			#print cudaout
+		else:
+			for model, cudafile in enumerate(self.cuda):
+				self.trajectories[model] = model_trajs[cudafile][0]
+
+
+	def scaling(self):
+		self.scale = [""]*self.nmodels
+		for model in range(self.nmodels):
+			maxDistTraj = max([math.fabs(numpy.amax(self.trajectories[model]) - numpy.amin(self.cudaout[model])),math.fabs(numpy.amax(self.cudaout[model]) - numpy.amin(self.trajectories[model]))])
+
+			preci = pow(10,-34)
+			FmaxDistTraj = 1.0*math.exp(-(maxDistTraj*maxDistTraj)/(2.0*self.sigma*self.sigma))
+
+			if FmaxDistTraj<preci:
+				self.scale[model] = pow(1.79*pow(10,300),1.0/(self.nspecies_all*len(self.times)))
+			else:
+				self.scale[model] = pow(preci,1.0/(self.nspecies_all*len(self.times)))*1.0/FmaxDistTraj

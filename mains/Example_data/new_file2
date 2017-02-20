@@ -7,7 +7,7 @@
 <particles
 
 >nsample
-5 5 8 0
+5 13 0 0
 <nsample
 
 >sigma
@@ -52,7 +52,7 @@ All
 <fit
 
 >paramfit
-parameter1 parameter2
+All
 <paramfit
 
 >initialfit
@@ -106,7 +106,6 @@ alpha 10 1
 alpha0 0.5 1
 alpha0 0.7 3
 alpha0 2.3 5
-h 100000000000 5
 alpha 7 3
 <Parameter - Experiment 3
 

@@ -38,7 +38,7 @@ def run_cudasim(m_object,inpath=""):
 	else:
 		result = [result[:,0]]
 
-	print "----Sorting NANs from CUDA-Sim output-----"
+	print "-----Sorting NaNs from CUDA-Sim output-----"
 
 	m_object.sortCUDASimoutput(list(set(m_object.cuda)),result)
 
@@ -51,10 +51,6 @@ def remove_na(m_object, modelTraj):
 		delete(modelTraj[mod], (i), axis=0)
 
 	return modelTraj
-
-
-
-
 
 def add_noise_to_traj(m_object, modelTraj, sigma, N1):##Need to ficure out were to get N1 from
 	ftheta = []

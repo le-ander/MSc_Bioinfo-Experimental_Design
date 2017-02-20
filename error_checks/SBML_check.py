@@ -3,26 +3,68 @@ from libsbml import *
 import re
 from shutil import copyfile
 
+def my_word_replace(string_input,string_search,string_replace):
+
+# --- Break input string into words
+	word_list = string_input.split(" ")
+	word_list_length = len(word_list)
+
+# --- Now run through each word of the input string; remove all non-alphanumeric
+# --- characters; find match with search string and if it matches substitute. We retain
+# --- the non-alphanumeric characters
+
+	word_list_copy = word_list
+
+	for i in range(0,word_list_length):
+
+		print word_list_copy
+		word_copy = word_list[i]
+		
+		word_copy = re.sub(r'\W', '', word_copy)
+   
+		if word_copy == string_search:
+			word_list_copy[i] = word_list[i].replace(string_search,string_replace)
+
+# --- Finally combine array into a single string
+
+	string_result = " ".join(word_list_copy)
+	return string_result
+
+
 def stringSearch(orig_str,orig_param,replacement):
-	print "here"
-	not_an = re.compile(r"[^A-Za-z0-9\s]+")
+	
+	not_an = re.compile(r"[^A-Za-z0-9]")
+	not_space = re.compile(r"[-\s]")
 	replaced_string = ""
 
-	if orig_str[:len(orig_param)] == orig_param and not_an.search(orig_str[len(orig_param)+1]):
+	if orig_str[:len(orig_param)] == orig_param and (not_an.search(orig_str[len(orig_param)]) or not_space.search(orig_str[len(orig_param)])):
 		replaced_string+=replacement
+		start = len(orig_param)
 	else:
-		replaced_string+=orig_str[:len(orig_param)]
+		replaced_string+=orig_str[0]
+		start = 1
 
+	if orig_str[-len(orig_param):] == orig_param and (not_an.search(orig_str[-len(orig_param)-1]) or not_space.search(orig_str[-len(orig_param)-1])):
+		replaced_string_end=replacement
+		end = len(orig_str)-len(orig_param)
+	else:
+		replaced_string_end=orig_str[-1]
+		end = -1
 
-	for i, param in enumerate(orig_str[len(orig_param):-1]):
-		if orig_str[i:i+len(orig_param)] == orig_param and not_an.search(orig_str[i+len(orig_param)+1]) and not_an.search(orig_str[i-1]):
+	i = start
+
+	while i < start+len(orig_str[start:end]):
+	#for i, param in enumerate(orig_str[start:end]):
+		if orig_str[i:i+len(orig_param)] == orig_param and (not_an.search(orig_str[i+len(orig_param)]) or not_space.search(orig_str[i+len(orig_param)])) and (not_an.search(orig_str[i-1]) or not_space.search(orig_str[i-1])):
 			replaced_string+=replacement
+			i+=len(orig_param)
 		else:
-			replaced_string+=param
+			replaced_string+=orig_str[i]
+			i+=1
 
-	print replaced_string
-	
-	sys.exit()
+	replaced_string += replaced_string_end
+
+	return replaced_string
 
 def SBML_checker(input_files):
 	tot_errors=0
@@ -45,15 +87,9 @@ def SBML_reactionchange(input_file, lines, param_to_change, mult_fact, param_rea
 		#temp = a.sub("[^A-Za-z0-9]+(" + param_to_change[i] + ")[^A-Za-z0-9]+",mult_fact[i]+" * "+param_to_change[i] + " ",reaction + " ")
 		#temp = a.sub(mult_fact[i]+" * "+param_to_change[i] + " ",reaction + " ")
 		temp = r"{string1} * {string2}".format(string1=mult_fact[i],string2=param_to_change[i])
-		print reaction
-		print ""
-		print param_to_change[i]
-		print ""
-		print temp
 		temp = stringSearch(reaction,param_to_change[i],temp)
 		#myRe.sub(r'\1"noversion"\3', val)
-		SBML_master.getModel().getListOfReactions()[reaction_no-1].getKineticLaw().setMath(parseFormula(temp[:-1]))
-		
+		SBML_master.getModel().getListOfReactions()[reaction_no-1].getKineticLaw().setMath(parseFormula(temp))
 	#if init_condit == False:
 	if dest=="":
 		writeSBML(SBML_master, "Exp_" + repr(nu) + ".xml")
@@ -91,10 +127,6 @@ def SBML_reactionchanges(input_file, inpath="", fname="", param_changes=""):
 			param_to_change.append(el_temp[0])
 			mult_fact.append(el_temp[1])
 			param_reaction.append(int(el_temp[2]))
-		
-		print param_to_change
-		print mult_fact
-		print param_reaction
 
 		SBML_reactionchange(input_file, data, param_to_change,mult_fact,param_reaction,exp_list[i+start_point], dest=fname, inpath = inpath)
 

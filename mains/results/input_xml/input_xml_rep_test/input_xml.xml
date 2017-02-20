@@ -25,8 +25,8 @@
 # Sizes of N1, N2, N3 and N4 samples for enthropy calculation
 <nsamples>
 <N1> 5 </N1>
-<N2> 5 </N2>
-<N3> 8 </N3>
+<N2> 13 </N2>
+<N3> 0 </N3>
 <N4> 0 </N4>
  </nsamples>
 
@@ -40,7 +40,7 @@
 <initialprior> False </initialprior>
 
 # Single or subset of parameters to be considered for calculation of mututal inforamtion:
-<paramfit> parameter1 parameter2 </paramfit>
+<paramfit> All </paramfit>
 
 <initfit> None </initfit>
 
