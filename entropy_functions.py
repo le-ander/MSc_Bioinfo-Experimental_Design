@@ -197,14 +197,14 @@ def getEntropy1(data,N1,N2,sigma,theta,scale):
 	print "PRELIM: grid, GRID_i and _j", grid, grid_prelim_i, grid_prelim_j
 
 	if N1 < grid_prelim_i:
-		grid_i = float(min(autoinit.device.max_block_dim_x,N1))
-		grid_j = float(min(autoinit.device.max_block_dim_y, round_down(grid/grid_i,block_j)))
+		grid_i = float(min(autoinit.device.max_grid_dim_x,N1))
+		grid_j = float(min(autoinit.device.max_grid_dim_y, round_down(grid/grid_i,block_j)))
 	elif N2 < grid_prelim_j:
-		grid_j = float(min(autoinit.device.max_block_dim_y,N2))
-		grid_i = float(min(autoinit.device.max_block_dim_x, round_down(grid/grid_j,block_i)))
+		grid_j = float(min(autoinit.device.max_grid_dim_y,N2))
+		grid_i = float(min(autoinit.device.max_grid_dim_x, round_down(grid/grid_j,block_i)))
 	else:
-		grid_i = float(min(autoinit.device.max_block_dim_x, grid_prelim_i))
-		grid_j = float(min(autoinit.device.max_block_dim_y, grid_prelim_j))
+		grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i))
+		grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j))
 
 	print "grid, GRID_i and _j", grid, grid_i, grid_j
 
@@ -346,14 +346,14 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 	print "PRELIM: grid, GRID_i and _j", grid, grid_prelim_i, grid_prelim_j
 
 	if N1 < grid_prelim_i:
-		grid_i = float(min(autoinit.device.max_block_dim_x,N1))
-		grid_j = float(min(autoinit.device.max_block_dim_y, round_down(grid/grid_i,block_j)))
+		grid_i = float(min(autoinit.device.max_grid_dim_x,N1))
+		grid_j = float(min(autoinit.device.max_grid_dim_y, round_down(grid/grid_i,block_j)))
 	elif N2 < grid_prelim_j:
-		grid_j = float(min(autoinit.device.max_block_dim_y,N2))
-		grid_i = float(min(autoinit.device.max_block_dim_x, round_down(grid/grid_j,block_i)))
+		grid_j = float(min(autoinit.device.max_grid_dim_y,N2))
+		grid_i = float(min(autoinit.device.max_grid_dim_x, round_down(grid/grid_j,block_i)))
 	else:
-		grid_i = float(min(autoinit.device.max_block_dim_x, grid_prelim_i))
-		grid_j = float(min(autoinit.device.max_block_dim_y, grid_prelim_j))
+		grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i))
+		grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j))
 
 	print "grid, GRID_i and _j", grid, grid_i, grid_j
 
@@ -433,7 +433,7 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 	block = optimal_blocksize(autoinit.device, dist_gpu2)
 	print "block",block
 
-	grid = float(min(autoinit.device.max_block_dim_x, optimise_grid_structure(7.76)))
+	grid = float(min(autoinit.device.max_grid_dim_x, optimise_grid_structure(7.76)))
 	print "grid", grid
 
 
