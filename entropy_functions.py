@@ -131,14 +131,15 @@ def optimal_blocksize(device, function):
 
 	return float(optimal_blocksize)
 
-def optimise_grid_structure(gmem_per_thread): ##need to define correct memory requirement for kernel (check for other cards)
+def optimise_grid_structure(gmem_per_thread):
 	# DETERMINE TOTAL NUMBER OF THREADS LIMITED BY GLOBAL MEMORY
+	# Note: need to manually check that max grid dimensions are not exceeded
 	# Read total global memory of device
 	avail_mem = driver.mem_get_info()[0]
-	# Calculate maximum number of threads, assuming global memory usage of 100 KB per thread
-	max_threads = int(avail_mem / gmem_per_thread)
-	##could change it to be a multiple of block size?
+	# Calculate maximum number of threads
+	max_threads = floor(avail_mem / gmem_per_thread)
 
+	##could change it to be a multiple of block size?
 	return max_threads
 
 def factor_partial(N):
@@ -187,23 +188,23 @@ def getEntropy1(data,N1,N2,sigma,theta,scale):
 	block = optimal_blocksize(autoinit.device, dist_gpu1)
 	block_i = factor_partial(block) # Maximum threads per block
 	block_j = block / block_i
-	print "blcok, BLOCK_I and _j",block, block_i, block_j
+	print "block, BLOCK_I and _j",block, block_i, block_j
 
 	grid = optimise_grid_structure(8.59)
 	##should be defined as an int, can then clean up formulas further down
 	grid_prelim_i = round_down(sqrt(grid),block_i) # Define square root of maximum threads per grid
 	grid_prelim_j = round_down(grid/grid_prelim_i,block_j)
-	print "grid, GRID_i and _j", grid, grid_prelim_i, grid_prelim_j
+	print "PRELIM: grid, GRID_i and _j", grid, grid_prelim_i, grid_prelim_j
 
 	if N1 < grid_prelim_i:
-		grid_i = N1
-		grid_j = round_down(grid/grid_i,block_j)
+		grid_i = float(min(autoinit.device.max_block_dim_x,N1))
+		grid_j = float(min(autoinit.device.max_block_dim_y, round_down(grid/grid_i,block_j)))
 	elif N2 < grid_prelim_j:
-		grid_j = N2
-		grid_i = round_down(grid/grid_j,block_i)
+		grid_j = float(min(autoinit.device.max_block_dim_y,N2))
+		grid_i = float(min(autoinit.device.max_block_dim_x, round_down(grid/grid_j,block_i)))
 	else:
-		grid_i = grid_prelim_i
-		grid_j = grid_prelim_j
+		grid_i = float(min(autoinit.device.max_block_dim_x, grid_prelim_i))
+		grid_j = float(min(autoinit.device.max_block_dim_y, grid_prelim_j))
 
 	print "grid, GRID_i and _j", grid, grid_i, grid_j
 
@@ -314,7 +315,7 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 
 	__global__ void distance2(int Nj, int M, int P, float sigma, double scale, double *d1, double *d3, double *res2)
 	{
-	int j = threadIdx.y + blockDim.y * blockIdx.y;
+	int j = threadIdx.x + blockDim.x * blockIdx.x;
 
 	if(j>=Nj) return;
 
@@ -322,7 +323,7 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 	x1 = 0.0;
 	for(int k=0; k<M; k++){
 			for(int l=0; l<P; l++){
-				x1 = x1 + log(scale) - ( d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])*(d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])/(2.0*sigma*sigma);
+				x1 = x1 + log(scale) - (d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])*(d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])/(2.0*sigma*sigma);
 			}
 	}
 
@@ -333,14 +334,33 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 	# Assigning main kernel function to a variable
 	dist_gpu1 = mod.get_function("distance1")
 
+	block = optimal_blocksize(autoinit.device, dist_gpu1)
+	block_i = factor_partial(block) # Maximum threads per block
+	block_j = block / block_i
+	print "block, BLOCK_I and _j",block, block_i, block_j
+
+	grid = optimise_grid_structure(8.59)
 	##should be defined as an int, can then clean up formulas further down
-	gridmax = 256.0 # Define square root of maximum threads per grid
-	blockmax = 16.0 # Maximum threads per block
+	grid_prelim_i = round_down(sqrt(grid),block_i) # Define square root of maximum threads per grid
+	grid_prelim_j = round_down(grid/grid_prelim_i,block_j)
+	print "PRELIM: grid, GRID_i and _j", grid, grid_prelim_i, grid_prelim_j
+
+	if N1 < grid_prelim_i:
+		grid_i = float(min(autoinit.device.max_block_dim_x,N1))
+		grid_j = float(min(autoinit.device.max_block_dim_y, round_down(grid/grid_i,block_j)))
+	elif N2 < grid_prelim_j:
+		grid_j = float(min(autoinit.device.max_block_dim_y,N2))
+		grid_i = float(min(autoinit.device.max_block_dim_x, round_down(grid/grid_j,block_i)))
+	else:
+		grid_i = float(min(autoinit.device.max_block_dim_x, grid_prelim_i))
+		grid_j = float(min(autoinit.device.max_block_dim_y, grid_prelim_j))
+
+	print "grid, GRID_i and _j", grid, grid_i, grid_j
 
 	# Determine required number of runs for i and j
 	##need float here?
-	numRuns_i = int(ceil(N1/float(gridmax)))
-	numRuns_j = int(ceil(N2/float(gridmax)))
+	numRuns_i = int(ceil(N1/float(grid_i)))
+	numRuns_j = int(ceil(N2/float(grid_j)))
 
 	res_t2 = zeros([N1,numRuns_j])
 
@@ -351,49 +371,48 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 	M = d1.shape[1] # number of timepoints
 	P = d1.shape[2] # number of species
 
-	Ni = int(gridmax)
+	Ni = int(grid_i)
 
 
 	for i in range(numRuns_i):
 		print "Runs left:", numRuns_i - i
-		if((int(gridmax)*(i+1)) > N1): # If last run with less that max remaining trajectories
-			Ni = int(N1 - gridmax*i) # Set Ni to remaining number of particels
+		if((int(grid_i)*(i+1)) > N1): # If last run with less that max remaining trajectories
+			Ni = int(N1 - grid_i*i) # Set Ni to remaining number of particels
 
-		if(Ni<blockmax):
+		if(Ni<block_i):
 			gi = 1  # Grid size in dim i
 			bi = Ni # Block size in dim i
 		else:
-			gi = ceil(Ni/blockmax)
-			bi = blockmax
+			gi = ceil(Ni/block_i)
+			bi = block_i
 
-		data1 = d1[(i*int(gridmax)):(i*int(gridmax)+Ni),:,:] # d1 subunit for the next j runs
+		data1 = d1[(i*int(grid_i)):(i*int(grid_i)+Ni),:,:] # d1 subunit for the next j runs
 
-		Nj = int(gridmax)
+		Nj = int(grid_j)
 		print "LOGSCALE", log(scale)
 
 
 		for j in range(numRuns_j):
-			if((int(gridmax)*(j+1)) > N2): # If last run with less that max remaining trajectories
-				Nj = int(N2 - gridmax*j) # Set Nj to remaining number of particels
+			if((int(grid_j)*(j+1)) > N2): # If last run with less that max remaining trajectories
+				Nj = int(N2 - grid_j*j) # Set Nj to remaining number of particels
 
-			data2 = d2[(j*int(gridmax)):(j*int(gridmax)+Nj),:,:] # d2 subunit for this run
+			data2 = d2[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:] # d2 subunit for this run
 
 			##could move into if statements (only if ni or nj change)
 			res1 = zeros([Ni,Nj]).astype(float64) # results vector [shape(data1)*shape(data2)]
 
-			if(Nj<blockmax):
+			if(Nj<block_j):
 				gj = 1  # Grid size in dim j
 				bj = Nj # Block size in dim j
 			else:
-				gj = ceil(Nj/blockmax)
-				bj = blockmax
+				gj = ceil(Nj/block_j)
+				bj = block_j
 
 			# Invoke GPU calculations (takes data1 and data2 as input, outputs res1)
 			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
-			print res1
 			# First summation (could be done on GPU?)
 			for k in range(Ni):
-				res_t2[(i*int(gridmax)+k),j] = sum(res1[k,:])
+				res_t2[(i*int(grid_i)+k),j] = sum(res1[k,:])
 			#print res_t2
 	sum1 = 0.0
 	count_na = 0
@@ -411,42 +430,43 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 
 	dist_gpu2 = mod.get_function("distance2")
 
-	##need this defined again here??
-	gridmax = 256.0
-	blockmax = 15.0
+	block = optimal_blocksize(autoinit.device, dist_gpu2)
+	print "block",block
 
-	numRuns_j2 = int(ceil(N3/gridmax))
+	grid = float(min(autoinit.device.max_block_dim_x, optimise_grid_structure(7.76)))
+	print "grid", grid
+
+
+	numRuns_j2 = int(ceil(N3/grid))
 
 	res_t2 = zeros([N1,numRuns_j2])
 
 	d3 = array(theta)[(N1+N2):(N1+N2+N1*N3),:,:].astype(float64)
 
-	print "DATA", shape(d1), shape(d3), gridmax, scale, shape(res_t2), numRuns_j2, N1
-
 	for i in range(N1):
 
 		data1 = d1[i,:,:]
 
-		Nj = int(gridmax)
+		Nj = int(grid)
 
 		for j in range(numRuns_j2):
 			#print "runs left:", numRuns_j2 - j
 
-			if((int(gridmax)*(j+1)) > N3):
-				Nj = int(N3 - gridmax*j)
+			if((int(grid)*(j+1)) > N3):
+				Nj = int(N3 - grid*j)
 
-			data3 = d3[(i*N3+j*int(gridmax)):(i*N3+j*int(gridmax)+Nj),:,:]
+			data3 = d3[(i*N3+j*int(grid)):(i*N3+j*int(grid)+Nj),:,:]
 
 			res2 = zeros([Nj]).astype(float64)
 
-			if(Nj<blockmax):
+			if(Nj<block):
 				gj = 1
 				bj = Nj
 			else:
-				gj = ceil(Nj/blockmax)
-				bj = blockmax
+				gj = ceil(Nj/block)
+				bj = block
 
-			dist_gpu2(int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data3),  driver.Out(res2), block=(1,int(bj),1), grid=(1,int(gj)))
+			dist_gpu2(int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data3),  driver.Out(res2), block=(int(bj),1,1), grid=(int(gj),1))
 
 			res_t2[i,j] = sum(res2[:])
 
