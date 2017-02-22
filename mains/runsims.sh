@@ -27,7 +27,7 @@ export PATH=/usr/local/cuda/bin/:/cluster/home/cbarnes/soft/bin:${PATH}
 python_exe=/cluster/home/cbarnes/soft/bin/python
 
 abcSysBio_exe=$REPRESSILATOR/abc-sysbio/scripts/run-abc-sysbio
-entBio_exe=$REPRESSILATOR/abc-sysbio/scripts/cudaEntropy_all_Scott.py
+entBio_exe=$REPRESSILATOR/abc-sysbio/scripts/cudaEntropy_all.py
 test_exe=$GPUDIR/mains/main_1.py
 
 test_temp=$REPRESSILATOR/abc-sysbio/scripts/test_SCOTT.py

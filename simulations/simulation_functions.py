@@ -30,7 +30,7 @@ def run_cudasim(m_object,inpath=""):
 	else:
 		parameters = m_object.parameterSample
 
-
+	
 	result = modelInstance.run(parameters, m_object.speciesSample, constant_sets = not(m_object.initialprior), pairings=m_object.pairParamsICS)
 	
 	if type(result)==list:
