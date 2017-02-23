@@ -491,3 +491,258 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 	print "DIST_GPU2.NUM_REGS", dist_gpu2.num_regs
 
 	return(Info)
+
+##Used to be getEntropy2!
+def getEntropy3(dataRef,dataY,N,sigma,theta1,theta2,maxDistTraj):
+
+	#kernel declaration
+	mod = compiler.SourceModule("""
+	#include <stdio.h>
+
+	__device__ unsigned int idx3d(int i, int k, int l, int M, int P)
+	{
+		return k*P + i*M*P + l;
+
+	}
+
+	__device__ unsigned int idx2d(int i, int j, int M)
+	{
+		return i*M + j;
+
+	}
+
+	__global__ void distance1(int Ni, int Nj, int M, int P, int M2, int P2, float sigma, float pi, double a, double *d1, double *d2, double *d3, double *d4, double *res1)
+	{
+	int i = threadIdx.x + blockDim.x * blockIdx.x;
+	int j = threadIdx.y + blockDim.y * blockIdx.y;
+
+	if((i>=Ni)||(j>=Nj)) return;
+
+	double x1;
+	x1 = 0.0;
+	double x3;
+	x3 = 0.0;
+	for(int k=0; k<M; k++){
+			for(int l=0; l<P; l++){
+				   x1 = x1 + a - ( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])/(2.0*sigma*sigma);
+			}
+	}
+
+
+	for(int k=0; k<M2; k++){
+			for(int l=0; l<P2; l++){
+				   x3 = x3 + a - ( d4[idx3d(j,k,l,M2,P2)]-d3[idx3d(i,k,l,M2,P2)])*( d4[idx3d(j,k,l,M2,P2)]-d3[idx3d(i,k,l,M2,P2)])/(2.0*sigma*sigma);
+			}
+	}
+
+
+	res1[idx2d(i,j,Nj)] = exp(x1+x3);
+	}
+
+
+	__global__ void distance2(int Ni, int Nj, int M, int P, int M2, int P2, float sigma, float pi, double a, double *d1, double *d2, double *d3, double *d4, double *res2, double *res3)
+	{
+	int i = threadIdx.x + blockDim.x * blockIdx.x;
+	int j = threadIdx.y + blockDim.y * blockIdx.y;
+
+	if((i>=Ni)||(j>=Nj)) return;
+
+	double x2;
+	double x3;
+	x2 = 0.0;
+	x3 = 0.0;
+
+	for(int k=0; k<M; k++){
+			for(int l=0; l<P; l++){
+				   x2 = x2 + a - ( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])/(2.0*sigma*sigma);
+			}
+	}
+	for(int k=0; k<M2; k++){
+			for(int l=0; l<P2; l++){
+				   x3 = x3 + a - ( d4[idx3d(j,k,l,M2,P2)]-d3[idx3d(i,k,l,M2,P2)])*( d4[idx3d(j,k,l,M2,P2)]-d3[idx3d(i,k,l,M2,P2)])/(2.0*sigma*sigma);
+			}
+	}
+
+	res2[idx2d(i,j,Nj)] = exp(x2);
+	res3[idx2d(i,j,Nj)] = exp(x3);
+
+
+	}
+
+
+	""")
+
+		 #         x1 = x1 + a - ( d4[idx3d(j,k,l,M2,P2)]-d3[idx3d(i,k,l,M2,P2)])*( d4[idx3d(j,k,l,M2,P2)]-d3[idx3d(i,k,l,M2,P2)])/(2.0*sigma*sigma);
+
+
+	# prepare data
+
+	N1 = 1000
+	N2 = 2500
+	N3 = 2500
+	N4 = 2500
+
+	d1 = dataRef[0:N1,:,:].astype(float64)
+	d2 = array(theta1)[N1:(N1+N2),:,:].astype(float64)
+	d3 = dataY[0:N1,:,:].astype(float64)
+	d4 = array(theta2)[N1:(N1+N2),:,:].astype(float64)
+
+	d5 = dataRef[0:N1,:,:].astype(float64)
+	d6 = array(theta1)[(N1+N2):(N1+N2+N3),:,:].astype(float64)
+	d7 = dataY[0:N1,:,:].astype(float64)
+	d8 = array(theta2)[(N1+N2+N3):(N1+N2+N3+N4),:,:].astype(float64)
+
+
+	# split data to correct size to run on GPU
+	Max = 256.0
+	dist_gpu1 = mod.get_function("distance1")
+	dist_gpu2 = mod.get_function("distance2")
+
+
+	preci = pow(10,-34)
+	M = float(max(d1.shape[1],d3.shape[1]))
+	P = float(max(d1.shape[2],d3.shape[2]))
+
+	aa1 = log(preci)/(2.0*M*P) + (maxDistTraj*maxDistTraj)/(2.0*sigma*sigma)
+
+	limMax = pow(10,300)
+
+#    aa2 = 690.7755278982136/(2.0*M*P)
+
+	aa2 = math.log(limMax)/(2.0*M*P)
+
+
+	print "aa1: ",aa1, "aa2: ",aa2
+	if(aa1<aa2): a = aa1
+	else: a = 0.0
+
+  #   FmaxDistTraj = 1.0*exp(-(maxDistTraj*maxDistTraj)/(2.0*sigma*sigma))
+ #    print "FmaxDistTraj:",FmaxDistTraj
+ #    if(FmaxDistTraj<preci):
+ #      a = pow(1.79*pow(10,300),1.0/(2.0*d1.shape[1]*d1.shape[2]*d3.shape[1]*d3.shape[2]))
+  #   else:
+ #      a = pow(1.79*pow(10,300),1.0/(2.0*d1.shape[1]*d1.shape[2]*d3.shape[1]*d3.shape[2]))
+
+
+	print "preci:", preci,"a:",a
+
+
+	numRuns = int(ceil(N1/Max))
+	print "numRuns: ", numRuns
+	numRuns2 = int(ceil(N2/Max))
+	print "numRuns2: ", numRuns2
+
+	result1 = zeros([N1,numRuns2])
+	result2 = zeros([N1,numRuns2])
+	result3 = zeros([N1,numRuns2])
+
+	countsi = 0
+	for i in range(numRuns):
+		print "runs left:", numRuns - i
+
+		si = int(Max)
+		sj = int(Max)
+
+		s = int(Max)
+		if((s*(i+1)) > N1):
+			si = int(N1 - Max*i)
+		countsj = 0
+		for j in range(numRuns2):
+			if((s*(j+1)) > N2):
+				sj = int(N2 - Max*j)
+
+			data1 = d1[(i*int(Max)):(i*int(Max)+si),:,:]
+			data2 = d2[(j*int(Max)):(j*int(Max)+sj),:,:]
+			data3 = d3[(i*int(Max)):(i*int(Max)+si),:,:]
+			data4 = d4[(j*int(Max)):(j*int(Max)+sj),:,:]
+
+			data5 = d5[(i*int(Max)):(i*int(Max)+si),:,:]
+			data6 = d6[(j*int(Max)):(j*int(Max)+sj),:,:]
+			data7 = d7[(i*int(Max)):(i*int(Max)+si),:,:]
+			data8 = d8[(j*int(Max)):(j*int(Max)+sj),:,:]
+
+			Ni=data1.shape[0]
+			Nj=data2.shape[0]
+
+			M=data1.shape[1]
+			P=data1.shape[2]
+
+			M2=data3.shape[1]
+			P2=data3.shape[2]
+
+			res1 = zeros([Ni,Nj]).astype(float64)
+			res2 = zeros([Ni,Nj]).astype(float64)
+			res3 = zeros([Ni,Nj]).astype(float64)
+
+
+			# invoke kernel
+			R = 15.0
+#           print "Ni:",Ni,"Nj:",Nj
+			if(Ni<R):
+				gi = 1
+				bi = Ni
+			else:
+				bi = R
+				gi = ceil(Ni/R)
+			if(Nj<R):
+				gj = 1
+				bj = Nj
+			else:
+				bj = R
+				gj = ceil(Nj/R)
+
+			dist_gpu1(int32(Ni), int32(Nj), int32(M), int32(P), int32(M2), int32(P2), float32(sigma), float32(pi), float64(a), driver.In(data1), driver.In(data2), driver.In(data3), driver.In(data4), driver.Out(res1),block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+
+			dist_gpu2(int32(Ni), int32(Nj), int32(M), int32(P), int32(M2), int32(P2), float32(sigma), float32(pi), float64(a), driver.In(data5), driver.In(data6), driver.In(data7), driver.In(data8), driver.Out(res2), driver.Out(res3),block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+
+
+			for k in range(si):
+				result1[(i*int(Max)+k),j] = sum(res1[k,:])
+				result2[(i*int(Max)+k),j] = sum(res2[k,:])
+				result3[(i*int(Max)+k),j] = sum(res3[k,:])
+			countsj = countsj+sj
+		countsi = countsi+si
+
+	sum1 = 0.0
+	a1 = 0.0
+	a2 = 0.0
+	a3 = 0.0
+
+ #   print res1
+ #   print result1
+ #   print result2
+ #   print result3
+
+	counter1 = 0
+	counter2 = 0
+	counter3 = 0
+	for i in range(N1):
+		if(isinf(log(sum(result1[i,:])))):
+			counter1=counter1+1
+			print "inf 1:",i
+		if(isinf(log(sum(result2[i,:])))):
+			counter2=counter2+1
+			print "inf 2:",i
+		if(isinf(log(sum(result3[i,:])))):
+			counter3=counter3+1
+			print "inf 3:",i
+		if(isinf(log(sum(result1[i,:]))) or isinf(log(sum(result2[i,:]))) or isinf(log(sum(result3[i,:])))):
+			print "inf:",i
+		else:
+			sum1 = sum1 + log(sum(result1[i,:])) - log(sum(result2[i,:])) - log(sum(result3[i,:])) - log(float(N2)) + log(float(N3)) + log(float(N4))
+
+
+		a1 = a1 + log(sum(result1[i,:])) - log(N2) - 2.0*M*P*log(2.0*pi*sigma*sigma) - 2*M*P*a
+		a2 = a2 - log(sum(result2[i,:])) + log(N3) +  M*P*log(2.0*pi*sigma*sigma) + M*P*a
+		a3 = a3 - log(sum(result3[i,:])) + log(N4) +  M*P*log(2.0*pi*sigma*sigma) + M*P*a
+
+
+	print "a1: ", a1/float(N1) , "a2: ", a2/float(N1), "a3: ", a3/float(N1)
+	print "all: ",  a1/float(N1) + a2/float(N1) + a3/float(N1)
+
+	Info = sum1/float(N1)
+
+	print "counter1: ", counter1
+	print "counter2: ", counter2
+	print "counter3: ", counter3
+	return(Info)
