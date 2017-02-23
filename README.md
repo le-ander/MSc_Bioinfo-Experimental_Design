@@ -4,9 +4,6 @@
 To do list:
 
 # Important
-
-- Simulation and Data Processing
-  - Update functions to be used with parsing output
   
 - Entropy calculations
   - Include launch configuration in getEntropy functions
@@ -14,7 +11,7 @@ To do list:
   
 - Combine all parts together
 
-- Prepare presentation
+- Figure out Python 2.7 error
 
 # Next steps
 
