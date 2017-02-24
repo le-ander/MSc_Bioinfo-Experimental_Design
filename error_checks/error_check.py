@@ -1,6 +1,5 @@
 import sys
 import os
-import parse_infoEnt
 
 def printOptions():
 	
