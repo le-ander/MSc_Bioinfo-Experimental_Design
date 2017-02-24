@@ -17,7 +17,7 @@ except:
 
 import time
 import sys
-sys.path.insert(0, '/cluster/home/saw112/work/git_group_project/error_checks')
+sys.path.insert(0, '../error_checks')
 sys.path.insert(0, ".")
 import parse_infoEnt_new_2
 

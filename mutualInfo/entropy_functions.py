@@ -10,8 +10,8 @@ import cudasim.Lsoda as Lsoda
 from pycuda import compiler, driver
 from pycuda import autoinit
 
-from abcsysbio import parse_infoEnt
-from abcsysbio_parser import ParseAndWrite
+#from abcsysbio import parse_infoEnt
+#from abcsysbio_parser import ParseAndWrite
 
 try:
 	import cPickle as pickle
@@ -512,5 +512,5 @@ def run_getEntropy2(model_obj):
 		print model_obj.cudaout[experiment].shape
 		#print N1, N2
 		
-		mutual_out = getEntropy2(model_obj.trajectories[experiment],N1,N2,1000,model_obj.sigma,model_obj.cudaout[experiment],model_obj.scale[experiment])
+		mutual_out = getEntropy2(model_obj.trajectories[experiment],N1,N2,25,model_obj.sigma,model_obj.cudaout[experiment],model_obj.scale[experiment])
 		print "Mutual Information:", mutual_out

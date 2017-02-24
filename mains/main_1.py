@@ -2,17 +2,17 @@ import sys
 import os
 from shutil import copyfile
 import re
-sys.path.insert(0, '/cluster/home/saw112/work/git_group_project/error_checks')
-sys.path.insert(0, '/cluster/home/saw112/work/git_group_project/simulations')
-sys.path.insert(0, '/cluster/home/saw112/work/git_group_project/mutualInfo')
+sys.path.insert(1, '../error_checks')
+sys.path.insert(1, '../simulations')
+sys.path.insert(1, '../mutualInfo')
 
 #import obtain_thetas
 import simulation_functions
 import organiser
 import error_check
-import cudacodecreater
-import SBML_check
-import input_file_parser_new_2
+#import cudacodecreater
+#import SBML_check
+#import input_file_parser_new_2
 import parse_infoEnt_new_2
 import gE1
 import entropy_functions
@@ -23,7 +23,7 @@ def main():
 	# Calls error_checker - reads in command line arguments and does some basic error checks
 	input_file_SBMLs, input_file_datas, analysis, fname, usesbml, parameter_change, init_condit, iname = error_check.input_checker(sys.argv,0)
 	# Calls SBML_checker - checks all the SBML files that have been inputted
-	SBML_check.SBML_checker([iname+"/"+input_file_SBMLs[i] for i, value in enumerate(usesbml) if value=="0"])
+#	SBML_check.SBML_checker([iname+"/"+input_file_SBMLs[i] for i, value in enumerate(usesbml) if value=="0"])
 	# Unpacks the following four command line arguments - each element corresponds to each SBML and data file pair 
 	usesbml=[not(bool(int(i))) for i in list(usesbml)]
 	parameter_change=[int(i) for i in list(parameter_change)]
