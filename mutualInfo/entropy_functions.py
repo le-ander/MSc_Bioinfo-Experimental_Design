@@ -437,25 +437,27 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 	print "grid", grid
 
 
-	numRuns_j2 = int(ceil(N3/grid))
+	
 
-	res_t2 = zeros([N1,numRuns_j2])
+	d3 = array(theta)[(N1+N2):(N1+N2+sum(N3)),:,:].astype(float64)
 
-	d3 = array(theta)[(N1+N2):(N1+N2+N1*N3),:,:].astype(float64)
+	res_t2 = zeros([N1,max([int(ceil(res_d2/grid)) for res_d2 in N3])])
 
 	for i in range(N1):
-
+		
 		data1 = d1[i,:,:]
 
 		Nj = int(grid)
 
+		numRuns_j2 = int(ceil(N3[i]/grid))
+
 		for j in range(numRuns_j2):
 			#print "runs left:", numRuns_j2 - j
+			
+			if((int(grid)*(j+1)) > N3[i]):
+				Nj = int(N3[i] - grid*j)
 
-			if((int(grid)*(j+1)) > N3):
-				Nj = int(N3 - grid*j)
-
-			data3 = d3[(i*N3+j*int(grid)):(i*N3+j*int(grid)+Nj),:,:]
+			data3 = d3[(i*N3[i]+j*int(grid)):(i*N3[i]+j*int(grid)+Nj),:,:]
 
 			res2 = zeros([Nj]).astype(float64)
 
@@ -467,8 +469,10 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 				bj = block
 
 			dist_gpu2(int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data3),  driver.Out(res2), block=(int(bj),1,1), grid=(int(gj),1))
-
+			
 			res_t2[i,j] = sum(res2[:])
+			
+	
 
 	sumstatic = 0.0
 	sum2 = 0.0
@@ -479,8 +483,8 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 		if(isnan(sum(res_t2[i,:]))): count2_na += 1
 		elif(isinf(log(sum(res_t2[i,:])))): count2_inf += 1
 		else:
-			sum2 += log(sum(res_t2[i,:])) - log(float(N3)) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
-			sumstatic += - log(float(N3)) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
+			sum2 += log(sum(res_t2[i,:])) - log(float(N3[i])) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
+			sumstatic += - log(float(N3[i])) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
 	print "COUNTER", count2_na, count2_inf
 	print "SUM2", sum2
 	print "sumstatic", sumstatic
@@ -512,5 +516,7 @@ def run_getEntropy2(model_obj):
 		print model_obj.cudaout[experiment].shape
 		#print N1, N2
 		
-		mutual_out = getEntropy2(model_obj.trajectories[experiment],N1,N2,25,model_obj.sigma,model_obj.cudaout[experiment],model_obj.scale[experiment])
+
+		mutual_out = getEntropy2(model_obj.trajectories[experiment],N1,N2,N3,model_obj.sigma,model_obj.cudaout[experiment],model_obj.scale[experiment])
+
 		print "Mutual Information:", mutual_out
