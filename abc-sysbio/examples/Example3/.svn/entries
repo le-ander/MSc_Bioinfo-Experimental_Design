@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="307"
+   name=""
+   committed-date="2011-07-19T18:18:32.637283Z"
+   url="https://abc-sysbio.svn.sourceforge.net/svnroot/abc-sysbio/trunk/examples/Example3"
+   last-author="finalstate"
+   kind="dir"
+   uuid="9fd3cdd8-cb19-473b-9a16-0324ff0cf891"
+   revision="419"/>
+<entry
+   committed-rev="286"
+   name="input_file_dimerisation.xml"
+   text-time="2011-10-05T12:10:11.000000Z"
+   committed-date="2011-07-13T19:00:33.706588Z"
+   checksum="5be6eee71c0982a1bf25e26c50b6a80e"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:11.000000Z"/>
+<entry
+   committed-rev="286"
+   name="input_file_dimerisation_auto.xml"
+   text-time="2011-10-05T12:10:11.000000Z"
+   committed-date="2011-07-13T19:00:33.706588Z"
+   checksum="6ca21d089f74a5ba71b8c009444526ff"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:11.000000Z"/>
+<entry
+   committed-rev="307"
+   name="DimerisationDiscreetStochastic.xml"
+   text-time="2011-10-05T12:10:11.000000Z"
+   committed-date="2011-07-19T18:18:32.637283Z"
+   checksum="f791791b15b3b5feddc7d902251f0e86"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:11.000000Z"/>
+</wc-entries>

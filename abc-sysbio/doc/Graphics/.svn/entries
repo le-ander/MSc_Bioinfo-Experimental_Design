@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="198"
+   name=""
+   committed-date="2010-06-07T18:32:14.983803Z"
+   url="https://abc-sysbio.svn.sourceforge.net/svnroot/abc-sysbio/trunk/doc/Graphics"
+   last-author="finalstate"
+   kind="dir"
+   uuid="9fd3cdd8-cb19-473b-9a16-0324ff0cf891"
+   revision="419"/>
+<entry
+   committed-rev="125"
+   name="TimeSeriesLinGrow1.png"
+   text-time="2011-10-05T12:09:46.000000Z"
+   committed-date="2010-04-15T09:28:57.128960Z"
+   checksum="284a6333ba25a47a31abad66c8f6ba65"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:43.000000Z"/>
+<entry
+   committed-rev="125"
+   name="TimeSeriesLinGrow2.png"
+   text-time="2011-10-05T12:09:47.000000Z"
+   committed-date="2010-04-15T09:28:57.128960Z"
+   checksum="3b49327ba4206f23f0f7a2d2d639135f"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:44.000000Z"/>
+<entry
+   committed-rev="125"
+   name="Simulated_Data_MMDeterministic.png"
+   text-time="2011-10-05T12:09:47.000000Z"
+   committed-date="2010-04-15T09:28:57.128960Z"
+   checksum="a220042b0c67a3636bb4193062cbf487"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:43.000000Z"/>
+<entry
+   committed-rev="125"
+   name="Simulated_Data_MMStochastic.png"
+   text-time="2011-10-05T12:09:47.000000Z"
+   committed-date="2010-04-15T09:28:57.128960Z"
+   checksum="9d134fa0b2676dab72ae2a02107a2513"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:44.000000Z"/>
+<entry
+   committed-rev="125"
+   name="LastTimeSIR.png"
+   text-time="2011-10-05T12:09:47.000000Z"
+   committed-date="2010-04-15T09:28:57.128960Z"
+   checksum="c287ee3d0ba7e618659dea7480913192"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:45.000000Z"/>
+<entry
+   committed-rev="125"
+   name="LinGrowPosterior1.png"
+   text-time="2011-10-05T12:09:48.000000Z"
+   committed-date="2010-04-15T09:28:57.128960Z"
+   checksum="e7597b3395c527fdb2471ace70bc9dcf"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:46.000000Z"/>
+<entry
+   committed-rev="125"
+   name="DimerisationResults.png"
+   text-time="2011-10-05T12:09:48.000000Z"
+   committed-date="2010-04-15T09:28:57.128960Z"
+   checksum="121173b16c772865c134597a40ca5752"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:46.000000Z"/>
+<entry
+   committed-rev="125"
+   name="ScatterPlotsLinGrow1.png"
+   text-time="2011-10-05T12:09:48.000000Z"
+   committed-date="2010-04-15T09:28:57.128960Z"
+   checksum="04bcb2c959c35029991cdfe5483b1c95"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:46.000000Z"/>
+<entry
+   committed-rev="125"
+   name="ScatterPlotsLinGrow2.png"
+   text-time="2011-10-05T12:09:48.000000Z"
+   committed-date="2010-04-15T09:28:57.128960Z"
+   checksum="07acd73028acd4e0b53c043be0f4282a"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:46.000000Z"/>
+<entry
+   committed-rev="197"
+   name="ModelDistributionSIR.png"
+   text-time="2011-10-05T12:09:47.000000Z"
+   committed-date="2010-06-07T18:31:58.604003Z"
+   checksum="7d3ae70ac0d8ccf4946a0b11e817e30c"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:44.000000Z"/>
+<entry
+   committed-rev="125"
+   name="abcAlgorithms.png"
+   text-time="2011-10-05T12:09:47.000000Z"
+   committed-date="2010-04-15T09:28:57.128960Z"
+   checksum="b302162a0a9b9006d40c8d6b88418f05"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:44.000000Z"/>
+<entry
+   committed-rev="125"
+   name="DimerisationData.png"
+   text-time="2011-10-05T12:09:47.000000Z"
+   committed-date="2010-04-15T09:28:57.128960Z"
+   checksum="e34073ada2f2d4fafcff631e471207a0"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:45.000000Z"/>
+<entry
+   committed-rev="125"
+   name="FirstTimeSIR.png"
+   text-time="2011-10-05T12:09:47.000000Z"
+   committed-date="2010-04-15T09:28:57.128960Z"
+   checksum="b7c07f47709ea07356eca73c7be000a5"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:45.000000Z"/>
+<entry
+   committed-rev="198"
+   name="AcceptedSIR.png"
+   text-time="2011-10-05T12:09:48.000000Z"
+   committed-date="2010-06-07T18:32:14.983803Z"
+   checksum="c0a882309a841ad8bdc4a2e491428b7b"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:46.000000Z"/>
+<entry
+   committed-rev="125"
+   name="dataSIR.png"
+   text-time="2011-10-05T12:09:48.000000Z"
+   committed-date="2010-04-15T09:28:57.128960Z"
+   checksum="89f60131db7d2bd9a6219aaee0686514"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:46.000000Z"/>
+</wc-entries>

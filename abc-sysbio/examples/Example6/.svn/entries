@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="419"
+   name=""
+   committed-date="2011-09-30T11:17:41.070787Z"
+   url="https://abc-sysbio.svn.sourceforge.net/svnroot/abc-sysbio/trunk/examples/Example6"
+   last-author="finalstate"
+   kind="dir"
+   uuid="9fd3cdd8-cb19-473b-9a16-0324ff0cf891"
+   revision="419"/>
+<entry
+   committed-rev="410"
+   name="three_nodes_model1.xml"
+   text-time="2011-10-05T12:10:07.000000Z"
+   committed-date="2011-09-26T11:06:57.986782Z"
+   checksum="770fe2305f7155293bd96e3435425eb7"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:06.000000Z"/>
+<entry
+   committed-rev="410"
+   name="three_nodes_model10.xml"
+   text-time="2011-10-05T12:10:07.000000Z"
+   committed-date="2011-09-26T11:06:57.986782Z"
+   checksum="4324c2ff65fcb77b007f4cc4f5716a52"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:06.000000Z"/>
+<entry
+   committed-rev="410"
+   name="three_nodes_model11.xml"
+   text-time="2011-10-05T12:10:07.000000Z"
+   committed-date="2011-09-26T11:06:57.986782Z"
+   checksum="bb1a160ca4e0e4e0d7d283c3ed4b0729"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:06.000000Z"/>
+<entry
+   committed-rev="410"
+   name="three_nodes_model2.xml"
+   text-time="2011-10-05T12:10:07.000000Z"
+   committed-date="2011-09-26T11:06:57.986782Z"
+   checksum="f0a7667908e1c64a4459fd7931c3aea3"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:06.000000Z"/>
+<entry
+   committed-rev="419"
+   name="input_file_adaptation.xml"
+   text-time="2011-10-05T12:10:07.000000Z"
+   committed-date="2011-09-30T11:17:41.070787Z"
+   checksum="8e18ee9d6422d0c9ea3723e6ba9be1a5"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:06.000000Z"/>
+<entry
+   committed-rev="410"
+   name="three_nodes_model3.xml"
+   text-time="2011-10-05T12:10:07.000000Z"
+   committed-date="2011-09-26T11:06:57.986782Z"
+   checksum="42c5e3cc1b1329cc97768452d60a9c27"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:06.000000Z"/>
+<entry
+   committed-rev="410"
+   name="three_nodes_model4.xml"
+   text-time="2011-10-05T12:10:08.000000Z"
+   committed-date="2011-09-26T11:06:57.986782Z"
+   checksum="a5602adc2ae6a24cf4bf612def3dfae9"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:06.000000Z"/>
+<entry
+   committed-rev="410"
+   name="three_nodes_model5.xml"
+   text-time="2011-10-05T12:10:08.000000Z"
+   committed-date="2011-09-26T11:06:57.986782Z"
+   checksum="c3b8b2e8d17890a1a167f8e6a22c77e6"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:06.000000Z"/>
+<entry
+   committed-rev="410"
+   name="three_nodes_model6.xml"
+   text-time="2011-10-05T12:10:08.000000Z"
+   committed-date="2011-09-26T11:06:57.986782Z"
+   checksum="101769dcb29ad79972f1598f46e75278"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:06.000000Z"/>
+<entry
+   committed-rev="410"
+   name="three_nodes_model7.xml"
+   text-time="2011-10-05T12:10:08.000000Z"
+   committed-date="2011-09-26T11:06:57.986782Z"
+   checksum="d9eb12663af756f48f5ebe9df71b1dea"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:07.000000Z"/>
+<entry
+   committed-rev="410"
+   name="three_nodes_model8.xml"
+   text-time="2011-10-05T12:10:08.000000Z"
+   committed-date="2011-09-26T11:06:57.986782Z"
+   checksum="0e09f53ad5b318b16bf251aa5b6f65d4"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:07.000000Z"/>
+<entry
+   committed-rev="410"
+   name="customABC.py"
+   text-time="2011-10-05T12:10:08.000000Z"
+   committed-date="2011-09-26T11:06:57.986782Z"
+   checksum="90c9cfced6247ca16fd0ad004d6bcec8"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:07.000000Z"/>
+<entry
+   committed-rev="410"
+   name="three_nodes_model9.xml"
+   text-time="2011-10-05T12:10:08.000000Z"
+   committed-date="2011-09-26T11:06:57.986782Z"
+   checksum="8af3f582f5f30801421a6eafd275aec4"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:07.000000Z"/>
+</wc-entries>

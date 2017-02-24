@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="383"
+   name=""
+   committed-date="2011-07-29T14:29:17.860295Z"
+   url="https://abc-sysbio.svn.sourceforge.net/svnroot/abc-sysbio/trunk/doc"
+   last-author="finalstate"
+   kind="dir"
+   uuid="9fd3cdd8-cb19-473b-9a16-0324ff0cf891"
+   revision="419"/>
+<entry
+   name="Graphics"
+   kind="dir"/>
+<entry
+   committed-rev="381"
+   name="ManualBibliography.bib"
+   text-time="2011-10-05T12:09:53.000000Z"
+   committed-date="2011-07-29T14:27:46.479937Z"
+   checksum="91782d358a54f5ba106b05bfb35da4f1"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:48.000000Z"/>
+<entry
+   committed-rev="382"
+   name="ABC-SysBio-Manual.tex"
+   text-time="2011-10-05T12:09:53.000000Z"
+   committed-date="2011-07-29T14:28:09.637959Z"
+   checksum="e17fe48ed168e95520a8fc186e1cbf2a"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:48.000000Z"/>
+<entry
+   committed-rev="127"
+   name="interface.bst"
+   text-time="2011-10-05T12:09:53.000000Z"
+   committed-date="2010-04-15T09:51:09.063525Z"
+   checksum="03bf01e7847434b3e69d5a424b2a86b4"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:49.000000Z"/>
+<entry
+   name="Flowchart"
+   kind="dir"/>
+<entry
+   committed-rev="383"
+   name="ABC-SysBio-Manual.pdf"
+   text-time="2011-10-05T12:09:53.000000Z"
+   committed-date="2011-07-29T14:29:17.860295Z"
+   checksum="de6caa3ec4262714f460463080eb0b78"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:52.000000Z"/>
+</wc-entries>

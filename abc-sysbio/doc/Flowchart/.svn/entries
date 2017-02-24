@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="125"
+   name=""
+   committed-date="2010-04-15T09:28:57.128960Z"
+   url="https://abc-sysbio.svn.sourceforge.net/svnroot/abc-sysbio/trunk/doc/Flowchart"
+   last-author="finalstate"
+   kind="dir"
+   uuid="9fd3cdd8-cb19-473b-9a16-0324ff0cf891"
+   revision="419"/>
+<entry
+   committed-rev="125"
+   name="Flowchart.tex"
+   text-time="2011-10-05T12:09:49.000000Z"
+   committed-date="2010-04-15T09:28:57.128960Z"
+   checksum="cb869de590f0de6d91ca11ffabeae052"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:49.000000Z"/>
+</wc-entries>

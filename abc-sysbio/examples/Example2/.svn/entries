@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="274"
+   name=""
+   committed-date="2011-07-12T17:17:58.668822Z"
+   url="https://abc-sysbio.svn.sourceforge.net/svnroot/abc-sysbio/trunk/examples/Example2"
+   last-author="finalstate"
+   kind="dir"
+   uuid="9fd3cdd8-cb19-473b-9a16-0324ff0cf891"
+   revision="419"/>
+<entry
+   committed-rev="260"
+   name="input_file_lingrow_restart.xml"
+   text-time="2011-10-05T12:10:10.000000Z"
+   committed-date="2011-07-11T14:29:43.745851Z"
+   checksum="618bd98aed4fc00d94214d7bc28690ff"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:10.000000Z"/>
+<entry
+   committed-rev="264"
+   name="input_file_lingrow_simulation.xml"
+   text-time="2011-10-05T12:10:10.000000Z"
+   committed-date="2011-07-11T19:14:26.075755Z"
+   checksum="7393c381268fcab838d38964117576e9"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:10.000000Z"/>
+<entry
+   committed-rev="272"
+   name="input_file_lingrow_normk.xml"
+   text-time="2011-10-05T12:10:10.000000Z"
+   committed-date="2011-07-12T17:17:10.763284Z"
+   checksum="25cb9b762cdf9de7d44cbe7a967aca9f"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:10.000000Z"/>
+<entry
+   committed-rev="260"
+   name="input_file_lingrow_x0.xml"
+   text-time="2011-10-05T12:10:11.000000Z"
+   committed-date="2011-07-11T14:29:43.745851Z"
+   checksum="dcddb0ecfada0b4337899c8b7cd9941e"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:10.000000Z"/>
+<entry
+   committed-rev="272"
+   name="input_file_lingrow_normk2.xml"
+   text-time="2011-10-05T12:10:11.000000Z"
+   committed-date="2011-07-12T17:17:10.763284Z"
+   checksum="5eb56fc094048bc300c2c5f120243416"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:10.000000Z"/>
+<entry
+   committed-rev="260"
+   name="input_file_lingrow_x0_restart.xml"
+   text-time="2011-10-05T12:10:11.000000Z"
+   committed-date="2011-07-11T14:29:43.745851Z"
+   checksum="f6ac8275452160357a829960b9a2d061"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:10.000000Z"/>
+<entry
+   committed-rev="219"
+   name="LinearGrowthModelModified.py"
+   text-time="2011-10-05T12:10:11.000000Z"
+   committed-date="2010-08-11T20:57:32.971047Z"
+   checksum="2e372ce7b04b7b7bd3c8aba3216c13f5"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:10.000000Z"/>
+<entry
+   committed-rev="260"
+   name="input_file_lingrow.xml"
+   text-time="2011-10-05T12:10:11.000000Z"
+   committed-date="2011-07-11T14:29:43.745851Z"
+   checksum="612563e5684c9cb6edb37d8c6b29b9e5"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:10.000000Z"/>
+</wc-entries>
