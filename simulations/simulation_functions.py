@@ -42,6 +42,7 @@ def run_cudasim(m_object,inpath=""):
 
 	m_object.sortCUDASimoutput(list(set(m_object.cuda)),result)
 
+
 def remove_na(m_object, modelTraj):
 	# Create a list of indices of particles that have an NA in their row
 	##Why using 7:8 when summing? -> Change this

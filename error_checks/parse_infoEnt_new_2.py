@@ -206,7 +206,6 @@ class algorithm_info:
 
 
 		self.nspecies_all=0
-		self.ncompparams_all=0
 		self.nparameters_all = 0
 		self.sampleFromPost = False
 		self.initialprior = False
@@ -336,13 +335,17 @@ class algorithm_info:
 				nparameter = 0
 				ncompparam = 0
 
-				compref = m.getElementsByTagName('compartments')[0]
-				for p in compref.childNodes:
-					if p.nodeType == p.ELEMENT_NODE:
-						ncompparam += 1
-						prior_tmp = [0,0,0]
-						tmp = str( p.firstChild.data ).split()
-						self.compprior[self.nmodels-1].append( process_prior( tmp ) )
+				try:
+					compref = m.getElementsByTagName('compartments')[0]
+					for p in compref.childNodes:
+						if p.nodeType == p.ELEMENT_NODE:
+							ncompparam += 1
+							prior_tmp = [0,0,0]
+							tmp = str( p.firstChild.data ).split()
+							self.compprior[self.nmodels-1].append( process_prior( tmp ) )
+				except:
+					self.ncompparams_all=0
+				
 				
 				paramref = m.getElementsByTagName('parameters')[0]
 				
@@ -390,9 +393,9 @@ class algorithm_info:
 			print "Models don't have the same number of species"
 			sys.exit()
 
-		if len(set(self.ncompparams))==1:
+		if len(set(self.ncompparams))==1 and list(set(self.ncompparams))[0]!=0:
 			self.ncompparams_all = list(set(self.ncompparams))[0]
-		else:
+		elif self.ncompparams_all != 0:
 			print "Models don't have the same number of compartments"
 			sys.exit()
 
@@ -667,14 +670,13 @@ class algorithm_info:
 		self.parameterSample = parameters
 		self.speciesSample = species
 
-	
 	def getAnalysisType(self,analysisType):
 		self.analysisType = analysisType
 
 #	def getCombination(self, combination_list):
 #		self.combination = combination_list
 
-
+	'''
 	def getSampleSizes(self,N1=0,N2=0,N3=0,N4=0):
 		if N1+N2+N3+N4==self.particles:
 			self.N1sample = N1
@@ -684,7 +686,7 @@ class algorithm_info:
 		else:
 			print "Sum of N1, N2, N3, and N4 is not the number of particles given in the input XML file"
 			sys.exit()
-
+	'''
 	def getpairingCudaICs(self):
 		self.pairParamsICS = {}
 		if self.sampleFromPost == False:
@@ -819,12 +821,16 @@ class algorithm_info:
 		#print self.cudaout_structure
 	#def removeNAs(self):
 		#for 
+
+
 		print "-----Sorting out measurable species-----"
 		self.fitSort()
+
 
 		if self.type[0] == "ODE":
 			print "-----Adding noise to CUDA-Sim outputs-----"
 			self.addNoise(cudaorder)
+
 
 	def addNoise(self,cudaorder):
 		#print self.sigma
@@ -870,6 +876,7 @@ class algorithm_info:
 				self.trajectories[model] = self.cudaout[model][:N1_temp,:,:] + noise
 
 	def fitSort(self):
+		
 		for i, exp_n in enumerate(self.cudaout):
 			cudaout_temp = numpy.zeros((exp_n.shape[0],exp_n.shape[1],len(self.fitSpecies[i])))
 			for j, fit in enumerate(self.fitSpecies[i]):
@@ -891,11 +898,10 @@ class algorithm_info:
 		self.scale = [""]*self.nmodels
 		for model in range(self.nmodels):
 			maxDistTraj = max([math.fabs(numpy.amax(self.trajectories[model]) - numpy.amin(self.cudaout[model])),math.fabs(numpy.amax(self.cudaout[model]) - numpy.amin(self.trajectories[model]))])
-
 			preci = pow(10,-34)
 			FmaxDistTraj = 1.0*math.exp(-(maxDistTraj*maxDistTraj)/(2.0*self.sigma*self.sigma))
 
 			if FmaxDistTraj<preci:
-				self.scale[model] = pow(1.79*pow(10,300),1.0/(self.nspecies_all*len(self.times)))
+				self.scale[model] = pow(1.79*pow(10,300),1.0/(len(self.fitSpecies[model])*len(self.times)))
 			else:
-				self.scale[model] = pow(preci,1.0/(self.nspecies_all*len(self.times)))*1.0/FmaxDistTraj
+				self.scale[model] = pow(preci,1.0/(len(self.fitSpecies[model])*len(self.times)))*1.0/FmaxDistTraj

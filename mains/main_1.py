@@ -15,6 +15,7 @@ import SBML_check
 import input_file_parser_new_2
 import parse_infoEnt_new_2
 import gE1
+import entropy_functions
 from numpy import *
 #import parse_infoEnt_new
 
@@ -116,9 +117,14 @@ def sorting_files(input_file_SBML, input_file_data, analysis, fname, usesbml, pa
 	print "-----Running CUDA-Sim-----"
 	#cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath)
 	cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath)
+	
 	print "-----Calculating scaling factor-----"
 	sbml_obj.scaling()
-	gE1.run_getEntropy1(sbml_obj)
+	
+	if sbml_obj.analysisType == 0:
+		gE1.run_getEntropy1(sbml_obj)
+	elif sbml_obj.analysisType == 1:
+		entropy_functions.run_getEntropy2(sbml_obj)
 
 
 	#sbml_obj.print_info()

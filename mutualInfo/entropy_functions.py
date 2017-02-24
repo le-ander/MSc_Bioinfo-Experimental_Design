@@ -491,3 +491,26 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 	print "DIST_GPU2.NUM_REGS", dist_gpu2.num_regs
 
 	return(Info)
+
+def run_getEntropy2(model_obj):
+	for experiment in range(model_obj.nmodels):
+
+		#pos = model_obj.pairParamsICS.values()[cudaorder.index(cudafile)].index([x[1] for x in model_obj.x0prior[model]])
+		if model_obj.initialprior == False:
+			pos = model_obj.pairParamsICS[model_obj.cuda[experiment]].index([x[1] for x in model_obj.x0prior[experiment]])
+			N1 = model_obj.cudaout_structure[model_obj.cuda[experiment]][pos][0]
+			N2 = model_obj.cudaout_structure[model_obj.cuda[experiment]][pos][1]
+			N3 = model_obj.cudaout_structure[model_obj.cuda[experiment]][pos][2]
+		else:
+			pos = model_obj.cudaout_structure[model_obj.cuda[experiment]][0]
+			N1 = pos[0]
+			N2 = pos[1]
+			N3 = pos[2]
+
+		print "-----Calculating Mutual Information-----", experiment
+		print model_obj.trajectories[experiment].shape
+		print model_obj.cudaout[experiment].shape
+		#print N1, N2
+		
+		mutual_out = getEntropy2(model_obj.trajectories[experiment],N1,N2,1000,model_obj.sigma,model_obj.cudaout[experiment],model_obj.scale[experiment])
+		print "Mutual Information:", mutual_out

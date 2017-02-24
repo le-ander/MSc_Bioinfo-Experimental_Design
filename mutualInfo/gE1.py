@@ -284,8 +284,6 @@ def run_getEntropy1(model_obj):
 			N2 = pos[1]
 
 		print "-----Calculating Mutual Information-----", experiment
-		print model_obj.trajectories[experiment].shape
-		print model_obj.cudaout[experiment].shape
 		#print N1, N2
 		mutual_out = getEntropy1(model_obj.trajectories[experiment],N1,N2,model_obj.sigma,model_obj.cudaout[experiment],model_obj.scale[experiment])
 		print "Mutual Information:", mutual_out
