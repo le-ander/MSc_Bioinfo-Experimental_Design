@@ -8,9 +8,6 @@ import re
 import cudasim.Lsoda as Lsoda
 
 
-#from abcsysbio import parse_infoEnt
-#from abcsysbio_parser import ParseAndWrite
-
 
 try:
 	import cPickle as pickle

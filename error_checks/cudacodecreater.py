@@ -1,5 +1,4 @@
 import sys
-sys.path.insert(0, '/cluster/home/saw112/work/Test_code/abcsysbio_parser')
 import ParseAndWrite
 
 def cudacodecreater(input_files, inPath="",outPath=""):

@@ -5,13 +5,8 @@ from numpy.random import *
 import math
 import re
 
-import cudasim.Lsoda as Lsoda
-
 from pycuda import compiler, driver
 from pycuda import autoinit
-
-#from abcsysbio import parse_infoEnt
-#from abcsysbio_parser import ParseAndWrite
 
 try:
 	import cPickle as pickle
