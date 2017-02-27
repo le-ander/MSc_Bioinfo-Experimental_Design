@@ -344,7 +344,7 @@ class algorithm_info:
 							tmp = str( p.firstChild.data ).split()
 							self.compprior[self.nmodels-1].append( process_prior( tmp ) )
 				except:
-					self.ncompparams_all=0
+					ncompparam = 0
 				
 				
 				paramref = m.getElementsByTagName('parameters')[0]
@@ -387,17 +387,20 @@ class algorithm_info:
 			print "\nNo models specified"
 			sys.exit()
 
+
 		if len(set(self.nspecies))==1:
 			self.nspecies_all = list(set(self.nspecies))[0]
 		else:
 			print "Models don't have the same number of species"
 			sys.exit()
 
-		if len(set(self.ncompparams))==1 and list(set(self.ncompparams))[0]!=0:
+
+		if len(set(self.ncompparams))==1: #and list(set(self.ncompparams))[0]!=0:
 			self.ncompparams_all = list(set(self.ncompparams))[0]
-		elif self.ncompparams_all != 0:
+		elif len(set(self.ncompparams))!=1:
 			print "Models don't have the same number of compartments"
 			sys.exit()
+
 
 		if (len(set(self.nparameters))!=1) or (self.nparameters_all != list(set(self.nparameters))[0]):
 			print "Models don't have the same number of parameters"
