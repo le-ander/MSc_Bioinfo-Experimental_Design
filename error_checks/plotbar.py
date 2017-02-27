@@ -14,7 +14,7 @@ def plotbar(MutInfo, modelname, n_groups, approach):
 		plt.ylabel(r'I($\Theta$,X)', fontweight="bold")
 		plt.suptitle('Mutual Information - Prediction for all parameters', fontweight="bold")
 	elif approach==1:
-		plt.ylabel(r'I($\Theta$,X)', fontweight="bold")
+		plt.ylabel(r'I($\Theta_c$,X)', fontweight="bold")
 		plt.suptitle('Mutual Information - Prediction for subset of parameters')
 	elif approach==2:
 		plt.ylabel('I(Y,X)', fontweight="bold" )
@@ -38,4 +38,4 @@ def plotbar(MutInfo, modelname, n_groups, approach):
 	plt.yticks(arange(0, ylim, ystep))
 
 
-	plt.savefig("./results/out.svg")
+	plt.savefig("./results/out.pdf")
