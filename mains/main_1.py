@@ -5,7 +5,7 @@ import re
 sys.path.insert(1, '../error_checks')
 sys.path.insert(1, '../simulations')
 sys.path.insert(1, '../mutualInfo')
-sys.path.insert(1, '../abc-sysbio/abcsysbio_parser')
+#sys.path.insert(1, '../abc-sysbio/abcsysbio_parser')
 sys.path.insert(1, '../abc-sysbio')
 
 #sys.path.insert(1, '/cluster/home/saw112/work/Test_code/abcsysbio_parser') ## not sure what it does as directory doesn't exist
