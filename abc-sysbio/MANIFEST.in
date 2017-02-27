@@ -1,4 +1,0 @@
-recursive-include examples *
-include doc/ABC-SysBio-Manual.pdf
-recursive-include abcsysbio/src *
-prune abcsysbio/src/newmat
