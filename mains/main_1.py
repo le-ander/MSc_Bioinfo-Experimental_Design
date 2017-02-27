@@ -20,6 +20,7 @@ import parse_infoEnt_new_2
 import gE1
 import entropy_functions
 import cudacodecreater
+import plotbar
 from numpy import *
 
 
@@ -126,7 +127,8 @@ def sorting_files(input_file_SBML, input_file_data, analysis, fname, usesbml, pa
 	sbml_obj.scaling()
 	
 	if sbml_obj.analysisType == 0:
-		gE1.run_getEntropy1(sbml_obj)
+		MutInfo1=gE1.run_getEntropy1(sbml_obj)
+		plotbar.plotbar(MutInfo1, sbml_obj.name ,sbml_obj.nmodels ,0)
 	elif sbml_obj.analysisType == 1:
 		entropy_functions.run_getEntropy2(sbml_obj)
 
@@ -140,6 +142,7 @@ def sorting_files(input_file_SBML, input_file_data, analysis, fname, usesbml, pa
 	#print sbml_obj.speciesSample
 	#print set(sbml_obj.cuda)
 	#print comb_list
+
 
 random.seed(123)
 main()
