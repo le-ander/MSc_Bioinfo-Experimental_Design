@@ -492,6 +492,7 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 	return(Info)
 
 def run_getEntropy2(model_obj):
+	MutInfo2 = []
 	for experiment in range(model_obj.nmodels):
 
 		#pos = model_obj.pairParamsICS.values()[cudaorder.index(cudafile)].index([x[1] for x in model_obj.x0prior[model]])
@@ -512,6 +513,6 @@ def run_getEntropy2(model_obj):
 		#print N1, N2
 		
 
-		mutual_out = getEntropy2(model_obj.trajectories[experiment],N1,N2,N3,model_obj.sigma,model_obj.cudaout[experiment],model_obj.scale[experiment])
+		MutInfo2.append(getEntropy2(model_obj.trajectories[experiment],N1,N2,N3,model_obj.sigma,model_obj.cudaout[experiment],model_obj.scale[experiment]))
 
-		print "Mutual Information:", mutual_out
+		print "Mutual Information:", MutInfo2[experiment]
