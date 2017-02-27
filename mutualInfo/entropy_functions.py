@@ -18,13 +18,6 @@ import sys
 sys.path.insert(0, ".")
 
 
-def get_mutinf_all_param(m_object, ftheta, N1, N2, sigma, modelTraj, scale):
-	MutInfo1 = []
-	# Run function to get the mutual information for all parameters
-	MutInfo1.append(getEntropy1(ftheta[0],N1,N2,sigma,array(modelTraj[0]),scale))
-
-	return MutInfo1
-
 def round_down(num, divisor):
 	return num - (num%divisor)
 
