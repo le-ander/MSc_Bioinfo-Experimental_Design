@@ -1,4 +1,4 @@
-from CUDAParser import CUDAParser
+from abcsysbio_parser.CUDAParser import CUDAParser
 
 class SdeAndGillespieCUDAParser(CUDAParser):
     def __init__(self, sbmlFileName, modelName, integrationType, method, inputPath="", outputPath=""):

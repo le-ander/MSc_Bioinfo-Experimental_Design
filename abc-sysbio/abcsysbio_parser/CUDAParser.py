@@ -1,4 +1,4 @@
-from Parser import Parser
+from abcsysbio_parser.Parser import Parser
 from libsbml import formulaToString
 import re
 

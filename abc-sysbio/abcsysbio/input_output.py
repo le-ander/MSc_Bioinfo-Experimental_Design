@@ -1,11 +1,11 @@
 import os, sys, pickle
 import numpy
 
-from getResults import getAllScatterPlots
-from getResults import getAllHistograms
-from getResults import plotTimeSeries
-from getResults import getModelDistribution
-from getResults import plotData
+from abcsysbio.getResults import getAllScatterPlots
+from abcsysbio.getResults import getAllHistograms
+from abcsysbio.getResults import plotTimeSeries
+from abcsysbio.getResults import getModelDistribution
+from abcsysbio.getResults import plotData
 
 class input_output:
     

@@ -3,13 +3,13 @@ from libsbml import *
 import re
 import os
 from abcsysbio.relations import *
-from CWriter import CWriter
-from SDEPythonWriter import SDEPythonWriter
-from ODEPythonWriter import ODEPythonWriter
-from GillespiePythonWriter import GillespiePythonWriter
-from SDECUDAWriter import SdeCUDAWriter
-from ODECUDAWriter import OdeCUDAWriter
-from GillespieCUDAWriter import GillespieCUDAWriter
+from abcsysbio_parser.CWriter import CWriter
+from abcsysbio_parser.SDEPythonWriter import SDEPythonWriter
+from abcsysbio_parser.ODEPythonWriter import ODEPythonWriter
+from abcsysbio_parser.GillespiePythonWriter import GillespiePythonWriter
+from abcsysbio_parser.SDECUDAWriter import SdeCUDAWriter
+from abcsysbio_parser.ODECUDAWriter import OdeCUDAWriter
+from abcsysbio_parser.GillespieCUDAWriter import GillespieCUDAWriter
 
 class Parser:
     def __init__(self, sbmlFileName, modelName, integrationType, method, inputPath="", outputPath=""):   

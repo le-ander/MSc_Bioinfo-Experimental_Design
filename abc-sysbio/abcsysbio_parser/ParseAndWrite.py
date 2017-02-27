@@ -1,13 +1,13 @@
-from ODEPythonWriter import ODEPythonWriter
-from GillespiePythonWriter import GillespiePythonWriter
-from SDEPythonWriter import SDEPythonWriter
-from ODECUDAWriter import OdeCUDAWriter
-from SDECUDAWriter import SdeCUDAWriter
-from GillespieCUDAWriter import GillespieCUDAWriter
+from abcsysbio_parser.ODEPythonWriter import ODEPythonWriter
+from abcsysbio_parser.GillespiePythonWriter import GillespiePythonWriter
+from abcsysbio_parser.SDEPythonWriter import SDEPythonWriter
+from abcsysbio_parser.ODECUDAWriter import OdeCUDAWriter
+from abcsysbio_parser.SDECUDAWriter import SdeCUDAWriter
+from abcsysbio_parser.GillespieCUDAWriter import GillespieCUDAWriter
 #from CWriter import CWriter
-from CandPythonParser import CandPythonParser
-from SDEAndGillespieCUDAParser import SdeAndGillespieCUDAParser
-from ODECUDAParser import OdeCUDAParser
+from abcsysbio_parser.CandPythonParser import CandPythonParser
+from abcsysbio_parser.SDEAndGillespieCUDAParser import SdeAndGillespieCUDAParser
+from abcsysbio_parser.ODECUDAParser import OdeCUDAParser
 import re
 
 def ParseAndWrite(source, integrationType, modelName = None, inputPath = "", outputPath = "", method = None):

@@ -1,6 +1,6 @@
 #from CandPythonParser import CandPythonParser
 #from CUDAParser import CUDAParser
-from ParsedModel import ParsedModel
+from abcsysbio_parser.ParsedModel import ParsedModel
 
 class Writer:
     def __init__(self, sbmlFileName, modelName = "", inputPath = "", outputPath = ""):

@@ -7,8 +7,8 @@ from pylab import *
 
 # need to get howToFitData
 #import abcsysbio.abcSMC_model
-import abcsmc
-from abcsmc import howToFitData
+import abcsysbio.abcsmc
+from abcsysbio.abcsmc import howToFitData
 
 # weighted histogramming 
 def bin_data(d, w, nbins):

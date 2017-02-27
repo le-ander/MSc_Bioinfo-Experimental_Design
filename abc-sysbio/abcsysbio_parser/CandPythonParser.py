@@ -1,10 +1,10 @@
-from Parser import Parser
+from abcsysbio_parser.Parser import Parser
 from libsbml import *
 from numpy import *
 import re
 import os
 from abcsysbio.relations import *
-from ParsedModel import ParsedModel
+from abcsysbio_parser.ParsedModel import ParsedModel
 
 class CandPythonParser(Parser):
     def __init__(self, sbmlFileName, modelName, integrationType, method, inputPath="", outputPath=""):

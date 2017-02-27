@@ -1,6 +1,6 @@
 from libsbml import *
 from abcsysbio.relations import *
-from Writer import Writer
+from abcsysbio_parser.Writer import Writer
 import os
 import re
 

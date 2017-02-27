@@ -2,7 +2,7 @@ import os
 import re
 from libsbml import *
 from abcsysbio.relations import *
-from Writer import Writer
+from abcsysbio_parser.Writer import Writer
 
 class ODEPythonWriter(Writer):
     def __init__(self, sbmlFileName, modelName="", inputPath="", outputPath=""):

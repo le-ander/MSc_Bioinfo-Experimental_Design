@@ -2,7 +2,7 @@ from libsbml import *
 from abcsysbio.relations import *
 import os
 import re
-from Writer import Writer
+from abcsysbio_parser.Writer import Writer
 
 class SdeCUDAWriter(Writer):
     def __init__(self, sbmlFileName, modelName="", inputPath="", outputPath=""):
