@@ -5,9 +5,9 @@ import re
 sys.path.insert(1, '../error_checks')
 sys.path.insert(1, '../simulations')
 sys.path.insert(1, '../mutualInfo')
-#sys.path.insert(1, '../abc-sysbio/abcsysbio_parser')
 sys.path.insert(1, '../abc-sysbio')
 
+#sys.path.insert(1, '../abc-sysbio/abcsysbio_parser')
 #sys.path.insert(1, '/cluster/home/saw112/work/Test_code/abcsysbio_parser') ## not sure what it does as directory doesn't exist
 
 #import obtain_thetas
@@ -17,8 +17,8 @@ import error_check
 import SBML_check
 import input_file_parser_new_2
 import parse_infoEnt_new_2
-import gE1
-import entropy_functions
+import getEntropy1
+import getEntropy2
 import cudacodecreater
 import plotbar
 from numpy import *
@@ -127,10 +127,10 @@ def sorting_files(input_file_SBML, input_file_data, analysis, fname, usesbml, pa
 	sbml_obj.scaling()
 	
 	if sbml_obj.analysisType == 0:
-		MutInfo1=gE1.run_getEntropy1(sbml_obj)
+		MutInfo1=getEntropy1.run_getEntropy1(sbml_obj)
 		plotbar.plotbar(MutInfo1, sbml_obj.name ,sbml_obj.nmodels ,0)
 	elif sbml_obj.analysisType == 1:
-		MutInfo2=entropy_functions.run_getEntropy2(sbml_obj)
+		MutInfo2=getEntropy2.run_getEntropy2(sbml_obj)
 		plotbar.plotbar(MutInfo2, sbml_obj.name ,sbml_obj.nmodels ,1)
 
 
