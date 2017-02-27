@@ -16,8 +16,8 @@ except:
 
 import time
 import sys
-sys.path.insert(0, '../error_checks')
-sys.path.insert(0, ".")
+sys.path.insert(1, '../error_checks')
+sys.path.insert(1, ".")
 import parse_infoEnt_new_2
 
 

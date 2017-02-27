@@ -6,18 +6,20 @@ sys.path.insert(1, '../error_checks')
 sys.path.insert(1, '../simulations')
 sys.path.insert(1, '../mutualInfo')
 sys.path.insert(1, '../abc-sysbio/abcsysbio_parser')
+sys.path.insert(1, '../abc-sysbio')
+
 #sys.path.insert(1, '/cluster/home/saw112/work/Test_code/abcsysbio_parser') ## not sure what it does as directory doesn't exist
 
 #import obtain_thetas
 import simulation_functions
 import organiser
 import error_check
-#import cudacodecreater
-#import SBML_check
-#import input_file_parser_new_2
+import SBML_check
+import input_file_parser_new_2
 import parse_infoEnt_new_2
 import gE1
 import entropy_functions
+import cudacodecreater
 from numpy import *
 
 
@@ -25,7 +27,7 @@ def main():
 	# Calls error_checker - reads in command line arguments and does some basic error checks
 	input_file_SBMLs, input_file_datas, analysis, fname, usesbml, parameter_change, init_condit, iname = error_check.input_checker(sys.argv,0)
 	# Calls SBML_checker - checks all the SBML files that have been inputted
-#	SBML_check.SBML_checker([iname+"/"+input_file_SBMLs[i] for i, value in enumerate(usesbml) if value=="0"])
+	SBML_check.SBML_checker([iname+"/"+input_file_SBMLs[i] for i, value in enumerate(usesbml) if value=="0"])
 	# Unpacks the following four command line arguments - each element corresponds to each SBML and data file pair 
 	usesbml=[not(bool(int(i))) for i in list(usesbml)]
 	parameter_change=[int(i) for i in list(parameter_change)]

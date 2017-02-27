@@ -18,7 +18,7 @@ export LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/local/cuda/lib:/cluster/home/c
 export PYTHONPATH=$TESTCODE/abc-sysbio/abcsysbio
 export PYTHONPATH=$PYTHONPATH:$TESTCODE/abc-sysbio/abcsysbio_parser
 export PYTHONPATH=$PYTHONPATH:$TESTCODE/abc-sysbio
-export PYTHONPATH=$PYTHONPATH:$REPRESSILATOR/cudaSim/cuda-sim-0.06
+export PYTHONPATH=$PYTHONPATH:/cluster/home/saw112/work/Repressilator/cudaSim/cuda-sim-0.06
 export PYTHONPATH=$PYTHONPATH:$TESTCODE
 export PYTHONPATH=$MYINSTALL/lib/python:$PYTHONPATH
 
@@ -61,6 +61,9 @@ $python_exe -u $entBio_exe -i input_file_repressilator.xml -of=results_1 -cu -lc
 
 
 #$python_exe $test_exe -a 0 -of=results -i1 rep_test.xml -i2 new_file2 -p 1 -ic 1 -lc 0
+
+
+python main_1.py -a 0 -of=results -i1 rep_test.xml -i2 new_file2 -p 1 -ic 1 -lc 0 -if=Example_data
 
 #For 2d reduction kernel
 #http://stackoverflow.com/questions/31706599/how-to-perform-reduction-on-a-huge-2d-matrix-along-the-row-direction-using-cuda

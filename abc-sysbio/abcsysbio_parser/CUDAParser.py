@@ -6,7 +6,7 @@ class CUDAParser(Parser):
     def __init__(self, sbmlFileName, modelName, integrationType, method, inputPath="", outputPath=""):
         self.mathPython = []
         self.mathCuda = []
-        Parser.__init__(self, sbmlFileName, modelName, integrationType, method, inputPath="", outputPath="")
+        Parser.__init__(self, sbmlFileName, modelName, integrationType, method, inputPath, outputPath)
         
     def parse(self):
         Parser.parse(self)
