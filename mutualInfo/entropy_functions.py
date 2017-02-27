@@ -516,3 +516,4 @@ def run_getEntropy2(model_obj):
 		MutInfo2.append(getEntropy2(model_obj.trajectories[experiment],N1,N2,N3,model_obj.sigma,model_obj.cudaout[experiment],model_obj.scale[experiment]))
 
 		print "Mutual Information:", MutInfo2[experiment]
+	return MutInfo2
