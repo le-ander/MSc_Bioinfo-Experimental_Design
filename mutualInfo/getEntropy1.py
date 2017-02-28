@@ -1,5 +1,3 @@
-#!/usr/bin/python2.5
-
 from numpy import *
 from numpy.random import *
 import math
@@ -8,14 +6,8 @@ import re
 from pycuda import compiler, driver
 from pycuda import autoinit
 
-try:
-	import cPickle as pickle
-except:
-	import pickle
-
 import time
 import sys
-sys.path.insert(0, ".")  #### not sure why this is here
 
 
 def round_down(num, divisor):
@@ -119,14 +111,15 @@ def optimal_blocksize(device, function):
 
 	return float(optimal_blocksize)
 
-def optimise_grid_structure(gmem_per_thread): ##need to define correct memory requirement for kernel (check for other cards)
+def optimise_grid_structure(gmem_per_thread):
 	# DETERMINE TOTAL NUMBER OF THREADS LIMITED BY GLOBAL MEMORY
+	# Note: need to manually check that max grid dimensions are not exceeded
 	# Read total global memory of device
 	avail_mem = driver.mem_get_info()[0]
-	# Calculate maximum number of threads, assuming global memory usage of 100 KB per thread
-	max_threads = int(avail_mem / gmem_per_thread)
-	##could change it to be a multiple of block size?
+	# Calculate maximum number of threads
+	max_threads = floor(avail_mem / gmem_per_thread)
 
+	##could change it to be a multiple of block size?
 	return max_threads
 
 def factor_partial(N):
@@ -175,32 +168,32 @@ def getEntropy1(data,N1,N2,sigma,theta,scale):
 	block = optimal_blocksize(autoinit.device, dist_gpu1)
 	block_i = factor_partial(block) # Maximum threads per block
 	block_j = block / block_i
-	print "blcok, BLOCK_I and _j",block, block_i, block_j
+	print "block, BLOCK_I and _j",block, block_i, block_j
 
 	grid = optimise_grid_structure(8.59)
 	##should be defined as an int, can then clean up formulas further down
 	grid_prelim_i = round_down(sqrt(grid),block_i) # Define square root of maximum threads per grid
 	grid_prelim_j = round_down(grid/grid_prelim_i,block_j)
-	print "grid, GRID_i and _j", grid, grid_prelim_i, grid_prelim_j
+	print "PRELIM: grid, GRID_i and _j", grid, grid_prelim_i, grid_prelim_j
 
 	if N1 < grid_prelim_i:
-		grid_i = N1
-		grid_j = round_down(grid/grid_i,block_j)
+		grid_i = float(min(autoinit.device.max_grid_dim_x,N1))
+		grid_j = float(min(autoinit.device.max_grid_dim_y, round_down(grid/grid_i,block_j)))
 	elif N2 < grid_prelim_j:
-		grid_j = N2
-		grid_i = round_down(grid/grid_j,block_i)
+		grid_j = float(min(autoinit.device.max_grid_dim_y,N2))
+		grid_i = float(min(autoinit.device.max_grid_dim_x, round_down(grid/grid_j,block_i)))
 	else:
-		grid_i = grid_prelim_i
-		grid_j = grid_prelim_j
+		grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i))
+		grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j))
 
 	print "grid, GRID_i and _j", grid, grid_i, grid_j
 
 	# Determine required number of runs for i and j
 	##need float here?
-	numRuns_i = int(ceil(N1/float(grid_i)))
-	numRuns_j = int(ceil(N2/float(grid_j)))
+	numRuns_i = int(ceil(N1/grid_i))
+	numRuns_j = int(ceil(N2/grid_j))
 
-	res_t2 = zeros([N1,numRuns_j])
+	result = zeros([N1,numRuns_j])
 
 	# Prepare data
 	d1 = data.astype(float64)
@@ -247,20 +240,20 @@ def getEntropy1(data,N1,N2,sigma,theta,scale):
 
 			# Invoke GPU calculations (takes data1 and data2 as input, outputs res1)
 			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
-			#print "RES1", res1
+			print "RES1", res1
 			# First summation (could be done on GPU?)
 			for k in range(Ni):
-					res_t2[(i*int(grid_i)+k),j] = sum(res1[k,:])
-			#print res_t2
+					result[(i*int(grid_i)+k),j] = sum(res1[k,:])
+			print result
 	sum1 = 0.0
 	count_na = 0
 	count_inf = 0
 
 	for i in range(N1):
-		if(isnan(sum(res_t2[i,:]))): count_na += 1
-		elif(isinf(log(sum(res_t2[i,:])))): count_inf += 1
+		if(isnan(sum(result[i,:]))): count_na += 1
+		elif(isinf(log(sum(result[i,:])))): count_inf += 1
 		else:
-			sum1 += - log(sum(res_t2[i,:])) + log(float(N2)) + M*P*log(scale) +  M*P*log(2.0*pi*sigma*sigma)
+			sum1 += - log(sum(result[i,:])) + log(float(N2)) + M*P*log(scale) +  M*P*log(2.0*pi*sigma*sigma)
 	print count_na, count_inf
 	Info = (sum1 / float(N1 - count_na - count_inf)) - M*P/2.0*(log(2.0*pi*sigma*sigma)+1)
 
@@ -282,8 +275,8 @@ def run_getEntropy1(model_obj):
 
 		print "-----Calculating Mutual Information-----", experiment
 		#print N1, N2
+
 		MutInfo1.append(getEntropy1(model_obj.trajectories[experiment],N1,N2,model_obj.sigma,model_obj.cudaout[experiment],model_obj.scale[experiment]))
 		print "Mutual Information:", MutInfo1[experiment]
-	return MutInfo1
 
-#def getEntropy1(data,N1,N2,sigma,theta,scale):
+	return MutInfo1
