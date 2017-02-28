@@ -125,11 +125,11 @@ def getEntropy1(data,N1,N2,sigma,theta,scale):
 
 			# Invoke GPU calculations (takes data1 and data2 as input, outputs res1)
 			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
-			print "RES1", res1
+
 			# First summation (could be done on GPU?)
 			for k in range(Ni):
 					result[(i*int(grid_i)+k),j] = sum(res1[k,:])
-			print result
+
 	sum1 = 0.0
 	count_na = 0
 	count_inf = 0
