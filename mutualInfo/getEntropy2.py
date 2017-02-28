@@ -18,6 +18,7 @@ import sys
 sys.path.insert(0, ".")
 
 
+
 def round_down(num, divisor):
 	return num - (num%divisor)
 
@@ -198,10 +199,10 @@ def getEntropy1(data,N1,N2,sigma,theta,scale):
 
 	# Determine required number of runs for i and j
 	##need float here?
-	numRuns_i = int(ceil(N1/float(grid_i)))
-	numRuns_j = int(ceil(N2/float(grid_j)))
+	numRuns_i = int(ceil(N1/grid_i))
+	numRuns_j = int(ceil(N2/grid_j))
 
-	res_t2 = zeros([N1,numRuns_j])
+	result1 = zeros([N1,numRuns_j])
 
 	# Prepare data
 	d1 = data.astype(float64)
@@ -251,17 +252,17 @@ def getEntropy1(data,N1,N2,sigma,theta,scale):
 			print "RES1", res1
 			# First summation (could be done on GPU?)
 			for k in range(Ni):
-					res_t2[(i*int(grid_i)+k),j] = sum(res1[k,:])
-			print res_t2
+					result1[(i*int(grid_i)+k),j] = sum(res1[k,:])
+			print result1
 	sum1 = 0.0
 	count_na = 0
 	count_inf = 0
 
 	for i in range(N1):
-		if(isnan(sum(res_t2[i,:]))): count_na += 1
-		elif(isinf(log(sum(res_t2[i,:])))): count_inf += 1
+		if(isnan(sum(result1[i,:]))): count_na += 1
+		elif(isinf(log(sum(result1[i,:])))): count_inf += 1
 		else:
-			sum1 += - log(sum(res_t2[i,:])) + log(float(N2)) + M*P*log(scale) +  M*P*log(2.0*pi*sigma*sigma)
+			sum1 += - log(sum(result1[i,:])) + log(float(N2)) + M*P*log(scale) +  M*P*log(2.0*pi*sigma*sigma)
 	print count_na, count_inf
 	Info = (sum1 / float(N1 - count_na - count_inf)) - M*P/2.0*(log(2.0*pi*sigma*sigma)+1)
 
@@ -347,10 +348,10 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 
 	# Determine required number of runs for i and j
 	##need float here?
-	numRuns_i = int(ceil(N1/float(grid_i)))
-	numRuns_j = int(ceil(N2/float(grid_j)))
+	numRuns_i = int(ceil(N1/grid_i))
+	numRuns_j = int(ceil(N2/grid_j))
 
-	res_t2 = zeros([N1,numRuns_j])
+	result = zeros([N1,numRuns_j])
 
 	# Prepare data
 	d1 = data[0:N1,:,:].astype(float64)
@@ -400,17 +401,17 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 			# First summation (could be done on GPU?)
 			for k in range(Ni):
-				res_t2[(i*int(grid_i)+k),j] = sum(res1[k,:])
-			#print res_t2
+				result[(i*int(grid_i)+k),j] = sum(res1[k,:])
+			#print result
 	sum1 = 0.0
 	count_na = 0
 	count_inf = 0
 
 	for i in range(N1):
-		if(isnan(sum(res_t2[i,:]))): count_na += 1
-		elif(isinf(log(sum(res_t2[i,:])))): count_inf += 1
+		if(isnan(sum(result[i,:]))): count_na += 1
+		elif(isinf(log(sum(result[i,:])))): count_inf += 1
 		else:
-			sum1 += log(sum(res_t2[i,:])) - log(float(N2)) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
+			sum1 += log(sum(result[i,:])) - log(float(N2)) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
 	print "COUNTER1", count_na, count_inf
 	print "SUM1", sum1
 
@@ -425,14 +426,13 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 	print "grid", grid
 
 
-	
-
 	d3 = array(theta)[(N1+N2):(N1+N2+sum(N3)),:,:].astype(float64)
+
 
 	res_t2 = zeros([N1,max([int(ceil(res_d2/grid)) for res_d2 in N3])])
 
 	for i in range(N1):
-		
+
 		data1 = d1[i,:,:]
 
 		Nj = int(grid)
@@ -441,7 +441,7 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 
 		for j in range(numRuns_j2):
 			#print "runs left:", numRuns_j2 - j
-			
+
 			if((int(grid)*(j+1)) > N3[i]):
 				Nj = int(N3[i] - grid*j)
 
@@ -457,10 +457,8 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 				bj = block
 
 			dist_gpu2(int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data3),  driver.Out(res2), block=(int(bj),1,1), grid=(int(gj),1))
-			
-			res_t2[i,j] = sum(res2[:])
-			
-	
+
+			result[i,j] = sum(res2[:])
 
 	sumstatic = 0.0
 	sum2 = 0.0
@@ -468,11 +466,12 @@ def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
 	count2_inf = 0
 
 	for i in range(N1):
-		if(isnan(sum(res_t2[i,:]))): count2_na += 1
-		elif(isinf(log(sum(res_t2[i,:])))): count2_inf += 1
+		if(isnan(sum(result[i,:]))): count2_na += 1
+		elif(isinf(log(sum(result[i,:])))): count2_inf += 1
 		else:
-			sum2 += log(sum(res_t2[i,:])) - log(float(N3[i])) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
+			sum2 += log(sum(result[i,:])) - log(float(N3[i])) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
 			sumstatic += - log(float(N3[i])) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
+
 	print "COUNTER", count2_na, count2_inf
 	print "SUM2", sum2
 	print "sumstatic", sumstatic
@@ -504,9 +503,300 @@ def run_getEntropy2(model_obj):
 		print model_obj.trajectories[experiment].shape
 		print model_obj.cudaout[experiment].shape
 		#print N1, N2
-		
+
 
 		MutInfo2.append(getEntropy2(model_obj.trajectories[experiment],N1,N2,N3,model_obj.sigma,model_obj.cudaout[experiment],model_obj.scale[experiment]))
 
 		print "Mutual Information:", MutInfo2[experiment]
 	return MutInfo2
+
+
+'''
+###Does not work! See comments in the function
+def scaling_gE3(modelTraj, ftheta, sigma):
+	###maxDistTraj is the same for all combintions of ref and alt experiments, however, the calc of "a" from maxDistTraj is different for each combination.
+	###Not sure how to implement this outside of gE3...
+	maxDistTraj = []
+
+	for tp in range(shape(modelTraj)[1]):
+		maxDistTraj.append(max(amax(ftheta[:,tp,:]),amax(modelTraj[:,tp,:])) - min(amin(ftheta[:,tp,:]),amin(modelTraj[:,tp,:])))
+
+	M_Ref=ftheta.shape[1]
+	P_Ref=ftheta.shape[2]
+
+	###How to select the right alternative model in this run??
+	M_Alt=XX.shape[1]
+	P_Alt=XX.shape[2]
+
+	M_Max = float(max(M_Ref,M_Alt))
+	P_Max = float(max(P_Ref,P_Alt))
+
+	preci = pow(10,-34)
+
+	aa1 = log(preci)/(2.0*M_Max*P_Max) + (maxDistTraj*maxDistTraj)/(2.0*sigma*sigma)
+	aa2 = math.log(pow(10,300))/(2.0*M_Max*P_Max)
+
+	print "aa1: ",aa1, "aa2: ",aa2
+	if(aa1<aa2): a = aa1
+	else: a = 0.0
+
+	#FmaxDistTraj = 1.0*exp(-(maxDistTraj*maxDistTraj)/(2.0*sigma*sigma))
+	#print "FmaxDistTraj:",FmaxDistTraj
+	#if(FmaxDistTraj<preci):
+	#	a = pow(1.79*pow(10,300),1.0/(2.0*d1.shape[1]*d1.shape[2]*d3.shape[1]*d3.shape[2]))
+	#else:
+	#	a = pow(1.79*pow(10,300),1.0/(2.0*d1.shape[1]*d1.shape[2]*d3.shape[1]*d3.shape[2]))
+
+	print "preci:", preci,"a:",a
+
+	return a
+'''
+
+
+def getEntropy3(dataRef,dataMod,N1,N2,N3,N4,sigma,thetaRef,thetaMod,maxDistTraj):
+
+	#kernel declaration
+	mod = compiler.SourceModule("""
+	#include <stdio.h>
+
+	__device__ unsigned int idx3d(int i, int k, int l, int M, int P)
+	{
+		return k*P + i*M*P + l;
+
+	}
+
+	__device__ unsigned int idx2d(int i, int j, int M)
+	{
+		return i*M + j;
+
+	}
+
+	__global__ void distance1(int Ni, int Nj, int M_Ref, int M_Ref, int M_Alt, int P_Alt, float sigma, double a, double *d1, double *d2, double *d3, double *d4, double *res1)
+	{
+	int i = threadIdx.x + blockDim.x * blockIdx.x;
+	int j = threadIdx.y + blockDim.y * blockIdx.y;
+
+	if((i>=Ni)||(j>=Nj)) return;
+
+	double x1;
+	x1 = 0.0;
+	double x3;
+	x3 = 0.0;
+	for(int k=0; k<M_Ref; k++){
+			for(int l=0; l<M_Ref; l++){
+				   x1 = x1 + a - ( d2[idx3d(j,k,l,M_Ref,M_Ref)]-d1[idx3d(i,k,l,M_Ref,M_Ref)])*( d2[idx3d(j,k,l,M_Ref,M_Ref)]-d1[idx3d(i,k,l,M_Ref,M_Ref)])/(2.0*sigma*sigma);
+			}
+	}
+
+
+	for(int k=0; k<M_Alt; k++){
+			for(int l=0; l<P_Alt; l++){
+				   x3 = x3 + a - ( d4[idx3d(j,k,l,M_Alt,P_Alt)]-d3[idx3d(i,k,l,M_Alt,P_Alt)])*( d4[idx3d(j,k,l,M_Alt,P_Alt)]-d3[idx3d(i,k,l,M_Alt,P_Alt)])/(2.0*sigma*sigma);
+			}
+	}
+
+
+	res1[idx2d(i,j,Nj)] = exp(x1+x3);
+	}
+
+
+	__global__ void distance2(int Ni, int Nj, int M_Ref, int M_Ref, int M_Alt, int P_Alt, float sigma, double a, double *d1, double *d2, double *d3, double *d4, double *res2, double *res3)
+	{
+	int i = threadIdx.x + blockDim.x * blockIdx.x;
+	int j = threadIdx.y + blockDim.y * blockIdx.y;
+
+	if((i>=Ni)||(j>=Nj)) return;
+
+	double x2;
+	double x3;
+	x2 = 0.0;
+	x3 = 0.0;
+
+	for(int k=0; k<M_Ref; k++){
+			for(int l=0; l<M_Ref; l++){
+				   x2 = x2 + a - ( d2[idx3d(j,k,l,M_Ref,M_Ref)]-d1[idx3d(i,k,l,M_Ref,M_Ref)])*( d2[idx3d(j,k,l,M_Ref,M_Ref)]-d1[idx3d(i,k,l,M_Ref,M_Ref)])/(2.0*sigma*sigma);
+			}
+	}
+	for(int k=0; k<M_Alt; k++){
+			for(int l=0; l<P_Alt; l++){
+				   x3 = x3 + a - ( d4[idx3d(j,k,l,M_Alt,P_Alt)]-d3[idx3d(i,k,l,M_Alt,P_Alt)])*( d4[idx3d(j,k,l,M_Alt,P_Alt)]-d3[idx3d(i,k,l,M_Alt,P_Alt)])/(2.0*sigma*sigma);
+			}
+	}
+
+	res2[idx2d(i,j,Nj)] = exp(x2);
+	res3[idx2d(i,j,Nj)] = exp(x3);
+
+
+	}
+
+
+	""")
+
+	dist_gpu1 = mod.get_function("distance1")
+	dist_gpu2 = mod.get_function("distance2")
+
+	block = optimal_blocksize(autoinit.device, dist_gpu1)
+	block_i = factor_partial(block)
+	block_j = block / block_i
+	print "block, BLOCK_I and _j",block, block_i, block_j
+
+	###Need to detect exact memory use here!
+	grid = optimise_grid_structure(15.0)
+	grid_prelim_i = round_down(sqrt(grid),block_i)
+	grid_prelim_j = round_down(grid/grid_prelim_i,block_j)
+	print "PRELIM: grid, GRID_i and _j", grid, grid_prelim_i, grid_prelim_j
+
+	if N1 < grid_prelim_i:
+		grid_i = float(min(autoinit.device.max_grid_dim_x,N1))
+		grid_j = float(min(autoinit.device.max_grid_dim_y, round_down(grid/grid_i,block_j)))
+	elif N2 < grid_prelim_j:
+		grid_j = float(min(autoinit.device.max_grid_dim_y,N2))
+		grid_i = float(min(autoinit.device.max_grid_dim_x, round_down(grid/grid_j,block_i)))
+	else:
+		grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i))
+		grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j))
+	print "grid, GRID_i and _j", grid, grid_i, grid_j
+
+	numRuns_i = int(ceil(N1/grid_i))
+	numRuns_j = int(ceil(N2/grid_j))
+	print "numRuns_i: ", numRuns_i
+	print "numRuns_j: ", numRuns_j
+
+	###Why is thetaMod[(N1+N2):(N1+N2+N3)] not used??
+	d1 = dataRef[0:N1,:,:].astype(float64)
+	d2 = array(thetaRef)[N1:(N1+N2),:,:].astype(float64)
+	d3 = dataMod[0:N1,:,:].astype(float64)
+	d4 = array(thetaMod)[N1:(N1+N2),:,:].astype(float64)
+	d6 = array(thetaRef)[(N1+N2):(N1+N2+N3),:,:].astype(float64)
+	d8 = array(thetaMod)[(N1+N2+N3):(N1+N2+N3+N4),:,:].astype(float64)
+
+	M_Ref=d1.shape[1]
+	P_Ref=d1.shape[2]
+
+	M_Alt=d3.shape[1]
+	P_Alt=d3.shape[2]
+
+	result1 = zeros([N1,numRuns_j])
+	result2 = zeros([N1,numRuns_j])
+	result3 = zeros([N1,numRuns_j])
+
+
+	###Move scaling into seperate function
+	####################SCALING#################################################
+	preci = pow(10,-34)
+
+	aa1 = log(preci)/(2.0*M_Max*P_Max) + (maxDistTraj*maxDistTraj)/(2.0*sigma*sigma)
+	aa2 = math.log(pow(10,300))/(2.0*M_Max*P_Max)
+
+	print "aa1: ",aa1, "aa2: ",aa2
+	if(aa1<aa2): a = aa1
+	else: a = 0.0
+
+	#FmaxDistTraj = 1.0*exp(-(maxDistTraj*maxDistTraj)/(2.0*sigma*sigma))
+	#print "FmaxDistTraj:",FmaxDistTraj
+	#if(FmaxDistTraj<preci):
+	#	a = pow(1.79*pow(10,300),1.0/(2.0*d1.shape[1]*d1.shape[2]*d3.shape[1]*d3.shape[2]))
+	#else:
+	#	a = pow(1.79*pow(10,300),1.0/(2.0*d1.shape[1]*d1.shape[2]*d3.shape[1]*d3.shape[2]))
+
+	print "preci:", preci,"a:",a
+	################END SCALING#################################################
+
+	Ni = int(grid_i)
+
+	for i in range(numRuns_i):
+		print "runs left:", numRuns_i - i
+
+		Ni = int(grid_i)
+		Nj = int(grid_i)
+
+		if((int(grid_i)*(i+1)) > N1):
+			Ni = int(N1 - grid_i*i)
+
+		data1 = d1[(i*int(grid_i)):(i*int(grid_i)+Ni),:,:]
+		data3 = d3[(i*int(grid_i)):(i*int(grid_i)+Ni),:,:]
+
+		Nj = int(grid_j)
+
+		for j in range(numRuns_j):
+			if((int(grid_j)*(j+1)) > N2):
+				Nj = int(N2 - grid_j*j)
+
+			data2 = d2[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
+			data4 = d4[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
+			data6 = d6[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
+			data8 = d8[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
+
+			res1 = zeros([Ni,Nj]).astype(float64)
+			res2 = zeros([Ni,Nj]).astype(float64)
+			res3 = zeros([Ni,Nj]).astype(float64)
+
+			if(Ni<block_i):
+				gi = 1
+				bi = Ni
+			else:
+				bi = block_i
+				gi = ceil(Ni/block_i)
+			if(Nj<block_j):
+				gj = 1
+				bj = Nj
+			else:
+				bj = block_j
+				gj = ceil(Nj/block_j)
+
+			dist_gpu1(int32(Ni), int32(Nj), int32(M_Ref), int32(M_Ref), int32(M_Alt), int32(P_Alt), float32(sigma), float64(a), driver.In(data1), driver.In(data2), driver.In(data3), driver.In(data4), driver.Out(res1),block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+
+			dist_gpu2(int32(Ni), int32(Nj), int32(M_Ref), int32(M_Ref), int32(M_Alt), int32(P_Alt), float32(sigma), float64(a), driver.In(data1), driver.In(data6), driver.In(data3), driver.In(data8), driver.Out(res2), driver.Out(res3),block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+
+			for k in range(Ni):
+				result1[(i*int(grid_i)+k),j] = sum(res1[k,:])
+				result2[(i*int(grid_i)+k),j] = sum(res2[k,:])
+				result3[(i*int(grid_i)+k),j] = sum(res3[k,:])
+
+	sum1 = 0.0
+	a1 = 0.0
+	a2 = 0.0
+	a3 = 0.0
+
+	count1_na = 0
+	count1_inf = 0
+	count2_na = 0
+	count2_inf = 0
+	count3_na = 0
+	count3_inf = 0
+	for i in range(N1):
+		if(isinf(log(sum(result1[i,:])))):
+			count1_inf=count1_inf+1
+		elif(isnan(log(sum(result1[i,:])))):
+			count1_na=count1_na+1
+		elif(isinf(log(sum(result2[i,:])))):
+			count2_inf=count2_inf+1
+		elif(isnan(log(sum(result2[i,:])))):
+			count_na=count2_na+1
+		elif(isinf(log(sum(result3[i,:])))):
+			count3_inf=count3_inf+1
+		elif(isnan(log(sum(result3[i,:])))):
+			count3_na=count3_na+1
+		else:
+			sum1 = sum1 + log(sum(result1[i,:])) - log(sum(result2[i,:])) - log(sum(result3[i,:])) - log(float(N2)) + log(float(N3)) + log(float(N4))
+
+			#a1 = a1 + log(sum(result1[i,:])) - log(N2) - 2.0*M_Ref*M_Ref*log(2.0*pi*sigma*sigma) - 2*M_Ref*M_Ref*a
+			#a2 = a2 - log(sum(result2[i,:])) + log(N3) +  M_Ref*M_Ref*log(2.0*pi*sigma*sigma) + M_Ref*M_Ref*a
+			#a3 = a3 - log(sum(result3[i,:])) + log(N4) +  M_Ref*M_Ref*log(2.0*pi*sigma*sigma) + M_Ref*M_Ref*a
+
+	count_all = count1_inf + count1_na + count2_inf + count2_na + count3_inf + count3_na
+
+	#print "a1: ", a1/float(N1-count1_na-count1_inf) , "a2: ", a2/float(N1-count2_na-count2_inf), "a3: ", a3/float(N1-count3_na-count3_inf)
+	#print "all: ", a1/float(N1-count1_na-count1_inf) + a2/float(N1-count2_na-count2_inf) + a3/float(N1-count3_na-count3_inf)
+	#print "sum1: ", sum1
+
+	Info = sum1/float(N1-count_all)
+
+	print "count1_na: ", count1_na
+	print "count1_inf: ", count1_inf
+	print "count2_na: ", count2_na
+	print "count2_inf: ", count2_inf
+	print "count3_na: ", count3_na
+	print "count3_inf: ", count3_inf
+
+	return(Info)
