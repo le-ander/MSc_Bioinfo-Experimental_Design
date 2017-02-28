@@ -908,3 +908,34 @@ class algorithm_info:
 				self.scale[model] = pow(1.79*pow(10,300),1.0/(len(self.fitSpecies[model])*len(self.times)))
 			else:
 				self.scale[model] = pow(preci,1.0/(len(self.fitSpecies[model])*len(self.times)))*1.0/FmaxDistTraj
+
+	def scaling_ge3(self):
+
+		for model in range(self.nmodels):
+			distance = []
+			# Only dealing with constant number of timepoints over all models here, need to change!
+			for tp in range(len(self.times)):
+				distance.append(max([math.fabs(numpy.amax(self.trajectories[model][:,tp,:]) - numpy.amin(self.cudaout[model][:,tp,:])),math.fabs(numpy.amax(self.cudaout[model][:,tp,:]) - numpy.amin(self.trajectories[model][:,tp,:]))]))
+			maxDistList.append(amax(array(distance)))
+		maxDistTraj = max(maxDistList)
+
+		self.scale = [""]*self.nmodels
+		preci = pow(10,-34)
+		# Only dealing with constant number of timepoints over all models here, need to change!
+		M_Ref = len(self.times)
+		P_Ref = len(self.fitSpecies[0])
+
+		for model in range(self.nmodels):
+
+			# Only dealing with constant number of timepoints over all models here, need to change!
+			M_Alt = len(self.times)
+			P_Alt = len(self.fitSpecies[model])
+			# Only dealing with constant number of timepoints over all models here, need to change!
+			M_Max = float(max(M_Ref,M_Alt))
+			P_Max = float(max(P_Ref,P_Alt))
+
+			scale1 = log(preci)/(2.0*M_Max*P_Max) + (maxDistTraj*maxDistTraj)/(2.0*self.sigma*self.sigma)
+			scale2 = math.log(pow(10,300))/(2.0*M_Max*P_Max)
+
+			if(aa1<aa2): self.scale[model] = scale1
+			else: self.scale[model] = 0.0

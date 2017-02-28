@@ -12,47 +12,7 @@ import time
 import sys
 
 
-###Does not work! See comments in the function
-def scaling_gE3(modelTraj, ftheta, sigma):
-	###maxDistTraj is the same for all combintions of ref and alt experiments, however, the calc of "a" from maxDistTraj is different for each combination.
-	###Not sure how to implement this outside of gE3...
-	maxDistTraj = []
-
-	for tp in range(shape(modelTraj)[1]):
-		maxDistTraj.append(max(amax(ftheta[:,tp,:]),amax(modelTraj[:,tp,:])) - min(amin(ftheta[:,tp,:]),amin(modelTraj[:,tp,:])))
-
-	M_Ref=ftheta.shape[1]
-	P_Ref=ftheta.shape[2]
-
-	###How to select the right alternative model in this run??
-	M_Alt=XX.shape[1]
-	P_Alt=XX.shape[2]
-
-	M_Max = float(max(M_Ref,M_Alt))
-	P_Max = float(max(P_Ref,P_Alt))
-
-
-	preci = pow(10,-34)
-
-	aa1 = log(preci)/(2.0*M_Max*P_Max) + (maxDistTraj*maxDistTraj)/(2.0*sigma*sigma)
-	aa2 = math.log(pow(10,300))/(2.0*M_Max*P_Max)
-
-	print "aa1: ",aa1, "aa2: ",aa2
-	if(aa1<aa2): a = aa1
-	else: a = 0.0
-
-
-	#FmaxDistTraj = 1.0*exp(-(maxDistTraj*maxDistTraj)/(2.0*sigma*sigma))
-	#print "FmaxDistTraj:",FmaxDistTraj
-	#if(FmaxDistTraj<preci):
-	#	a = pow(1.79*pow(10,300),1.0/(2.0*d1.shape[1]*d1.shape[2]*d3.shape[1]*d3.shape[2]))
-	#else:
-	#	a = pow(1.79*pow(10,300),1.0/(2.0*d1.shape[1]*d1.shape[2]*d3.shape[1]*d3.shape[2]))
-
-	return a
-
-
-def getEntropy3(dataRef,dataMod,N1,N2,N3,N4,sigma,thetaRef,thetaMod,maxDistTraj):
+def getEntropy3(dataRef,dataMod,N1,N2,N3,N4,sigma,thetaRef,thetaMod,scale):
 
 	###Remove stdio.h include from kernel
 	mod = compiler.SourceModule("""
@@ -70,7 +30,7 @@ def getEntropy3(dataRef,dataMod,N1,N2,N3,N4,sigma,thetaRef,thetaMod,maxDistTraj)
 
 	}
 
-	__global__ void distance1(int Ni, int Nj, int M_Ref, int M_Ref, int M_Alt, int P_Alt, float sigma, double a, double *d1, double *d2, double *d3, double *d4, double *res1)
+	__global__ void distance1(int Ni, int Nj, int M_Ref, int M_Ref, int M_Alt, int P_Alt, float sigma, double scale, double *d1, double *d2, double *d3, double *d4, double *res1)
 	{
 	int i = threadIdx.x + blockDim.x * blockIdx.x;
 	int j = threadIdx.y + blockDim.y * blockIdx.y;
@@ -83,14 +43,14 @@ def getEntropy3(dataRef,dataMod,N1,N2,N3,N4,sigma,thetaRef,thetaMod,maxDistTraj)
 	x3 = 0.0;
 	for(int k=0; k<M_Ref; k++){
 			for(int l=0; l<M_Ref; l++){
-				   x1 = x1 + a - ( d2[idx3d(j,k,l,M_Ref,M_Ref)]-d1[idx3d(i,k,l,M_Ref,M_Ref)])*( d2[idx3d(j,k,l,M_Ref,M_Ref)]-d1[idx3d(i,k,l,M_Ref,M_Ref)])/(2.0*sigma*sigma);
+				   x1 = x1 + scale - ( d2[idx3d(j,k,l,M_Ref,M_Ref)]-d1[idx3d(i,k,l,M_Ref,M_Ref)])*( d2[idx3d(j,k,l,M_Ref,M_Ref)]-d1[idx3d(i,k,l,M_Ref,M_Ref)])/(2.0*sigma*sigma);
 			}
 	}
 
 
 	for(int k=0; k<M_Alt; k++){
 			for(int l=0; l<P_Alt; l++){
-				   x3 = x3 + a - ( d4[idx3d(j,k,l,M_Alt,P_Alt)]-d3[idx3d(i,k,l,M_Alt,P_Alt)])*( d4[idx3d(j,k,l,M_Alt,P_Alt)]-d3[idx3d(i,k,l,M_Alt,P_Alt)])/(2.0*sigma*sigma);
+				   x3 = x3 + scale - ( d4[idx3d(j,k,l,M_Alt,P_Alt)]-d3[idx3d(i,k,l,M_Alt,P_Alt)])*( d4[idx3d(j,k,l,M_Alt,P_Alt)]-d3[idx3d(i,k,l,M_Alt,P_Alt)])/(2.0*sigma*sigma);
 			}
 	}
 
@@ -99,7 +59,7 @@ def getEntropy3(dataRef,dataMod,N1,N2,N3,N4,sigma,thetaRef,thetaMod,maxDistTraj)
 	}
 
 
-	__global__ void distance2(int Ni, int Nj, int M_Ref, int M_Ref, int M_Alt, int P_Alt, float sigma, double a, double *d1, double *d2, double *d3, double *d4, double *res2, double *res3)
+	__global__ void distance2(int Ni, int Nj, int M_Ref, int M_Ref, int M_Alt, int P_Alt, float sigma, double scale, double *d1, double *d2, double *d3, double *d4, double *res2, double *res3)
 	{
 	int i = threadIdx.x + blockDim.x * blockIdx.x;
 	int j = threadIdx.y + blockDim.y * blockIdx.y;
@@ -113,12 +73,12 @@ def getEntropy3(dataRef,dataMod,N1,N2,N3,N4,sigma,thetaRef,thetaMod,maxDistTraj)
 
 	for(int k=0; k<M_Ref; k++){
 			for(int l=0; l<M_Ref; l++){
-				   x2 = x2 + a - ( d2[idx3d(j,k,l,M_Ref,M_Ref)]-d1[idx3d(i,k,l,M_Ref,M_Ref)])*( d2[idx3d(j,k,l,M_Ref,M_Ref)]-d1[idx3d(i,k,l,M_Ref,M_Ref)])/(2.0*sigma*sigma);
+				   x2 = x2 + scale - ( d2[idx3d(j,k,l,M_Ref,M_Ref)]-d1[idx3d(i,k,l,M_Ref,M_Ref)])*( d2[idx3d(j,k,l,M_Ref,M_Ref)]-d1[idx3d(i,k,l,M_Ref,M_Ref)])/(2.0*sigma*sigma);
 			}
 	}
 	for(int k=0; k<M_Alt; k++){
 			for(int l=0; l<P_Alt; l++){
-				   x3 = x3 + a - ( d4[idx3d(j,k,l,M_Alt,P_Alt)]-d3[idx3d(i,k,l,M_Alt,P_Alt)])*( d4[idx3d(j,k,l,M_Alt,P_Alt)]-d3[idx3d(i,k,l,M_Alt,P_Alt)])/(2.0*sigma*sigma);
+				   x3 = x3 + scale - ( d4[idx3d(j,k,l,M_Alt,P_Alt)]-d3[idx3d(i,k,l,M_Alt,P_Alt)])*( d4[idx3d(j,k,l,M_Alt,P_Alt)]-d3[idx3d(i,k,l,M_Alt,P_Alt)])/(2.0*sigma*sigma);
 			}
 	}
 
@@ -178,28 +138,6 @@ def getEntropy3(dataRef,dataMod,N1,N2,N3,N4,sigma,thetaRef,thetaMod,maxDistTraj)
 	result2 = zeros([N1,numRuns_j])
 	result3 = zeros([N1,numRuns_j])
 
-
-	###Move scaling into seperate function
-	####################SCALING#################################################
-	preci = pow(10,-34)
-
-	aa1 = log(preci)/(2.0*M_Max*P_Max) + (maxDistTraj*maxDistTraj)/(2.0*sigma*sigma)
-	aa2 = math.log(pow(10,300))/(2.0*M_Max*P_Max)
-
-	print "aa1: ",aa1, "aa2: ",aa2
-	if(aa1<aa2): a = aa1
-	else: a = 0.0
-
-	#FmaxDistTraj = 1.0*exp(-(maxDistTraj*maxDistTraj)/(2.0*sigma*sigma))
-	#print "FmaxDistTraj:",FmaxDistTraj
-	#if(FmaxDistTraj<preci):
-	#	a = pow(1.79*pow(10,300),1.0/(2.0*d1.shape[1]*d1.shape[2]*d3.shape[1]*d3.shape[2]))
-	#else:
-	#	a = pow(1.79*pow(10,300),1.0/(2.0*d1.shape[1]*d1.shape[2]*d3.shape[1]*d3.shape[2]))
-
-	#print "preci:", preci,"a:",a
-	################END SCALING#################################################
-
 	Ni = int(grid_i)
 
 	for i in range(numRuns_i):
@@ -242,9 +180,9 @@ def getEntropy3(dataRef,dataMod,N1,N2,N3,N4,sigma,thetaRef,thetaMod,maxDistTraj)
 				bj = block_j
 				gj = ceil(Nj/block_j)
 
-			dist_gpu1(int32(Ni), int32(Nj), int32(M_Ref), int32(M_Ref), int32(M_Alt), int32(P_Alt), float32(sigma), float64(a), driver.In(data1), driver.In(data2), driver.In(data3), driver.In(data4), driver.Out(res1),block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+			dist_gpu1(int32(Ni), int32(Nj), int32(M_Ref), int32(M_Ref), int32(M_Alt), int32(P_Alt), float32(sigma), float64(scale), driver.In(data1), driver.In(data2), driver.In(data3), driver.In(data4), driver.Out(res1),block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 
-			dist_gpu2(int32(Ni), int32(Nj), int32(M_Ref), int32(M_Ref), int32(M_Alt), int32(P_Alt), float32(sigma), float64(a), driver.In(data1), driver.In(data6), driver.In(data3), driver.In(data8), driver.Out(res2), driver.Out(res3),block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+			dist_gpu2(int32(Ni), int32(Nj), int32(M_Ref), int32(M_Ref), int32(M_Alt), int32(P_Alt), float32(sigma), float64(scale), driver.In(data1), driver.In(data6), driver.In(data3), driver.In(data8), driver.Out(res2), driver.Out(res3),block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 
 			for k in range(Ni):
 				result1[(i*int(grid_i)+k),j] = sum(res1[k,:])
@@ -279,9 +217,9 @@ def getEntropy3(dataRef,dataMod,N1,N2,N3,N4,sigma,thetaRef,thetaMod,maxDistTraj)
 		else:
 			sum1 = sum1 + log(sum(result1[i,:])) - log(sum(result2[i,:])) - log(sum(result3[i,:])) - log(float(N2)) + log(float(N3)) + log(float(N4))
 
-			#a1 = a1 + log(sum(result1[i,:])) - log(N2) - 2.0*M_Ref*M_Ref*log(2.0*pi*sigma*sigma) - 2*M_Ref*M_Ref*a
-			#a2 = a2 - log(sum(result2[i,:])) + log(N3) +  M_Ref*M_Ref*log(2.0*pi*sigma*sigma) + M_Ref*M_Ref*a
-			#a3 = a3 - log(sum(result3[i,:])) + log(N4) +  M_Ref*M_Ref*log(2.0*pi*sigma*sigma) + M_Ref*M_Ref*a
+			#a1 = a1 + log(sum(result1[i,:])) - log(N2) - 2.0*M_Ref*M_Ref*log(2.0*pi*sigma*sigma) - 2*M_Ref*M_Ref*scale
+			#a2 = a2 - log(sum(result2[i,:])) + log(N3) +  M_Ref*M_Ref*log(2.0*pi*sigma*sigma) + M_Ref*M_Ref*scale
+			#a3 = a3 - log(sum(result3[i,:])) + log(N4) +  M_Ref*M_Ref*log(2.0*pi*sigma*sigma) + M_Ref*M_Ref*scale
 
 	count_all = count1_inf + count1_na + count2_inf + count2_na + count3_inf + count3_na
 
