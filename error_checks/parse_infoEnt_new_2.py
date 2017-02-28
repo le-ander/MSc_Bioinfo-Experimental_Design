@@ -256,13 +256,13 @@ class algorithm_info:
 
 		### get information about sample from posterior
 		if parse_required_single_value( dataref, "samplefrompost", "Please provide a boolean value for <samplefrompost>", str ).strip()=="True":
-			
+
 			self.sampleFromPost = True
 			self.post_sample_file = parse_required_single_value( dataref, "samplefrompost_file", "Please provide a file name for <samplefrompost_file>", str ).strip()
 			self.post_weight_file = parse_required_single_value( dataref, "samplefrompost_weights", "Please provide a file name for <samplefrompost_weights>", str ).strip()
-		else: 
+		else:
 			self.sampleFromPost = False
-		
+
 		if parse_required_single_value( dataref, "initialprior", "Please provide a boolean value for <initialprior>", str ).strip()=="True":
 			self.initialprior = True
 		else:
@@ -345,10 +345,10 @@ class algorithm_info:
 							self.compprior[self.nmodels-1].append( process_prior( tmp ) )
 				except:
 					ncompparam = 0
-				
-				
+
+
 				paramref = m.getElementsByTagName('parameters')[0]
-				
+
 				for p in paramref.childNodes:
 					if p.nodeType == p.ELEMENT_NODE:
 						nparameter += 1
@@ -422,7 +422,7 @@ class algorithm_info:
 
 
 #	def post_cudasim(self, array):
-#		self.maxDist = 
+#		self.maxDist =
 #		self.scalefactor =
 #		self.fTheta =
 #		self.m =
@@ -484,21 +484,21 @@ class algorithm_info:
 			#obtain Thetas from prior distributions, wich are either constant, uniform, normal or lognormal
 
 			for j in range(len(self.prior[0])): # loop through number of parameter
-				
+
 				#####Constant prior#####
 				if(self.prior[0][j][0]==0):  # j paramater self.index
 					parameters[:,j] = self.prior[0][j][1]
-				
+
 				#####Uniform prior#####
-				elif(self.prior[0][j][0]==2):   
+				elif(self.prior[0][j][0]==2):
 					parameters[:,j] = uniform(low=self.prior[0][j][1], high=self.prior[0][j][2], size=(self.particles))
-				
+
 				#####Normal prior#####
-				elif(self.prior[0][j][0]==1):       
+				elif(self.prior[0][j][0]==1):
 					parameters[:,j] = normal(loc=self.prior[0][j][1], scale=self.prior[0][j][2], size=(self.particles))
 
 				#####Lognormal prior#####
-				elif(self.prior[0][j][0]==3):       
+				elif(self.prior[0][j][0]==3):
 					parameters[:,j] = lognormal(mean=self.prior[0][j][1], sigma=self.prior[0][j][2], size=(self.particles))
 
 				####
@@ -511,21 +511,21 @@ class algorithm_info:
 				species = numpy.zeros([self.particles,self.nspecies_all])  # number of repeats x species in system
 
 				for j in range(len(self.x0prior[0])): # loop through number of parameter
-						
+
 					#####Constant prior#####
 					if(self.x0prior[0][j][0]==0):  # j paramater self.index
 						species[:,j] = self.x0prior[0][j][1]
-					
+
 					#####Uniform prior#####
-					elif(self.x0prior[0][j][0]==2):   
+					elif(self.x0prior[0][j][0]==2):
 						species[:,j] = uniform(low=self.x0prior[0][j][1], high=self.x0prior[0][j][2], size=(self.particles))
-					
+
 					#####Normal prior#####
-					elif(self.x0prior[0][j][0]==1):       
+					elif(self.x0prior[0][j][0]==1):
 						species[:,j] = normal(loc=self.x0prior[0][j][1], scale=self.x0prior[0][j][2], size=(self.particles))
 
 					#####Lognormal prior#####
-					elif(self.x0prior[0][j][0]==3):       
+					elif(self.x0prior[0][j][0]==3):
 						species[:,j] = lognormal(mean=self.x0prior[0][j][1], sigma=self.x0prior[0][j][2], size=(self.particles))
 
 					####
@@ -534,7 +534,7 @@ class algorithm_info:
 						sys.exit()
 
 			else:
-				
+
 				x0prior_uniq = [self.x0prior[0]]
 				for ic in self.x0prior[1:]:
 					if ic not in x0prior_uniq:
@@ -557,21 +557,21 @@ class algorithm_info:
 				compartments = numpy.zeros([self.particles,self.ncompparams_all])
 
 				for j in range(len(self.compprior[0])): # loop through number of parameter
-					
+
 					#####Constant prior#####
 					if(self.compprior[0][j][0]==0):  # j paramater self.index
 						compartments[:,j] = self.compprior[0][j][1]
-					
+
 					#####Uniform prior#####
-					elif(self.compprior[0][j][0]==2):   
+					elif(self.compprior[0][j][0]==2):
 						compartments[:,j] = uniform(low=self.compprior[0][j][1], high=self.compprior[0][j][2], size=(self.particles))
-					
+
 					#####Normal prior#####
-					elif(self.compprior[0][j][0]==1):       
+					elif(self.compprior[0][j][0]==1):
 						compartments[:,j] = normal(loc=self.compprior[0][j][1], scale=self.compprior[0][j][2], size=(self.particles))
 
 					#####Lognormal prior#####
-					elif(self.compprior[0][j][0]==3):       
+					elif(self.compprior[0][j][0]==3):
 						compartments[:,j] = lognormal(mean=self.compprior[0][j][1], sigma=self.compprior[0][j][2], size=(self.particles))
 
 					####
@@ -611,10 +611,10 @@ class algorithm_info:
 				####Obtain Theta from posterior samples through weigths####
 				if(counter==counter2):#and len(self.nparameters[0])==len(param[0])): ### model object needs to include nparameters information
 					parameters = numpy.zeros( [self.particles,self.nparameters_all] )
-					species = numpy.zeros([self.particles,self.nspecies_all])	
+					species = numpy.zeros([self.particles,self.nspecies_all])
 					for i in range(self.particles): #repeats
 						index = getWeightedSample(weights)  #manually defined function
-						parameters[i,:] = param[index][:self.nparameters_all] #self.index indefies list which is used to assign parameter value.  j corresponds to different parameters defines column 
+						parameters[i,:] = param[index][:self.nparameters_all] #self.index indefies list which is used to assign parameter value.  j corresponds to different parameters defines column
 						species[i,:] = param[index][-self.nspecies_all:]
 				else:
 					print "Please provide equal number of particles and weights in model!"
@@ -625,11 +625,11 @@ class algorithm_info:
 				if(counter==counter2):#and len(self.nparameters[0])==len(param[0])): ### model object needs to include nparameters information
 					compartments = numpy.zeros([self.particles,self.ncompparams_all])
 					parameters = numpy.zeros( [self.particles,self.nparameters_all] )
-					species = numpy.zeros([self.particles,self.nspecies_all])	
+					species = numpy.zeros([self.particles,self.nspecies_all])
 					for i in range(self.particles): #repeats
 						index = getWeightedSample(weights)  #manually defined function
 						compartments[i,:] = param[index][:self.ncompparams_all]
-						parameters[i,:] = param[index][self.ncompparams_all:self.ncompparams_all+self.nparameters_all] #self.index indefies list which is used to assign parameter value.  j corresponds to different parameters defines column 
+						parameters[i,:] = param[index][self.ncompparams_all:self.ncompparams_all+self.nparameters_all] #self.index indefies list which is used to assign parameter value.  j corresponds to different parameters defines column
 						species[i,:] = param[index][-self.nspecies_all:]
 				else:
 					print "Please provide equal number of particles and weights in model!"
@@ -638,13 +638,13 @@ class algorithm_info:
 		if self.analysisType == 1:
 			paramsN3 = parameters[(self.particles-self.N3sample):,:]
 			params_final = numpy.concatenate((paramsN3,)*self.N1sample,axis=0)
-			
+
 			for j in range(0,self.N1sample):
 				for i in self.param_fit:
 					params_final[range((j*self.N3sample),((j+1)*self.N3sample)),i] = parameters[j,i]
 
 			parameters = numpy.concatenate((parameters[range(self.particles-self.N3sample),:],params_final),axis=0)
-			
+
 			if self.initialprior == True:
 				speciesN3 = species[(self.particles-self.N3sample):,:]
 				species_final = numpy.concatenate((speciesN3,)*self.N1sample,axis=0)
@@ -657,7 +657,7 @@ class algorithm_info:
 			else:
 				for ic in range(len(species)):
 					species[ic] = numpy.tile(species[ic][0,:],(self.N1sample*self.N3sample+self.N1sample+self.N2sample,1))
-					
+
 			if usesbml == True:
 				compsN3 = compartments[(self.particles-self.N3sample):,:]
 				comp_final = numpy.concatenate((compsN3,)*self.N1sample,axis=0)
@@ -700,15 +700,15 @@ class algorithm_info:
 				for Cfile in set(self.cuda):
 					temp = [[l[1] for l in self.x0prior[j]] for j in [i for i, x in enumerate(self.cuda) if x == Cfile]]
 					self.pairParamsICS[Cfile] = [list(x) for x in set(tuple(x) for x in temp)]
-	
+
 	def sortCUDASimoutput(self,cudaorder,cudaout):
 		self.cudaout=[""]*len(self.cuda)
-		
+
 		if self.analysisType == 1:
 			Nparticles = self.N1sample+self.N2sample+self.N1sample*self.N3sample
 		else:
 			Nparticles = self.particles
-		
+
 		cuda_NAs = dict((k, []) for k in cudaorder)
 		for i, cudafile in enumerate(cudaorder):
 			index_NA = [p for p, e in enumerate(numpy.isnan(numpy.sum(numpy.sum(cudaout[i][:,:,:],axis=2),axis=1))) if e==True]
@@ -729,7 +729,7 @@ class algorithm_info:
 					N3_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample+self.N3sample and x >= j*Nparticles + self.N1sample + self.N2sample]
 					N4_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample+self.N3sample+self.N4sample and x >= j*Nparticles + self.N1sample + self.N2sample+self.N3sample]
 					cuda_NAs[cudafile].append([self.N1sample-len(N1_NA),self.N2sample-len(N2_NA),self.N3sample-len(N3_NA),self.N4sample-len(N4_NA)])
-				
+
 				elif self.analysisType == 1:
 					start = j*Nparticles + self.N1sample+self.N2sample
 					end = j*Nparticles + self.N1sample+self.N2sample + self.N1sample*self.N3sample
@@ -737,20 +737,20 @@ class algorithm_info:
 					N2_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample and x >= j*Nparticles + self.N1sample]
 					new_N2 = self.N2sample-len(N2_NA)
 					additional_N1N3_NAs = [range(int(j*Nparticles + self.N1sample + self.N2sample + x*self.N3sample),int(j*Nparticles + self.N1sample + self.N2sample + (x+1)*self.N3sample)) for x in N1_NA - j*Nparticles*numpy.ones([len(N1_NA)])]
-					
+
 					y = []
-					
+
 					for temp in additional_N1N3_NAs:
 						y+=temp
-					
+
 					additional_N1N3_NAs = y
-					
+
 					index_NA_IC = list(set().union(index_NA_IC,additional_N1N3_NAs))
 
 					N1N3_NA = [x for x in index_NA_IC if x < end and x >= start]
 					#new_N1N3 = self.N1sample*self.N3sample-len(N1N3_NA)
 					remaining_N1N3 = [item for item in range(start,end) if item not in N1N3_NA]
-					
+
 					keep_N1N3 = [[z for z in y if z not in index_NA_IC] for y in [list(range(x,x+self.N3sample)) for x in range(start,end,self.N3sample)]]
 					new_N1N3 = [len(x) for x in keep_N1N3 if len(x)!=0]
 
@@ -780,13 +780,13 @@ class algorithm_info:
 		#if self.type[0] == "ODE":
 		#	print "-----Adding noise to CUDA-Sim outputs-----"
 		#	self.addNoise(cudaorder, cudaout)
-		
+
 
 
 		#print ""
 		#print cuda_NAs
 		#print ""
-		#print self.pairParamsICS 
+		#print self.pairParamsICS
 		#print ""
 		#print cudaorder
 		#print ""
@@ -797,7 +797,7 @@ class algorithm_info:
 		#print ""
 		#print [numpy.isnan(numpy.sum(numpy.sum(cudaout[i][:,:,:],axis=2),axis=1)) for i in range(2)]
 		#print cudaout[1][4,:,:]
-		#np.sum(np.sum(a, axis=-2), axis=1) 
+		#np.sum(np.sum(a, axis=-2), axis=1)
 		#[p for p, i in enumerate(isnan(sum(asarray(modelTraj[0])[:,7:8,:],axis=2))) if i==True]
 		#print numpy.sum(cudaout[0][:,0:cudaout[0].shape[1],:],axis=2)
 
@@ -806,7 +806,7 @@ class algorithm_info:
 			for model, cudafile in enumerate(self.cuda):
 				cudaout_temp = cudaout[cudaorder.index(cudafile)]
 				#print cudaout_temp.shape
-				
+
 				pos = self.pairParamsICS.values()[cudaorder.index(cudafile)].index([x[1] for x in self.x0prior[model]])
 				#print cudaout_temp[pos*sum(cuda_NAs[cudafile][pos]):(pos+1)*sum(cuda_NAs[cudafile][pos]),:,:]
 				if self.analysisType!=1:
@@ -823,7 +823,7 @@ class algorithm_info:
 		#print [x.shape for x in self.cudaout]
 		#print self.cudaout_structure
 	#def removeNAs(self):
-		#for 
+		#for
 
 
 		print "-----Sorting out measurable species-----"
@@ -842,16 +842,16 @@ class algorithm_info:
 		'''
 		model_trajs = dict((k, []) for k in cudaorder)
 		for i, cudafile in enumerate(cudaorder):
-			
+
 			for j, IC in enumerate(self.pairParamsICS.values()[i]):
 				noise = normal(loc=0.0, scale=self.sigma, size=(self.cudaout_structure[cudafile][j][0],len(self.times),self.nspecies_all))
-				#model_trajs[cudafile] =  + noise 
+				#model_trajs[cudafile] =  + noise
 				pos = self.pairParamsICS.values()[cudaorder.index(cudafile)].index(IC)
 				if self.analysisType!=1:
 					size_cudaout = sum(self.cudaout_structure[cudafile][pos])
 				else:
 					size_cudaout = sum([self.cudaout_structure[cudafile][pos][0]]+[self.cudaout_structure[cudafile][pos][1]]+self.cudaout_structure[cudafile][pos][2])
-				
+
 				model_trajs[cudafile].append(cudaout_red[i][j*size_cudaout:j*size_cudaout+self.cudaout_structure[cudafile][j][0],:,:]+noise)
 		'''
 		#for m in model_trajs.values():
@@ -865,7 +865,7 @@ class algorithm_info:
 				#print cudaout_temp.shape
 				#pos = self.pairParamsICS.values()[cudaorder.index(cudafile)].index([x[1] for x in self.x0prior[model]])
 				pos = self.pairParamsICS.values()[cudaorder.index(cudafile)].index([x[1] for x in self.x0prior[model]])
-				
+
 				#print cudaout_temp[pos*sum(cuda_NAs[cudafile][pos]):(pos+1)*sum(cuda_NAs[cudafile][pos]),:,:]
 				N1_temp = self.cudaout_structure[cudafile][pos][0]
 				noise = normal(loc=0.0, scale=self.sigma, size=(N1_temp,len(self.times),len(self.fitSpecies[model])))
@@ -879,7 +879,7 @@ class algorithm_info:
 				self.trajectories[model] = self.cudaout[model][:N1_temp,:,:] + noise
 
 	def fitSort(self):
-		
+
 		for i, exp_n in enumerate(self.cudaout):
 			cudaout_temp = numpy.zeros((exp_n.shape[0],exp_n.shape[1],len(self.fitSpecies[i])))
 			for j, fit in enumerate(self.fitSpecies[i]):

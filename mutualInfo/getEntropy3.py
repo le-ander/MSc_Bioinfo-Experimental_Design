@@ -12,7 +12,6 @@ import time
 import sys
 
 
-'''
 ###Does not work! See comments in the function
 def scaling_gE3(modelTraj, ftheta, sigma):
 	###maxDistTraj is the same for all combintions of ref and alt experiments, however, the calc of "a" from maxDistTraj is different for each combination.
@@ -32,6 +31,7 @@ def scaling_gE3(modelTraj, ftheta, sigma):
 	M_Max = float(max(M_Ref,M_Alt))
 	P_Max = float(max(P_Ref,P_Alt))
 
+
 	preci = pow(10,-34)
 
 	aa1 = log(preci)/(2.0*M_Max*P_Max) + (maxDistTraj*maxDistTraj)/(2.0*sigma*sigma)
@@ -41,6 +41,7 @@ def scaling_gE3(modelTraj, ftheta, sigma):
 	if(aa1<aa2): a = aa1
 	else: a = 0.0
 
+
 	#FmaxDistTraj = 1.0*exp(-(maxDistTraj*maxDistTraj)/(2.0*sigma*sigma))
 	#print "FmaxDistTraj:",FmaxDistTraj
 	#if(FmaxDistTraj<preci):
@@ -48,15 +49,12 @@ def scaling_gE3(modelTraj, ftheta, sigma):
 	#else:
 	#	a = pow(1.79*pow(10,300),1.0/(2.0*d1.shape[1]*d1.shape[2]*d3.shape[1]*d3.shape[2]))
 
-	print "preci:", preci,"a:",a
-
 	return a
-'''
 
 
 def getEntropy3(dataRef,dataMod,N1,N2,N3,N4,sigma,thetaRef,thetaMod,maxDistTraj):
 
-	#kernel declaration
+	###Remove stdio.h include from kernel
 	mod = compiler.SourceModule("""
 	#include <stdio.h>
 
@@ -163,7 +161,6 @@ def getEntropy3(dataRef,dataMod,N1,N2,N3,N4,sigma,thetaRef,thetaMod,maxDistTraj)
 	print "numRuns_i: ", numRuns_i
 	print "numRuns_j: ", numRuns_j
 
-	###Why is thetaMod[(N1+N2):(N1+N2+N3)] not used??
 	d1 = dataRef[0:N1,:,:].astype(float64)
 	d2 = array(thetaRef)[N1:(N1+N2),:,:].astype(float64)
 	d3 = dataMod[0:N1,:,:].astype(float64)
@@ -200,7 +197,7 @@ def getEntropy3(dataRef,dataMod,N1,N2,N3,N4,sigma,thetaRef,thetaMod,maxDistTraj)
 	#else:
 	#	a = pow(1.79*pow(10,300),1.0/(2.0*d1.shape[1]*d1.shape[2]*d3.shape[1]*d3.shape[2]))
 
-	print "preci:", preci,"a:",a
+	#print "preci:", preci,"a:",a
 	################END SCALING#################################################
 
 	Ni = int(grid_i)

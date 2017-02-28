@@ -29,7 +29,7 @@ def main():
 	input_file_SBMLs, input_file_datas, analysis, fname, usesbml, parameter_change, init_condit, iname = error_check.input_checker(sys.argv,0)
 	# Calls SBML_checker - checks all the SBML files that have been inputted
 	SBML_check.SBML_checker([iname+"/"+input_file_SBMLs[i] for i, value in enumerate(usesbml) if value=="0"])
-	# Unpacks the following four command line arguments - each element corresponds to each SBML and data file pair 
+	# Unpacks the following four command line arguments - each element corresponds to each SBML and data file pair
 	usesbml=[not(bool(int(i))) for i in list(usesbml)]
 	parameter_change=[int(i) for i in list(parameter_change)]
 	#init_condit=[int(i) for i in list(init_condit)]
@@ -96,14 +96,14 @@ def sorting_files(input_file_SBML, input_file_data, analysis, fname, usesbml, pa
 		if not(os.path.isdir("./"+fname+"/input_xml")):
 			os.mkdir(fname+"/input_xml")
 		if not(os.path.isdir("./"+fname+"/input_xml/input_xml_"+input_file_SBML_name)):
-			os.mkdir(fname+"/input_xml/input_xml_"+input_file_SBML_name)		
+			os.mkdir(fname+"/input_xml/input_xml_"+input_file_SBML_name)
 		xml_out=fname+"/input_xml/input_xml_"+input_file_SBML_name
 
 		exp_xml_files = os.listdir(inPath)
 		
 		print "-----Input XML file-----"
 		comb_list = input_file_parser_new_2.generateTemplate(exp_xml_files, "input_xml", "summmary", input_file_data, inpath = inPath, outpath= xml_out, iname=iname)
-		
+
 		input_xml="/input_xml"
 
 	elif usesbml == False:
@@ -122,10 +122,10 @@ def sorting_files(input_file_SBML, input_file_data, analysis, fname, usesbml, pa
 	print "-----Running CUDA-Sim-----"
 	#cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath)
 	cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath)
-	
+
 	print "-----Calculating scaling factor-----"
 	sbml_obj.scaling()
-	
+
 	if sbml_obj.analysisType == 0:
 		MutInfo1=getEntropy1.run_getEntropy1(sbml_obj)
 		plotbar.plotbar(MutInfo1, sbml_obj.name ,sbml_obj.nmodels ,0)

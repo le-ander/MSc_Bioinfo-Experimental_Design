@@ -1,21 +1,20 @@
-# Experimental-Design
-
-14/2/2017
-To do list:
+# Experimental-Design ToDo
 
 # Important
 
-- Entropy calculations
-  - Include launch configuration in getEntropy functions
-  - Rewrite getEntropy3
+- Work on scaling_gE3
 
-- Combine all parts together
+- Combine all parts together and test
 
-- Figure out Python 2.7 error
 
 # Next steps
 
-- Check why we get such large numbers in res1 and res_t2
+- Make sure cudaSim works wit gE3 (Scott)
+
+- Reduce number of simulations before gE3 (gE1&2 as well?) and slice arrays more efficiently
+  - dataRef/Mod (N1); thetaRef (N2+N3); thetaMod (N2+N4)
+
+- Check why we get such large numbers in res1 and result
 
 - Stochastic implementation
   - Reuse code from MEANS package
