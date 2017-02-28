@@ -2,7 +2,11 @@
 
 # Important
 
-- Work on scaling_gE3
+
+- gE3:
+  - Write run_gE3
+  - Work on scaling_gE3
+    - Ensure that different number of timepoints can exist for each model in gE3
 
 - Combine all parts together and test
 
