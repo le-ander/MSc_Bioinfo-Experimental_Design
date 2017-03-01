@@ -4,7 +4,7 @@
 
 
 - gE3:
-  - Write run_gE3
+  - Determine 2x gE3 mem use
   - Work on scaling_gE3
     - Ensure that different number of timepoints can exist for each model in gE3
 
@@ -41,6 +41,8 @@
   - Write it
 
 # Extra
+
+- Dynamically plotting trajectories on graph
 
 - Update abcsysbio parser to take local parameters
 

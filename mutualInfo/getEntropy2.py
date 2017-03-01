@@ -12,7 +12,7 @@ import time
 import sys
 
 
-def getEntropy2(data,N1,N2,N3,sigma,theta,scale):
+def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	#kernel declaration
 	mod = compiler.SourceModule("""
 	__device__ unsigned int idx3d(int i, int k, int l, int M, int P)
@@ -243,12 +243,12 @@ def run_getEntropy2(model_obj):
 			N3 = pos[2]
 
 		print "-----Calculating Mutual Information-----", experiment
-		print model_obj.trajectories[experiment].shape
-		print model_obj.cudaout[experiment].shape
+		#print model_obj.trajectories[experiment].shape
+		#print model_obj.cudaout[experiment].shape
 		#print N1, N2
 
 
-		MutInfo2.append(getEntropy2(model_obj.trajectories[experiment],N1,N2,N3,model_obj.sigma,model_obj.cudaout[experiment],model_obj.scale[experiment]))
+		MutInfo2.append(getEntropy2(model_obj.trajectories[experiment],model_obj.cudaout[experiment],N1,N2,N3,model_obj.sigma,model_obj.scale[experiment]))
 
 		print "Mutual Information:", MutInfo2[experiment]
 
