@@ -1,30 +1,22 @@
 from numpy import *
-from numpy.random import *
-import math
-import re
 
 from pycuda import compiler, driver
 from pycuda import autoinit
 
 import launch
 
-import time
-import sys
-
 
 def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
-	#kernel declaration
+	# Kernel declaration
 	mod = compiler.SourceModule("""
 	__device__ unsigned int idx3d(int i, int k, int l, int M, int P)
 	{
 		return k*P + i*M*P + l;
-
 	}
 
 	__device__ unsigned int idx2d(int i, int j, int M)
 	{
 		return i*M + j;
-
 	}
 
 	__global__ void distance1(int Ni, int Nj, int M, int P, float sigma, double scale, double *d1, double *d2, double *res1)
@@ -37,9 +29,9 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	double x1;
 	x1 = 0.0;
 	for(int k=0; k<M; k++){
-			for(int l=0; l<P; l++){
-				x1 = x1 + log(scale) - ( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])/(2.0*sigma*sigma);
-			}
+		for(int l=0; l<P; l++){
+			x1 = x1 + log(scale) - ( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])/(2.0*sigma*sigma);
+		}
 	}
 
 	res1[idx2d(i,j,Nj)] = exp(x1);
@@ -54,13 +46,14 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	double x1;
 	x1 = 0.0;
 	for(int k=0; k<M; k++){
-			for(int l=0; l<P; l++){
-				x1 = x1 + log(scale) - (d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])*(d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])/(2.0*sigma*sigma);
-			}
+		for(int l=0; l<P; l++){
+			x1 = x1 + log(scale) - (d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])*(d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])/(2.0*sigma*sigma);
+		}
 	}
 
 	res2[j] = exp(x1);
 	}
+
 	""")
 
 	# Assigning main kernel function to a variable
@@ -72,7 +65,6 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	print "block, BLOCK_I and _j",block, block_i, block_j
 
 	grid = launch.optimise_gridsize(8.59)
-	##should be defined as an int, can then clean up formulas further down
 	grid_prelim_i = launch.round_down(sqrt(grid),block_i) # Define square root of maximum threads per grid
 	grid_prelim_j = launch.round_down(grid/grid_prelim_i,block_j)
 	print "PRELIM: grid, GRID_i and _j", grid, grid_prelim_i, grid_prelim_j
@@ -121,7 +113,6 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 		data1 = d1[(i*int(grid_i)):(i*int(grid_i)+Ni),:,:] # d1 subunit for the next j runs
 
 		Nj = int(grid_j)
-		print "LOGSCALE", log(scale)
 
 
 		for j in range(numRuns_j):
@@ -142,10 +133,11 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 
 			# Invoke GPU calculations (takes data1 and data2 as input, outputs res1)
 			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+
 			# First summation (could be done on GPU?)
 			for k in range(Ni):
 				result[(i*int(grid_i)+k),j] = sum(res1[k,:])
-			#print result
+
 	sum1 = 0.0
 	count_na = 0
 	count_inf = 0
@@ -243,13 +235,9 @@ def run_getEntropy2(model_obj):
 			N3 = pos[2]
 
 		print "-----Calculating Mutual Information-----", experiment
-		#print model_obj.trajectories[experiment].shape
-		#print model_obj.cudaout[experiment].shape
 		#print N1, N2
 
-
 		MutInfo2.append(getEntropy2(model_obj.trajectories[experiment],model_obj.cudaout[experiment],N1,N2,N3,model_obj.sigma,model_obj.scale[experiment]))
-
 		print "Mutual Information:", MutInfo2[experiment]
 
 	return MutInfo2

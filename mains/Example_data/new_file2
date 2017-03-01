@@ -3,11 +3,11 @@
 <dt
 
 >particles
-50
+200
 <particles
 
 >nsample
-25 25 0 0
+100 100 0 0
 <nsample
 
 >sigma
@@ -118,7 +118,6 @@ alpha 7 5
 
 
 >combination
-initset1 paramexp1 fit3
-initset1 paramexp2 fit3
-initset1 paramexp3 fit3
+initset2 paramexp2 fit2
+initset3 paramexp3 fit3
 <combination

@@ -1,31 +1,22 @@
 from numpy import *
-from numpy.random import *
-import math
-import re
 
 from pycuda import compiler, driver
 from pycuda import autoinit
 
 import launch
 
-import time
-import sys
-
 
 def getEntropy1(data,theta,N1,N2,sigma,scale):
-
-	#kernel declaration
+	# Kernel declaration
 	mod = compiler.SourceModule("""
 	__device__ unsigned int idx3d(int i, int k, int l, int M, int P)
 	{
 		return k*P + i*M*P + l;
-
 	}
 
 	__device__ unsigned int idx2d(int i, int j, int M)
 	{
 		return i*M + j;
-
 	}
 
 	__global__ void distance1(int Ni, int Nj, int M, int P, float sigma, double scale, double *d1, double *d2, double *res1)
@@ -39,10 +30,10 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 	x1 = 0.0;
 	for(int k=0; k<M; k++){
 		for(int l=0; l<P; l++){
-			x1 = x1 +log(scale) - (d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*(d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])/(2.0*sigma*sigma);
+			x1 = x1 + log(scale) - ( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])/(2.0*sigma*sigma);
 		}
 	}
-
+	
 	res1[idx2d(i,j,Nj)] = exp(x1);
 	}
 	""")
@@ -91,7 +82,7 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 
 
 	for i in range(numRuns_i):
-		print "Runs left:", numRuns_i-i
+		print "Runs left:", numRuns_i - i
 		if((int(grid_i)*(i+1)) > N1): # If last run with less that max remaining trajectories
 			Ni = int(N1 - grid_i*i) # Set Ni to remaining number of particels
 
@@ -128,7 +119,7 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 
 			# First summation (could be done on GPU?)
 			for k in range(Ni):
-					result[(i*int(grid_i)+k),j] = sum(res1[k,:])
+				result[(i*int(grid_i)+k),j] = sum(res1[k,:])
 
 	sum1 = 0.0
 	count_na = 0
@@ -138,8 +129,8 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 		if(isnan(sum(result[i,:]))): count_na += 1
 		elif(isinf(log(sum(result[i,:])))): count_inf += 1
 		else:
-			sum1 += - log(sum(result[i,:])) + log(float(N2)) + M*P*log(scale) +  M*P*log(2.0*pi*sigma*sigma)
-	print count_na, count_inf
+			sum1 -= log(sum(result[i,:])) - log(float(N2)) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
+	print "COUNTER", count_na, count_inf
 	Info = (sum1 / float(N1 - count_na - count_inf)) - M*P/2.0*(log(2.0*pi*sigma*sigma)+1)
 
 	return(Info)

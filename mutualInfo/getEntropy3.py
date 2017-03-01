@@ -1,31 +1,22 @@
 from numpy import *
-from numpy.random import *
-import math
-import re
 
 from pycuda import compiler, driver
 from pycuda import autoinit
 
 import launch
 
-import time
-import sys
-
 
 def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,scale):
-
+	# Kernel declaration
 	mod = compiler.SourceModule("""
-
 	__device__ unsigned int idx3d(int i, int k, int l, int M, int P)
 	{
 		return k*P + i*M*P + l;
-
 	}
 
 	__device__ unsigned int idx2d(int i, int j, int M)
 	{
 		return i*M + j;
-
 	}
 
 	__global__ void distance1(int Ni, int Nj, int M_Ref, int P_Ref, int M_Mod, int P_Mod, float sigma_ref, float sigma_mod, double scale, double *d1, double *d2, double *d3, double *d4, double *res1)
@@ -40,22 +31,19 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	double x3;
 	x3 = 0.0;
 	for(int k=0; k<M_Ref; k++){
-			for(int l=0; l<P_Ref; l++){
-				   x1 = x1 + scale - ( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])*( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])/(2.0*sigma_ref*sigma_ref);
-			}
+		for(int l=0; l<P_Ref; l++){
+			x1 = x1 + scale - ( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])*( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])/(2.0*sigma_ref*sigma_ref);
+		}
 	}
-
 
 	for(int k=0; k<M_Mod; k++){
-			for(int l=0; l<P_Mod; l++){
-				   x3 = x3 + scale - ( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])*( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])/(2.0*sigma_mod*sigma_mod);
-			}
+		for(int l=0; l<P_Mod; l++){
+			x3 = x3 + scale - ( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])*( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])/(2.0*sigma_mod*sigma_mod);
+		}
 	}
-
 
 	res1[idx2d(i,j,Nj)] = exp(x1+x3);
 	}
-
 
 	__global__ void distance2(int Ni, int Nj, int M_Ref, int P_Ref, int M_Mod, int P_Mod, float sigma_ref, float sigma_mod, double scale, double *d1, double *d2, double *d3, double *d4, double *res2, double *res3)
 	{
@@ -70,22 +58,20 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	x3 = 0.0;
 
 	for(int k=0; k<M_Ref; k++){
-			for(int l=0; l<P_Ref; l++){
-				   x2 = x2 + scale - ( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])*( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])/(2.0*sigma_ref*sigma_ref);
-			}
+		for(int l=0; l<P_Ref; l++){
+			x2 = x2 + scale - ( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])*( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])/(2.0*sigma_ref*sigma_ref);
+		}
 	}
+
 	for(int k=0; k<M_Mod; k++){
-			for(int l=0; l<P_Mod; l++){
-				   x3 = x3 + scale - ( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])*( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])/(2.0*sigma_mod*sigma_mod);
-			}
+		for(int l=0; l<P_Mod; l++){
+			x3 = x3 + scale - ( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])*( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])/(2.0*sigma_mod*sigma_mod);
+		}
 	}
 
 	res2[idx2d(i,j,Nj)] = exp(x2);
 	res3[idx2d(i,j,Nj)] = exp(x3);
-
-
 	}
-
 
 	""")
 
@@ -255,12 +241,9 @@ def run_getEntropy3(model_obj, ref_obj):
 			N4 = pos[3]
 
 		print "-----Calculating Mutual Information-----", experiment
-		#print model_obj.trajectories[experiment].shape
-		#print model_obj.cudaout[experiment].shape
 		#print N1, N2
 
 		MutInfo3.append(getEntropy3(ref_obj.trajectories[experiment],model_obj.trajectories[experiment],ref_obj.cudaout[experiment], model_obj.cudaout[experiment],N1,N2,N3,N4,ref_obj.sigma,model_obj.sigma,model_obj.scale[experiment]))
-
 		print "Mutual Information:", MutInfo3[experiment]
 
 	return MutInfo3
