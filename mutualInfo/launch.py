@@ -41,11 +41,11 @@ def optimise_gridsize(gmem_per_thread):
 def optimal_blocksize(device, function):
 
 	# Check that compute capability of the GPU is compatible with this launch configurator
-	print("Detected compute capability of device:", device.compute_capability()[0], ".", device.compute_capability()[1])
+	print "Detected compute capability of device:", str(device.compute_capability()[0])+"."+str(device.compute_capability()[1])
 	if device.compute_capability()[0] < 2 or device.compute_capability()[0] > 6:
-		print("WARNING: GPU not supported. The launch configurator only supports compute capability 2.0 - 6.2. Configuration for CC 6.2 will be used. This might cause errors.")
+		print "WARNING: GPU not supported. The launch configurator only supports compute capability 2.0 - 6.2. Configuration for CC 6.2 will be used. This might cause errors."
 	elif device.compute_capability()[0] == 6 and device.compute_capability()[1] > 2:
-		print("WARNING: GPU not supported. The launch configurator only supports compute capability 2.0 - 6.2. Configuration for CC 6.2 will be used. This might cause errors.")
+		print "WARNING: GPU not supported. The launch configurator only supports compute capability 2.0 - 6.2. Configuration for CC 6.2 will be used. This might cause errors."
 
 	# Start at smallest blocksize and iteratively increase it to find maximum occupancy
 	max_blocksize = min(device.max_threads_per_block, function.max_threads_per_block)
@@ -61,8 +61,8 @@ def optimal_blocksize(device, function):
 			break
 		blocksize += device.warp_size
 
-	print("Smallest optimal blocksize on this GPU:", optimal_blocksize)
-	print("Theoretically achieved GPU occupancy", (float(achieved_occupancy)/device.max_threads_per_multiprocessor)*100, "%")
+	print "Smallest optimal blocksize on this GPU:", optimal_blocksize
+	print "Theoretically achieved GPU occupancy", (float(achieved_occupancy)/device.max_threads_per_multiprocessor)*100, "%"
 
 	return float(optimal_blocksize)
 
@@ -143,7 +143,7 @@ def max_active_blocks_per_sm(device, function, blocksize, dyn_smem_per_block=0):
 	# Find the maximum number of blocks based on the limits calculated above
 	block_lim = min(block_lim_regs, block_lim_tSM, block_lim_bSM, block_lim_smem)
 
-	#print("Max numbers, limited by [Registers, Threads per SM, Blocks per SM, Shared Memory]", [block_lim_regs, block_lim_tSM, block_lim_bSM, block_lim_smem])
-	#print("Maximum number of blocks on this device (with", blocksize, "threads each):", block_lim)
+	#print "Max numbers, limited by [Registers, Threads per SM, Blocks per SM, Shared Memory]", [block_lim_regs, block_lim_tSM, block_lim_bSM, block_lim_smem]
+	#print "Maximum number of blocks on this device (with", blocksize, "threads each):", block_lim
 
 	return block_lim
