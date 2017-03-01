@@ -35,10 +35,18 @@ def main():
 	#init_condit=[int(i) for i in list(init_condit)]
 	# Calls sorting_files which creates new SBML files for new experiments and creates CUDA code from SBML files if necessary
 
-	for i in range(0,len(input_file_SBMLs)):
-		sorting_files(input_file_SBMLs[i],input_file_datas[i],analysis,fname,usesbml[i], parameter_change[i], init_condit[i], iname)
 
-def sorting_files(input_file_SBML, input_file_data, analysis, fname, usesbml, parameter_change, init_condit, iname):
+	if analysis != 2:
+		for i in range(0,len(input_file_SBMLs)):
+			sorting_files(input_file_SBMLs[i],input_file_datas[i],analysis,fname,usesbml[i], parameter_change[i], init_condit[i], iname)
+	else:
+		####Reference model
+		ref_model = sorting_files(input_file_SBMLs[0],input_file_datas[0],analysis,fname,usesbml[0], parameter_change[0], init_condit[0], iname)
+		####Not reference models
+		for i in range(1,len(input_file_SBMLs)):
+			sorting_files(input_file_SBMLs[i],input_file_datas[i],analysis,fname,usesbml[i], parameter_change[i], init_condit[i], iname, refmod = ref_model)
+
+def sorting_files(input_file_SBML, input_file_data, analysis, fname, usesbml, parameter_change, init_condit, iname, refmod=""):
 	# Used to remove the .xml at the end of the file if present to name directories
 	input_file_SBML_name = input_file_SBML
 	if input_file_SBML_name[-4:]==".xml":
@@ -118,10 +126,21 @@ def sorting_files(input_file_SBML, input_file_data, analysis, fname, usesbml, pa
 	sbml_obj.getpairingCudaICs()
 	print "-----Sampling from prior-----"
 	sbml_obj.getAnalysisType(analysis)
-	sbml_obj.THETAS(inputpath=iname, usesbml=usesbml)
+	if sbml_obj.analysisType != 2:
+		sbml_obj.THETAS(inputpath=iname, usesbml=usesbml)
+	elif sbml_obj.analysisType == 2 and refmod == "":
+		sbml_obj.THETAS(inputpath=iname, usesbml=usesbml)
+	else:
+		sbml_obj.copyTHETAS(refmod)
+
 	print "-----Running CUDA-Sim-----"
 	#cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath)
-	cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath)
+	if sbml_obj.analysisType != 2:
+		cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath, analysis = 0)
+	elif sbml_obj.analysisType == 2 and refmod == "":
+		cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath, analysis = 1)
+	elif sbml_obj.analysisType == 2 and refmod != "":
+		cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath, analysis = 2)
 
 	print "-----Calculating scaling factor-----"
 	sbml_obj.scaling()
@@ -132,6 +151,10 @@ def sorting_files(input_file_SBML, input_file_data, analysis, fname, usesbml, pa
 	elif sbml_obj.analysisType == 1:
 		MutInfo2=getEntropy2.run_getEntropy2(sbml_obj)
 		plotbar.plotbar(MutInfo2, sbml_obj.name ,sbml_obj.nmodels ,1)
+	elif sbml_obj.analysisType == 2 and refmod == "":
+		return sbml_obj
+	elif sbml_obj.analysisType == 2 and refmod != "":
+		print "calc"
 
 
 	#sbml_obj.print_info()

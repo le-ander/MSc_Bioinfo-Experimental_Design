@@ -701,7 +701,8 @@ class algorithm_info:
 					temp = [[l[1] for l in self.x0prior[j]] for j in [i for i, x in enumerate(self.cuda) if x == Cfile]]
 					self.pairParamsICS[Cfile] = [list(x) for x in set(tuple(x) for x in temp)]
 
-	def sortCUDASimoutput(self,cudaorder,cudaout):
+	def sortCUDASimoutput(self,cudaorder,cudaout,control = 0):
+		
 		self.cudaout=[""]*len(self.cuda)
 
 		if self.analysisType == 1:
@@ -711,8 +712,9 @@ class algorithm_info:
 
 		cuda_NAs = dict((k, []) for k in cudaorder)
 		for i, cudafile in enumerate(cudaorder):
+			print cudaout[0].shape
 			index_NA = [p for p, e in enumerate(numpy.isnan(numpy.sum(numpy.sum(cudaout[i][:,:,:],axis=2),axis=1))) if e==True]
-			#print index_NA
+			print index_NA
 			#print self.pairParamsICS.values()[i]
 			if self.initialprior == False:
 				pairing_ICs = enumerate(self.pairParamsICS.values()[i])
@@ -721,15 +723,22 @@ class algorithm_info:
 
 			for j, IC in pairing_ICs:
 				index_NA_IC = [s for s in index_NA if s < (j+1)*Nparticles  and s >= j*Nparticles]
+				#print index_NA_IC
 				#index_NA_IC = [p for p, e in enumerate(numpy.isnan(numpy.sum(numpy.sum(cudaout[i][j*Nparticles:(j+1)*Nparticles,:,:],axis=2),axis=1))) if e==True]
 				#print index_NA_IC
-				if self.analysisType != 1:
+				if self.analysisType == 0:
 					N1_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample]
 					N2_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample and x >= j*Nparticles + self.N1sample]
 					N3_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample+self.N3sample and x >= j*Nparticles + self.N1sample + self.N2sample]
 					N4_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample+self.N3sample+self.N4sample and x >= j*Nparticles + self.N1sample + self.N2sample+self.N3sample]
 					cuda_NAs[cudafile].append([self.N1sample-len(N1_NA),self.N2sample-len(N2_NA),self.N3sample-len(N3_NA),self.N4sample-len(N4_NA)])
-
+				elif self.analysisType == 2:
+					N1_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample]
+					N2_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample and x >= j*Nparticles + self.N1sample]
+					N3_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample+self.N3sample and x >= j*Nparticles + self.N1sample + self.N2sample]
+					N4_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample+self.N3sample+self.N4sample and x >= j*Nparticles + self.N1sample + self.N2sample+self.N3sample]
+					cuda_NAs[cudafile].append([self.N1sample-len(N1_NA),self.N2sample-len(N2_NA),self.N3sample-len(N3_NA),self.N4sample-len(N4_NA)])
+					sys.exit()
 				elif self.analysisType == 1:
 					start = j*Nparticles + self.N1sample+self.N2sample
 					end = j*Nparticles + self.N1sample+self.N2sample + self.N1sample*self.N3sample
@@ -908,3 +917,9 @@ class algorithm_info:
 				self.scale[model] = pow(1.79*pow(10,300),1.0/(len(self.fitSpecies[model])*len(self.times)))
 			else:
 				self.scale[model] = pow(preci,1.0/(len(self.fitSpecies[model])*len(self.times)))*1.0/FmaxDistTraj
+
+	def copyTHETAS(self,refmod):
+		self.parameterSample = refmod.parameterSample
+		self.speciesSample = refmod.speciesSample
+		if refmod.ncompparams_all > 0:
+			self.compsSample = refmod.compsSample
