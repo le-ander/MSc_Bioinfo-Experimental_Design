@@ -28,6 +28,7 @@
   - Catch user input errors
   - Only load packages when required (libsbml and means)
   - To be done at the end
+  - Catch div by 0 in gE due to all inf/na
 
 - Comment code extensively
 
