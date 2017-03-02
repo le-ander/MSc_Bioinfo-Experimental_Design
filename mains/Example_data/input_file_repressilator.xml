@@ -1,33 +1,26 @@
 <input>
 
-######################## number of models
-
 # Number of models for which details are described in this input file
 <modelnumber> 1 </modelnumber>
 
-######################## particles
-
-<particles> 12 </particles>
-
-######################## dt
+# Population size
+<particles> 4600 </particles>
 
 # Internal timestep for solver.
 # Make this small for a stiff model.
 <dt> 1.0 </dt>
 
-######################## User-supplied data
 
 <data>
 # times: For ABC SMC, times must be a whitespace delimited list
 # In simulation mode these are the timepoints for which the simulations will be output
 <times> 0.0 2.0 4.0 6.0 8.0 10.0 12.0 14.0 16.0 18.0 20.0 22.0 24.0 26.0 28.0 30.0 </times>
-
-# Sizes of N1, N2, N3 and N4 samples for enthropy calculation
+ 
 <nsamples>
-<N1> 3 </N1>
-<N2> 3 </N2>
-<N3> 3 </N3>
-<N4> 3 </N4>
+<N1> 100 </N1>
+<N2> 4500 </N2>
+<N3> 0 </N3>
+<N4> 0 </N4>
  </nsamples>
 
 # Sigma
@@ -53,29 +46,15 @@
 
 </data>
 
-######################## Models
 
 <models>
 <model1>
-<name> model1 </name>
-<source> Exp_1.xml </source>
-<cuda> Exp_1.cu </cuda>
-
-# type: the method used to simulate your model. ODE, SDE or Gillespie.
+<name> repressilator_WT </name>
+<source> repressilator_WT.xml </source>
+<cuda> repressilator_WT.cu </cuda>
 <type> ODE </type>
 
-# Fitting information. If fit is ALL, all species in the model are fitted to the data in the order they are listed in the model.
-# Otherwise, give a whitespace delimited list of fitting instrictions the same length as the dimensions of your data.
-# Use speciesN to denote the Nth species in your model. Simple arithmetic operations can be performed on the species from your model.
-# For example, to fit the sum of the first two species in your model to your first variable, write fit: species1+species2
 <fit> All </fit>
-
-# Priors on initial conditions, compartments and parameters:
-# one of 
-#       constant, value 
-#       normal, mean, variance 
-#       uniform, lower, upper 
-#       lognormal, mean, variance 
 
 <initial>
  <ic1> constant 0.0 </ic1>
@@ -86,14 +65,10 @@
  <ic6> constant 0.0 </ic6>
 </initial>
 
-<compartments>
-<compartment1> constant 1 </compartment1>
-</compartments>
-
 <parameters>
 <parameter1> uniform 1 10 </parameter1>
 <parameter2> uniform 0 20 </parameter2>
-<parameter3> lognormal 102 151 </parameter3>
+<parameter3> uniform 500 2000 </parameter3>
 <parameter4> uniform 0 10 </parameter4>
 </parameters>
 </model1>
@@ -101,4 +76,3 @@
 </models>
 
 </input>
-

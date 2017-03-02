@@ -42,7 +42,7 @@
               <plus/>
               <apply>
                 <times/>
-                <cn> 0.5 </cn>
+                <cn> 0.1 </cn>
                 <ci> alpha0 </ci>
               </apply>
               <apply>
@@ -91,7 +91,7 @@
               <plus/>
               <apply>
                 <times/>
-                <cn> 0.2 </cn>
+                <cn> 0.1 </cn>
                 <ci> alpha0 </ci>
               </apply>
               <apply>
@@ -140,16 +140,12 @@
               <plus/>
               <apply>
                 <times/>
-                <cn> 1.8 </cn>
+                <cn> 0.1 </cn>
                 <ci> alpha0 </ci>
               </apply>
               <apply>
                 <divide/>
-                <apply>
-                  <times/>
-                  <cn type="integer"> 7 </cn>
-                  <ci> alpha </ci>
-                </apply>
+                <ci> alpha </ci>
                 <apply>
                   <plus/>
                   <cn type="integer"> 1 </cn>
@@ -224,6 +220,7 @@
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
               <times/>
+              <cn> 0.1 </cn>
               <ci> beta </ci>
               <ci> m2 </ci>
             </apply>
@@ -241,6 +238,7 @@
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
               <times/>
+              <cn> 0.1 </cn>
               <ci> beta </ci>
               <ci> p2 </ci>
             </apply>
