@@ -37,32 +37,34 @@ def stringSearch(orig_str,orig_param,replacement):
 	not_space = re.compile(r"[-\s]")
 	replaced_string = ""
 
-	if orig_str[:len(orig_param)] == orig_param and (not_an.search(orig_str[len(orig_param)]) or not_space.search(orig_str[len(orig_param)])):
-		replaced_string+=replacement
-		start = len(orig_param)
-	else:
-		replaced_string+=orig_str[0]
-		start = 1
-
-	if orig_str[-len(orig_param):] == orig_param and (not_an.search(orig_str[-len(orig_param)-1]) or not_space.search(orig_str[-len(orig_param)-1])):
-		replaced_string_end=replacement
-		end = len(orig_str)-len(orig_param)
-	else:
-		replaced_string_end=orig_str[-1]
-		end = -1
-
-	i = start
-
-	while i < start+len(orig_str[start:end]):
+#	hold_begin = orig_str[:len(orig_param)] == orig_param and ( not_an.search(orig_str[len(orig_param):len(orig_param)+1]) or not_space.search(orig_str[len(orig_param):len(orig_param)+1]) or not_an.search(orig_str[len(orig_param):len(orig_param)+1]) == None or not_space.search(orig_str[len(orig_param):len(orig_param)+1])== None)
+#
+#	if hold_begin:
+#		replaced_string+=replacement
+#		start = len(orig_param)
+#	else:
+#		replaced_string+=orig_str[0]
+#		start = 1
+#
+#	hold_end = orig_str[-len(orig_param):] == orig_param and (not_an.search(orig_str[-len(orig_param)-1:-len(orig_param)]) or not_space.search(orig_str[-len(orig_param)-1:-len(orig_param)]) or not_an.search(orig_str[-len(orig_param)-1:-len(orig_param)]) == None or not_space.search(orig_str[-len(orig_param)-1:-len(orig_param)]) == None)
+#
+#	if hold_end:
+#		replaced_string_end=replacement
+#		end = len(orig_str)-len(orig_param)
+#	else:
+#		replaced_string_end=orig_str[-1]
+#		end = -1
+#
+#	i = start
+	i = 0
+	while i < len(orig_str):
 	#for i, param in enumerate(orig_str[start:end]):
-		if orig_str[i:i+len(orig_param)] == orig_param and (not_an.search(orig_str[i+len(orig_param)]) or not_space.search(orig_str[i+len(orig_param)])) and (not_an.search(orig_str[i-1]) or not_space.search(orig_str[i-1])):
+		if orig_str[i:i+len(orig_param)] == orig_param and (not_an.search(orig_str[i+len(orig_param):i+len(orig_param)+1]) or not_space.search(orig_str[i+len(orig_param):i+len(orig_param)+1]) or not_an.search(orig_str[i+len(orig_param):i+len(orig_param)+1]) == None or not_space.search(orig_str[i+len(orig_param):i+len(orig_param)+1]) == None) and (not_an.search(orig_str[i-1:i]) or not_space.search(orig_str[i-1:i]) or not_an.search(orig_str[i-1:i]) == None or not_space.search(orig_str[i-1:i]) == None):
 			replaced_string+=replacement
 			i+=len(orig_param)
 		else:
 			replaced_string+=orig_str[i]
 			i+=1
-
-	replaced_string += replaced_string_end
 
 	return replaced_string
 
@@ -127,7 +129,7 @@ def SBML_reactionchanges(input_file, inpath="", fname="", param_changes=""):
 			param_to_change.append(el_temp[0])
 			mult_fact.append(el_temp[1])
 			param_reaction.append(int(el_temp[2]))
-
+		
 		SBML_reactionchange(input_file, data, param_to_change,mult_fact,param_reaction,exp_list[i+start_point], dest=fname, inpath = inpath)
 
 	return len(lines)

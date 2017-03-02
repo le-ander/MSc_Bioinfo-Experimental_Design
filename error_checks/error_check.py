@@ -40,6 +40,7 @@ def input_checker(sys_arg,mode):
 	parameter_change = False
 	init_condit = False
 	Nsamples = [0]*4
+	input_file_data=[]
 
 	for i in range(1,len(sys_arg)):
 		if sys_arg[i].startswith('--'):
@@ -86,10 +87,6 @@ def input_checker(sys_arg,mode):
 						break
 				input_file_data=input_file_data[:keep]
 				print ""
-			elif option == "params":
-				parameter_change = sys_arg[i+1]
-			elif option == "init":
-				init_condit = sys_arg[i+1]
 			elif option[0:9] == "infolder=":
 				iname = option[9:]
 				print "Input file destination: " + iname + "\n"
@@ -142,10 +139,6 @@ def input_checker(sys_arg,mode):
 						break
 				input_file_data=input_file_data[:keep]
 				print ""
-			elif option == "p":
-				parameter_change = sys_arg[i+1]
-			elif option == "ic":
-				init_condit = sys_arg[i+1]
 			elif option[0:3] == "if=":
 				iname = option[3:]
 				print "Input file destination: " + iname + "\n"
@@ -157,16 +150,11 @@ def input_checker(sys_arg,mode):
 	if file_exist_SBML == False:
 		print "\nNo input_file_SBML is given!\nUse: \n\t-i1 'inputfile' \nor: \n\t--infile_SBML 'inputfile' \n"
 		sys.exit()
-	if file_exist_data == False:
-		print "\nNo input_file is given!\nUse: \n\t-i2 'inputfile' \nor: \n\t--infile_data 'inputfile' \n"
-		sys.exit()
 	if analysis not in [0,1,2]:
 		print "\nNo analysis type is given!\nUse: \n\t-a 'analysis type' \nor: \n\t --analysis 'analysis type' \n"
 		sys.exit()
-	if which_species == False and parameter_change == False and init_condit == False:
-		print "\nNeed to have different experiments! Specify whether you are: \n\tChanging species measured with -s or --species \n\tChanging parameters by a multiplicative factor with -p or --params \n\tChanging initial conditions with -ic or --init\n"
 	
 	if not(os.path.isdir("./"+fname)):
 		os.mkdir(fname)
 
-	return input_file_SBML, input_file_data, analysis, fname, usesbml, parameter_change, init_condit, iname
+	return input_file_SBML, input_file_data, analysis, fname, usesbml, iname
