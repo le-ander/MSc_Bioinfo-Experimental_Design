@@ -15,7 +15,7 @@
 
 - Make sure cudaSim works wit gE3 (Scott)
 
-- Reduce number of simulations before gE3 (gE1&2 as well?) and slice arrays more efficiently
+- Reduce number of simulations before gE3 (gE1&2 as well?) and slice arrays more efficiently (gE2 as well?)
   - dataRef/Mod (N1); thetaRef (N2+N3); thetaMod (N2+N4)
 
 - Check why we get such large numbers in res1 and result
