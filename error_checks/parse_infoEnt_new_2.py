@@ -935,10 +935,10 @@ class algorithm_info:
 		for model in range(self.nmodels):
 			maxDistTraj = max([math.fabs(numpy.amax(self.trajectories[model]) - numpy.amin(self.cudaout[model])),math.fabs(numpy.amax(self.cudaout[model]) - numpy.amin(self.trajectories[model]))])
 			
-			print maxDistTraj
+			#print maxDistTraj
 			preci = pow(10,-34)
 			FmaxDistTraj = 1.0*math.exp(-(maxDistTraj*maxDistTraj)/(2.0*self.sigma*self.sigma))
-			print FmaxDistTraj
+			#print FmaxDistTraj
 			#print len(self.fitSpecies[model])
 
 			if FmaxDistTraj<preci:
@@ -955,7 +955,7 @@ class algorithm_info:
 			# Only dealing with constant number of timepoints over all models here, need to change!
 			for tp in range(len(self.times)):
 				distance.append(max([math.fabs(numpy.amax(self.trajectories[model][:,tp,:]) - numpy.amin(self.cudaout[model][:,tp,:])),math.fabs(numpy.amax(self.cudaout[model][:,tp,:]) - numpy.amin(self.trajectories[model][:,tp,:]))]))
-			print distance
+			#print distance
 			maxDistList.append(numpy.amax(numpy.array(distance)))
 		maxDistTraj = max(maxDistList)
 
@@ -976,12 +976,12 @@ class algorithm_info:
 
 			scale1 = math.log(preci)/(2.0*M_Max*P_Max) + (maxDistTraj*maxDistTraj)/(2.0*self.sigma*self.sigma)
 			scale2 = math.log(pow(10,300))/(2.0*M_Max*P_Max)
-			print scale1
-			print scale2
+			#print scale1
+			#print scale2
 			if(scale1<scale2): self.scale[model] = scale1
 			else: self.scale[model] = 0.0
 
-		print self.scale
+		#print self.scale
 		#sys.exit()
 
 	def copyTHETAS(self,refmod):
