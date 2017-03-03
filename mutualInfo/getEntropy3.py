@@ -2,7 +2,7 @@ from numpy import *
 
 from pycuda import compiler, driver
 from pycuda import autoinit
-
+import sys
 import launch
 
 # A function to calculate the mutual information between the outcome of two experiments
@@ -13,7 +13,11 @@ import launch
 ##N1,N2 - Number of particles
 ##sigma - stadard deviation
 ##scale - scaling constant to prevent nans and infs
-def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,scale):
+
+#MutInfo3.append(getEntropy3(ref_obj.trajectories[0],model_obj.trajectories[experiment],ref_obj.cudaout[0], model_obj.cudaout[experiment],N1,N2,N3,N4,ref_obj.sigma,model_obj.sigma,max(model_obj.scale[experiment],ref_obj.scale[0])))
+#dataRef = ref traj
+#thetaRef
+def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,scale_ref,scale_mod):
 	# Kernel declaration using pycuda SourceModule
 	mod = compiler.SourceModule("""
 	__device__ unsigned int idx3d(int i, int k, int l, int M, int P)
@@ -26,7 +30,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 		return i*M + j;
 	}
 
-	__global__ void distance1(int Ni, int Nj, int M_Ref, int P_Ref, int M_Mod, int P_Mod, float sigma_ref, float sigma_mod, double scale, double *d1, double *d2, double *d3, double *d4, double *res1)
+	__global__ void distance1(int Ni, int Nj, int M_Ref, int P_Ref, int M_Mod, int P_Mod, float sigma_ref, float sigma_mod, double scale_ref, double scale_mod, double *d1, double *d2, double *d3, double *d4, double *res1)
 	{
 	int i = threadIdx.x + blockDim.x * blockIdx.x;
 	int j = threadIdx.y + blockDim.y * blockIdx.y;
@@ -39,20 +43,20 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	x3 = 0.0;
 	for(int k=0; k<M_Ref; k++){
 		for(int l=0; l<P_Ref; l++){
-			x1 = x1 + scale - ( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])*( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])/(2.0*sigma_ref*sigma_ref);
+			x1 = x1 + scale_ref - ( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])*( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])/(2.0*sigma_ref*sigma_ref);
 		}
 	}
 
 	for(int k=0; k<M_Mod; k++){
 		for(int l=0; l<P_Mod; l++){
-			x3 = x3 + scale - ( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])*( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])/(2.0*sigma_mod*sigma_mod);
+			x3 = x3 + scale_mod - ( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])*( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])/(2.0*sigma_mod*sigma_mod);
 		}
 	}
 
-	res1[idx2d(i,j,Nj)] = exp(x1+x3);
+	res1[idx2d(i,j,Nj)] = x1+x3;
 	}
 
-	__global__ void distance2(int Ni, int Nj, int M_Ref, int P_Ref, int M_Mod, int P_Mod, float sigma_ref, float sigma_mod, double scale, double *d1, double *d2, double *d3, double *d4, double *res2, double *res3)
+	__global__ void distance2(int Ni, int Nj, int M_Ref, int P_Ref, int M_Mod, int P_Mod, float sigma_ref, float sigma_mod, double scale_ref, double scale_mod, double *d1, double *d2, double *d3, double *d4, double *res2, double *res3)
 	{
 	int i = threadIdx.x + blockDim.x * blockIdx.x;
 	int j = threadIdx.y + blockDim.y * blockIdx.y;
@@ -66,13 +70,13 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 
 	for(int k=0; k<M_Ref; k++){
 		for(int l=0; l<P_Ref; l++){
-			x2 = x2 + scale - ( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])*( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])/(2.0*sigma_ref*sigma_ref);
+			x2 = x2 + scale_ref - ( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])*( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])/(2.0*sigma_ref*sigma_ref);
 		}
 	}
 
 	for(int k=0; k<M_Mod; k++){
 		for(int l=0; l<P_Mod; l++){
-			x3 = x3 + scale - ( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])*( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])/(2.0*sigma_mod*sigma_mod);
+			x3 = x3 + scale_mod - ( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])*( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])/(2.0*sigma_mod*sigma_mod);
 		}
 	}
 
@@ -82,6 +86,8 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 
 	""")
 
+	print scale_ref
+	print scale_mod
 	# Creating handles for global kernel functions
 	dist_gpu1 = mod.get_function("distance1")
 	dist_gpu2 = mod.get_function("distance2")
@@ -116,11 +122,21 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 
 	# Prepare input data
 	d1 = dataRef[0:N1,:,:].astype(float64)
-	d2 = array(thetaRef)[N1:(N1+N2),:,:].astype(float64)
+	d2 = thetaRef[N1:(N1+N2),:,:].astype(float64)
 	d3 = dataMod[0:N1,:,:].astype(float64)
 	d4 = array(thetaMod)[N1:(N1+N2),:,:].astype(float64)
 	d6 = array(thetaRef)[(N1+N2):(N1+N2+N3),:,:].astype(float64)
-	d8 = array(thetaMod)[(N1+N2+N3):(N1+N2+N3+N4),:,:].astype(float64)
+	d8 = array(thetaMod)[(N1+N2):(N1+N2+N4),:,:].astype(float64)
+
+	#print concatenate((d1, d2),axis=2)
+	#print d1-d2
+	
+	
+	#print amax(d2)
+	#print amax(d3)
+	#print amax(d4)
+	#print amax(d6)
+	#print amax(d8)
 
 	# Determine number of timepoints (M) and number of species (P)
 	##Reference experiment
@@ -176,7 +192,11 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 			res1 = zeros([Ni,Nj]).astype(float64)
 			res2 = zeros([Ni,Nj]).astype(float64)
 			res3 = zeros([Ni,Nj]).astype(float64)
-
+			#print data2
+			#print data4.shape
+			#print data6.shape
+			#print data8.shape
+			#print "--------------------"
 			# Set j dimension of block and grid for this run
 			if(Nj<block_j):
 				gj = 1
@@ -186,8 +206,8 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 				gj = ceil(Nj/block_j)
 
 			# Call GPU kernel functions
-			dist_gpu1(int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_ref), float32(sigma_mod), float64(scale), driver.In(data1), driver.In(data2), driver.In(data3), driver.In(data4), driver.Out(res1),block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
-			dist_gpu2(int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_ref), float32(sigma_mod), float64(scale), driver.In(data1), driver.In(data6), driver.In(data3), driver.In(data8), driver.Out(res2), driver.Out(res3),block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+			dist_gpu1(int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_ref), float32(sigma_mod), float64(scale_ref), float64(scale_mod), driver.In(data1), driver.In(data2), driver.In(data3), driver.In(data4), driver.Out(res1),block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+			dist_gpu2(int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_ref), float32(sigma_mod), float64(scale_ref), float64(scale_mod), driver.In(data1), driver.In(data6), driver.In(data3), driver.In(data8), driver.Out(res2), driver.Out(res3),block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 
 			# Summing rows in GPU output for this run
 			for k in range(Ni):
@@ -196,6 +216,8 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 				result3[(i*int(grid_i)+k),j] = sum(res3[k,:]) ###Could be done on GPU?
 
 	# Initialising required variables for next steps
+	print result1
+	sys.exit()
 	sum1 = 0.0
 	a1 = 0.0
 	a2 = 0.0
@@ -235,10 +257,14 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	#print "a1: ", a1/float(N1-count1_na-count1_inf) , "a2: ", a2/float(N1-count2_na-count2_inf), "a3: ", a3/float(N1-count3_na-count3_inf)
 	#print "all: ", a1/float(N1-count1_na-count1_inf) + a2/float(N1-count2_na-count2_inf) + a3/float(N1-count3_na-count3_inf)
 	#print "sum1: ", sum1
-
+	print count1_inf, count1_na
+	print count2_inf, count2_na
+	print count3_inf, count3_na
+	
 	# Final division to give mutual information
 	Info = sum1/float(N1-count_all)
-
+	print Info
+	sys.exit()
 	return(Info)
 
 # A function calling getEntropy3 for all provided experiments and outputs the mutual information
@@ -246,25 +272,44 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 ##model_obj - an object containing all alternative experiments and all their associated information
 ##ref_obj - an object containing the reference experiment and all associated information
 def run_getEntropy3(model_obj, ref_obj):
+	
 	MutInfo3 = []
 	for experiment in range(model_obj.nmodels):
 
 		if model_obj.initialprior == False:
 			pos = model_obj.pairParamsICS[model_obj.cuda[experiment]].index([x[1] for x in model_obj.x0prior[experiment]])
-			N1 = model_obj.cudaout_structure[model_obj.cuda[experiment]][pos][0]
-			N2 = model_obj.cudaout_structure[model_obj.cuda[experiment]][pos][1]
-			N3 = model_obj.cudaout_structure[model_obj.cuda[experiment]][pos][2]
+			pos2 = ref_obj.pairParamsICS[ref_obj.cuda[0]].index([x[1] for x in ref_obj.x0prior[0]])
+			N1_mod = model_obj.cudaout_structure[model_obj.cuda[experiment]][pos][0]
+			N2_mod = model_obj.cudaout_structure[model_obj.cuda[experiment]][pos][1]
+			N1_ref = ref_obj.cudaout_structure[ref_obj.cuda[experiment]][pos2][0]
+			N2_ref = ref_obj.cudaout_structure[ref_obj.cuda[experiment]][pos2][1]
+
+			N3 = ref_obj.cudaout_structure[ref_obj.cuda[experiment]][pos2][2]
 			N4 = model_obj.cudaout_structure[model_obj.cuda[experiment]][pos][3]
 		else:
 			pos = model_obj.cudaout_structure[model_obj.cuda[experiment]][0]
-			N1 = pos[0]
-			N2 = pos[1]
-			N3 = pos[2]
+			pos2 = ref_obj.cudaout_structure[ref_obj.cuda[0]][0]
+			N1_mod = pos[0]
+			N2_mod = pos[1]
+			N1_ref = pos2[0]
+			N2_ref = pos2[1]
+
+			N3 = pos2[2]
 			N4 = pos[3]
 
-		print "-----Calculating Mutual Information for Experiment", experiment+1,"-----"
+		N1 = min(N1_mod,N1_ref)
+		N2 = min(N2_mod,N2_ref)
 
-		MutInfo3.append(getEntropy3(ref_obj.trajectories[experiment],model_obj.trajectories[experiment],ref_obj.cudaout[experiment], model_obj.cudaout[experiment],N1,N2,N3,N4,ref_obj.sigma,model_obj.sigma,model_obj.scale[experiment]))
+
+		#print ref_obj.trajectories[0].shape
+		#print ref_obj.cudaout[0].shape
+		#print "-----------------"
+		#print model_obj.trajectories[experiment].shape
+		#print model_obj.cudaout[experiment].shape
+
+
+		print "-----Calculating Mutual Information for Experiment", experiment+1,"-----"
+		MutInfo3.append(getEntropy3(ref_obj.trajectories[0],ref_obj.cudaout[0],model_obj.trajectories[experiment], model_obj.cudaout[experiment],N1,N2,N3,N4,ref_obj.sigma,model_obj.sigma,ref_obj.scale[0],model_obj.scale[experiment]))
 		print "Mutual Information for Experiment", str(experiment+1)+":", MutInfo1[experiment]
 
 	return MutInfo3

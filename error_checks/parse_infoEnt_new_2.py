@@ -934,24 +934,33 @@ class algorithm_info:
 		self.scale = [""]*self.nmodels
 		for model in range(self.nmodels):
 			maxDistTraj = max([math.fabs(numpy.amax(self.trajectories[model]) - numpy.amin(self.cudaout[model])),math.fabs(numpy.amax(self.cudaout[model]) - numpy.amin(self.trajectories[model]))])
+			print self.trajectories[model].shape
+			#print ""
+			print self.cudaout[model].shape
+			print maxDistTraj
 			preci = pow(10,-34)
 			FmaxDistTraj = 1.0*math.exp(-(maxDistTraj*maxDistTraj)/(2.0*self.sigma*self.sigma))
-
+			print FmaxDistTraj
 			#print len(self.fitSpecies[model])
 
 			if FmaxDistTraj<preci:
 				self.scale[model] = pow(1.79*pow(10,300),1.0/(len(self.fitSpecies[model])*len(self.times)))
+				print "here"
 			else:
 				self.scale[model] = pow(preci,1.0/(len(self.fitSpecies[model])*len(self.times)))*1.0/FmaxDistTraj
-
+		print self.scale
+		sys.exit()
+		
 	def scaling_ge3(self):
-
+		
+		maxDistList =[]
 		for model in range(self.nmodels):
 			distance = []
 			# Only dealing with constant number of timepoints over all models here, need to change!
 			for tp in range(len(self.times)):
 				distance.append(max([math.fabs(numpy.amax(self.trajectories[model][:,tp,:]) - numpy.amin(self.cudaout[model][:,tp,:])),math.fabs(numpy.amax(self.cudaout[model][:,tp,:]) - numpy.amin(self.trajectories[model][:,tp,:]))]))
-			maxDistList.append(amax(array(distance)))
+			print distance
+			maxDistList.append(numpy.amax(numpy.array(distance)))
 		maxDistTraj = max(maxDistList)
 
 		self.scale = [""]*self.nmodels
@@ -969,11 +978,15 @@ class algorithm_info:
 			M_Max = float(max(M_Ref,M_Alt))
 			P_Max = float(max(P_Ref,P_Alt))
 
-			scale1 = log(preci)/(2.0*M_Max*P_Max) + (maxDistTraj*maxDistTraj)/(2.0*self.sigma*self.sigma)
+			scale1 = math.log(preci)/(2.0*M_Max*P_Max) + (maxDistTraj*maxDistTraj)/(2.0*self.sigma*self.sigma)
 			scale2 = math.log(pow(10,300))/(2.0*M_Max*P_Max)
-
-			if(aa1<aa2): self.scale[model] = scale1
+			print scale1
+			print scale2
+			if(scale1<scale2): self.scale[model] = scale1
 			else: self.scale[model] = 0.0
+
+		print self.scale
+		sys.exit()
 
 	def copyTHETAS(self,refmod):
 		self.particles -= self.N3sample

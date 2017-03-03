@@ -19,6 +19,7 @@ import input_file_parser_new_2
 import parse_infoEnt_new_2
 import getEntropy1
 import getEntropy2
+import getEntropy3
 import cudacodecreater
 import plotbar
 from numpy import *
@@ -50,12 +51,14 @@ def main():
 		####Reference model
 		count = 0
 		if usesbml[0] == True:
+			random.seed(123)
 			ref_model = sorting_files(input_file_SBMLs[0],analysis,fname,usesbml[0], iname, input_file_data = input_file_datas[count])
 			count += 1 
 		else:
 			ref_model = sorting_files(input_file_SBMLs[0],analysis,fname,usesbml[0], iname)
 		####Not reference models
 		for i in range(1,len(input_file_SBMLs)):
+			random.seed(123)
 			if usesbml[i] == True:
 				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, refmod = ref_model,input_file_data = input_file_datas[count])
 				count += 1 
@@ -158,7 +161,10 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 	#	cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath, analysis = 2)
 
 	print "-----Calculating scaling factor-----"
-	sbml_obj.scaling()
+	if sbml_obj.analysisType != 2:
+		sbml_obj.scaling()
+	else:
+		sbml_obj.scaling_ge3()
 	#print sbml_obj.scale
 	if sbml_obj.analysisType == 0:
 		MutInfo1=getEntropy1.run_getEntropy1(sbml_obj)
@@ -169,9 +175,8 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 	elif sbml_obj.analysisType == 2 and refmod == "":
 		return sbml_obj
 	elif sbml_obj.analysisType == 2 and refmod != "":
-		print [x.shape for x in sbml_obj.trajectories]
-		print [x.shape for x in refmod.trajectories]
-		print "calc"
+		getEntropy3.run_getEntropy3(sbml_obj, refmod)
+		
 
 
 	#sbml_obj.print_info()
