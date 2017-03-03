@@ -1,1 +1,6 @@
+<<<<<<< HEAD
 *.pyc
+=======
+*.pyc
+mains/results
+>>>>>>> 70cff231eef8170fefad4e27741214103f7f26bd
