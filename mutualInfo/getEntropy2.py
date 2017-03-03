@@ -15,7 +15,6 @@ except:
 
 import time
 import sys
-sys.path.insert(0, ".")
 
 
 def round_down(num, divisor):
