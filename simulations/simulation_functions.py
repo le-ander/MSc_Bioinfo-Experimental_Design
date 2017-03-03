@@ -8,7 +8,6 @@ import re
 import cudasim.Lsoda as Lsoda
 
 
-
 try:
 	import cPickle as pickle
 except:
@@ -29,17 +28,22 @@ def run_cudasim(m_object,inpath=""):
 	else:
 		parameters = m_object.parameterSample
 
+	#print parameters
+
 	species = m_object.speciesSample
-	
+
 	result = modelInstance.run(parameters, species, constant_sets = not(m_object.initialprior), pairings=m_object.pairParamsICS)
 	
 	if type(result)==list:
 		result = [x[:,0] for x in result]
 	else:
 		result = [result[:,0]]
-
+	
+	#print result[0][1,:,:]
+	sys.exit()
 	print "-----Sorting NaNs from CUDA-Sim output-----"
 	m_object.sortCUDASimoutput(list(set(m_object.cuda)),result)
+	
 
 def pickle_object(object):
 	pickle.dump(object, open("save_point.pkl", "wb"))

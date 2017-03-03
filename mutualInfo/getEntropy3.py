@@ -53,7 +53,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 		}
 	}
 
-	res1[idx2d(i,j,Nj)] = x1+x3;
+	res1[idx2d(i,j,Nj)] = exp(x1+x3);
 	}
 
 	__global__ void distance2(int Ni, int Nj, int M_Ref, int P_Ref, int M_Mod, int P_Mod, float sigma_ref, float sigma_mod, double scale_ref, double scale_mod, double *d1, double *d2, double *d3, double *d4, double *res2, double *res3)
@@ -216,9 +216,14 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 				result3[(i*int(grid_i)+k),j] = sum(res3[k,:]) ###Could be done on GPU?
 
 	# Initialising required variables for next steps
-	print result1
-	sys.exit()
+	#print result1
+	#sys.exit()
+
+
 	sum1 = 0.0
+	sumres1 = 0.0
+	sumres2 = 0.0
+	sumres3 = 0.0
 	a1 = 0.0
 	a2 = 0.0
 	a3 = 0.0
@@ -245,6 +250,9 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 			count3_na=count3_na+1
 		else:
 			sum1 += log(sum(result1[i,:])) - log(sum(result2[i,:])) - log(sum(result3[i,:])) - log(float(N2)) + log(float(N3)) + log(float(N4))
+			sumres1 += log(sum(result1[i,:]))
+			sumres2 -= log(sum(result2[i,:]))
+			sumres3 -= log(sum(result3[i,:]))
 			# Optional calculations of intermediate results
 			#a1 += log(sum(result1[i,:])) - log(N2) - M_Ref*P_Ref*log(2.0*pi*sigma_ref*sigma_ref) - M_Mod*P_Mod*log(2.0*pi*sigma_mod*sigma_mod) - M_Ref*P_Ref*scale - M_Mod*P_Mod*scale
 			#a2 -= log(sum(result2[i,:])) + log(N3) + M_Ref*P_Ref*log(2.0*pi*sigma_ref*sigma_ref) + M_Ref*P_Ref*scale
@@ -260,9 +268,15 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	print count1_inf, count1_na
 	print count2_inf, count2_na
 	print count3_inf, count3_na
+
+	print ""
+	print sumres1
+	print sumres2
+	print sumres3
 	
 	# Final division to give mutual information
 	Info = sum1/float(N1-count_all)
+	print sum1
 	print Info
 	sys.exit()
 	return(Info)

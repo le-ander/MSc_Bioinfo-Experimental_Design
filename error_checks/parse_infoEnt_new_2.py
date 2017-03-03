@@ -934,9 +934,7 @@ class algorithm_info:
 		self.scale = [""]*self.nmodels
 		for model in range(self.nmodels):
 			maxDistTraj = max([math.fabs(numpy.amax(self.trajectories[model]) - numpy.amin(self.cudaout[model])),math.fabs(numpy.amax(self.cudaout[model]) - numpy.amin(self.trajectories[model]))])
-			print self.trajectories[model].shape
-			#print ""
-			print self.cudaout[model].shape
+			
 			print maxDistTraj
 			preci = pow(10,-34)
 			FmaxDistTraj = 1.0*math.exp(-(maxDistTraj*maxDistTraj)/(2.0*self.sigma*self.sigma))
@@ -945,11 +943,9 @@ class algorithm_info:
 
 			if FmaxDistTraj<preci:
 				self.scale[model] = pow(1.79*pow(10,300),1.0/(len(self.fitSpecies[model])*len(self.times)))
-				print "here"
 			else:
 				self.scale[model] = pow(preci,1.0/(len(self.fitSpecies[model])*len(self.times)))*1.0/FmaxDistTraj
-		print self.scale
-		sys.exit()
+		#sys.exit()
 		
 	def scaling_ge3(self):
 		
@@ -986,7 +982,7 @@ class algorithm_info:
 			else: self.scale[model] = 0.0
 
 		print self.scale
-		sys.exit()
+		#sys.exit()
 
 	def copyTHETAS(self,refmod):
 		self.particles -= self.N3sample
