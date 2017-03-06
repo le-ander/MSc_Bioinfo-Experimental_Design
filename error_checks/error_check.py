@@ -3,7 +3,7 @@ import os
 
 
 def printOptions():
-	
+
 	print "\nList of possible options:"
 
 	print "\n Input options:"
@@ -18,9 +18,9 @@ def printOptions():
 	print "-p\t--params\t to specify whether you are changing the parameters by some multiplicative factor in each experiment"
 	print "-ic\t--init\t to specify whether you are changing the initial conditions of each experiment"
 
-	print "\n Output options:"  
+	print "\n Output options:"
 	print "-of\t--outfolder\t write results to folder eg -of=/full/path/to/folder (default is _results_ in current directory)"
-	
+
 	print "\n-h\t--help\t\t print this list of options."
 
 	print "\n"
@@ -56,12 +56,12 @@ def input_checker(sys_arg,mode):
 					print "Type of Analysis: Prediction for a subset of parameters\n"
 				elif analysis == 2:
 					print "Type of Analysis: Prediction of experiment\n"
-			elif option == 'localcode' : 
+			elif option == 'localcode' :
 				usesbml = sys_arg[i+1]
-			elif option[0:10] == 'outfolder=' : 
+			elif option[0:10] == 'outfolder=' :
 				fname = option[10:]
 				print "Output file destination: " + fname + "\n"
-			elif option == 'infile_SBML': 
+			elif option == 'infile_SBML':
 				input_file_SBML=sys_arg[i+1:]
 				file_exist_SBML=True
 				print "Input SBML files: "
@@ -74,7 +74,7 @@ def input_checker(sys_arg,mode):
 						break
 				input_file_SBML=input_file_SBML[:keep]
 				print ""
-			elif option == 'infile_data': 
+			elif option == 'infile_data':
 				input_file_data=sys_arg[i+1:]
 				file_exist_data=True
 				print "Input data files: "
@@ -90,7 +90,7 @@ def input_checker(sys_arg,mode):
 			elif option[0:9] == "infolder=":
 				iname = option[9:]
 				print "Input file destination: " + iname + "\n"
-			elif not(sys_arg[i-1][2:] == 'infile_SBML'): 
+			elif not(sys_arg[i-1][2:] == 'infile_SBML'):
 				print "\nunknown option "+sys_arg[i]
 				printOptions()
 				sys.exit()
@@ -108,12 +108,12 @@ def input_checker(sys_arg,mode):
 					print "Type of Analysis: Prediction for a subset of parameters\n"
 				elif analysis == 2:
 					print "Type of Analysis: Prediction of experiment\n"
-			elif option == 'lc' : 
+			elif option == 'lc' :
 				usesbml = sys_arg[i+1]
-			elif option[0:3] == 'of=' : 
+			elif option[0:3] == 'of=' :
 				fname = option[3:]
 				print "Output file destination: " + fname + "\n"
-			elif option == 'i1': 
+			elif option == 'i1':
 				input_file_SBML=sys_arg[i+1:]
 				file_exist_SBML=True
 				print "Input SBML files: "
@@ -126,7 +126,7 @@ def input_checker(sys_arg,mode):
 						break
 				input_file_SBML=input_file_SBML[:keep]
 				print ""
-			elif option == 'i2': 
+			elif option == 'i2':
 				input_file_data=sys_arg[i+1:]
 				file_exist_data=True
 				print "Input data files: "
@@ -142,18 +142,18 @@ def input_checker(sys_arg,mode):
 			elif option[0:3] == "if=":
 				iname = option[3:]
 				print "Input file destination: " + iname + "\n"
-			elif not(sys_arg[i-1][2:] == 'i1'): 
+			elif not(sys_arg[i-1][2:] == 'i1'):
 				print "\nunknown option "+sys_arg[i]
 				printOptions()
 				sys.exit()
- 
+
 	if file_exist_SBML == False:
 		print "\nNo input_file_SBML is given!\nUse: \n\t-i1 'inputfile' \nor: \n\t--infile_SBML 'inputfile' \n"
 		sys.exit()
 	if analysis not in [0,1,2]:
 		print "\nNo analysis type is given!\nUse: \n\t-a 'analysis type' \nor: \n\t --analysis 'analysis type' \n"
 		sys.exit()
-	
+
 	if not(os.path.isdir("./"+fname)):
 		os.mkdir(fname)
 
