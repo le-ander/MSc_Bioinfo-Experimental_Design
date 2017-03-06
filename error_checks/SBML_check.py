@@ -59,12 +59,14 @@ def stringSearch(orig_str,orig_param,replacement):
 	i = 0
 	while i < len(orig_str):
 	#for i, param in enumerate(orig_str[start:end]):
-		if orig_str[i:i+len(orig_param)] == orig_param and (not_an.search(orig_str[i+len(orig_param):i+len(orig_param)+1]) or not_space.search(orig_str[i+len(orig_param):i+len(orig_param)+1]) or not_an.search(orig_str[i+len(orig_param):i+len(orig_param)+1]) == None or not_space.search(orig_str[i+len(orig_param):i+len(orig_param)+1]) == None) and (not_an.search(orig_str[i-1:i]) or not_space.search(orig_str[i-1:i]) or not_an.search(orig_str[i-1:i]) == None or not_space.search(orig_str[i-1:i]) == None):
+		if orig_str[i:i+len(orig_param)] == orig_param and (not_an.search(orig_str[i+len(orig_param):i+len(orig_param)+1]) or not_space.search(orig_str[i+len(orig_param):i+len(orig_param)+1]) or len(orig_str[i+len(orig_param):i+len(orig_param)+1]) == 0 or len(orig_str[i+len(orig_param):i+len(orig_param)+1]) == 0) and (not_an.search(orig_str[i-1:i]) or not_space.search(orig_str[i-1:i]) or len(orig_str[i-1:i]) == 0 or len(orig_str[i-1:i]) == 0):
 			replaced_string+=replacement
 			i+=len(orig_param)
+			#print replaced_string , i, "replaced"
 		else:
 			replaced_string+=orig_str[i]
 			i+=1
+			#print replaced_string, i
 
 	return replaced_string
 
@@ -99,7 +101,6 @@ def SBML_reactionchange(input_file, lines, param_to_change, mult_fact, param_rea
 		writeSBML(SBML_master, "./" + dest + "/Exp_" + repr(nu) + ".xml")
 	#else:
 	#	SBML_initialcond(nu, input_file,SBML_master,lines,dest)
-
 
 def SBML_reactionchanges(input_file, inpath="", fname="", param_changes=""):
 	change_params=open(inpath+"/"+param_changes,'r')

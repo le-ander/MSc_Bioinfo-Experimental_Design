@@ -16,9 +16,9 @@
 		</listOfCompartments>
 
 		<listOfSpecies>
-			<species id="p53" initialAmount="0" compartment="Cell" hasOnlySubstanceUnits="true"/>
-			<species id="pMDM2" initialAmount="0" compartment="Cell" hasOnlySubstanceUnits="true"/>
-			<species id="MDM2" initialAmount="0" compartment="Cell" hasOnlySubstanceUnits="true"/>
+			<species id="p53" initialAmount="70" compartment="Cell" hasOnlySubstanceUnits="true"/>
+			<species id="pMDM2" initialAmount="30" compartment="Cell" hasOnlySubstanceUnits="true"/>
+			<species id="MDM2" initialAmount="60" compartment="Cell" hasOnlySubstanceUnits="true"/>
 		</listOfSpecies>
 
 		<listOfParameters>

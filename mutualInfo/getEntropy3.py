@@ -192,7 +192,9 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 			res1 = zeros([Ni,Nj]).astype(float64)
 			res2 = zeros([Ni,Nj]).astype(float64)
 			res3 = zeros([Ni,Nj]).astype(float64)
-			#print data2
+			#print "---------------"
+			#print concatenate((data3,data4),axis=2)
+			#print "---------------"
 			#print data4.shape
 			#print data6.shape
 			#print data8.shape
@@ -234,6 +236,8 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	count3_na = 0
 	count3_inf = 0
 
+	#print result1
+
 	# Sum all content of new results matrix and add/subtract constants for each row if there are no NANs or infs
 	for i in range(N1):
 		if(isinf(log(sum(result1[i,:])))):
@@ -265,11 +269,12 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	#print "a1: ", a1/float(N1-count1_na-count1_inf) , "a2: ", a2/float(N1-count2_na-count2_inf), "a3: ", a3/float(N1-count3_na-count3_inf)
 	#print "all: ", a1/float(N1-count1_na-count1_inf) + a2/float(N1-count2_na-count2_inf) + a3/float(N1-count3_na-count3_inf)
 	#print "sum1: ", sum1
-	print count1_inf, count1_na
-	print count2_inf, count2_na
-	print count3_inf, count3_na
+	print "", "Infs", "NAs"
+	print "1", count1_inf, count1_na
+	print "2", count2_inf, count2_na
+	print "3", count3_inf, count3_na
 
-	print ""
+	print "Sums"
 	print sumres1
 	print sumres2
 	print sumres3
