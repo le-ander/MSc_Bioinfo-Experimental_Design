@@ -942,9 +942,11 @@ class algorithm_info:
 			#print len(self.fitSpecies[model])
 
 			if FmaxDistTraj<preci:
-				self.scale[model] = pow(1.79*pow(10,300),1.0/(len(self.fitSpecies[model])*len(self.times)))
+#				self.scale[model] = math.log(pow(1.79*pow(10,300),1.0/(len(self.fitSpecies[model])*len(self.times))),math.e)
+				self.scale[model] = pow(1.79*pow(10,300),1.0/(len(self.fitSpecies[model])*len(self.times)))		
 			else:
-				self.scale[model] = pow(preci,1.0/(len(self.fitSpecies[model])*len(self.times)))*1.0/FmaxDistTraj
+#				self.scale[model] = math.log(pow(preci,1.0/(len(self.fitSpecies[model])*len(self.times)))*1.0/FmaxDistTraj,math.e)
+				self.scale[model] = pow(preci,1.0/(len(self.fitSpecies[model])*len(self.times)))*1.0/FmaxDistTraj			
 		#sys.exit()
 		
 	def scaling_ge3(self):

@@ -8,10 +8,7 @@ sys.path.insert(1, '../mutualInfo')
 sys.path.insert(1, '../abc-sysbio')
 sys.path.insert(1, '../cudasim')
 
-#sys.path.insert(1, '../abc-sysbio/abcsysbio_parser')
-#sys.path.insert(1, '/cluster/home/saw112/work/Test_code/abcsysbio_parser') ## not sure what it does as directory doesn't exist
 
-#import obtain_thetas
 import simulation_functions
 import organiser
 import error_check
@@ -24,6 +21,7 @@ import getEntropy3
 import cudacodecreater
 import plotbar
 from numpy import *
+import time
 
 
 def main():
@@ -168,7 +166,11 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 		sbml_obj.scaling_ge3()
 	#print sbml_obj.scale
 	if sbml_obj.analysisType == 0:
+		time1=time.time()
 		MutInfo1=getEntropy1.run_getEntropy1(sbml_obj)
+		time2=time.time()
+		print "MutInfo1 runtime", time2-time1
+		print sbml_obj.prior
 		plotbar.plotbar(MutInfo1, sbml_obj.name ,sbml_obj.nmodels ,0)
 	elif sbml_obj.analysisType == 1:
 		MutInfo2=getEntropy2.run_getEntropy2(sbml_obj)
