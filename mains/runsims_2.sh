@@ -1,6 +1,6 @@
 module load python
-source activate /cluster/home/jm2716/work/conda_enviroments/conda_py27_gpu
+source activate /cluster/home/jm2716/work/conda_enviroments/Python27_GPU
 
-cd /cluster/home/saw112/work/run_rep/mains
+cd /cluster/home/ld2113/work/Experimental-Design/main
 
-python main_1.py -a 0 -i1 rep_test.xml -i2 rep_test_data -of=results -lc 0 -if=Example_data > log_repressilator.txt
+python main_1.py -a 2 -i1 p53_model.xml p53_model_exp.xml -i2 data_p53 data_p53_exp -of=results -lc 00 -if=Example_data > log_repressilator.txt
