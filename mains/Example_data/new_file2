@@ -68,7 +68,12 @@ constant 1
 
 
 >Initial Conditions 1
-Unchanged
+constant 0
+constant 1
+constant 0
+constant 0
+constant 0
+constant 0
 <Initial Conditions 1
 
 >Initial Conditions 2
