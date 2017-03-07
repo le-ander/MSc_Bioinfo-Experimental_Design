@@ -97,12 +97,34 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 
 	""")
 
-	print scale_ref
-	print scale_mod
 	# Creating handles for global kernel functions
 	dist_gpu1 = mod.get_function("distance1")
 	dist_gpu2 = mod.get_function("distance2")
 	dist_gpu3 = mod.get_function("distance3")
+
+	# Prepare input data
+	d1 = dataRef[0:N1,:,:].astype(float64)
+	d2 = thetaRef[N1:(N1+N2),:,:].astype(float64)
+	d3 = dataMod[0:N1,:,:].astype(float64)
+	d4 = array(thetaMod)[N1:(N1+N2),:,:].astype(float64)
+	d6 = array(thetaRef)[(N1+N2):(N1+N2+N3),:,:].astype(float64)
+	d8 = array(thetaMod)[(N1+N2):(N1+N2+N4),:,:].astype(float64)
+
+	# Determine number of timepoints (M) and number of species (P)
+	##Reference experiment
+	M_Ref=d1.shape[1]
+	P_Ref=d1.shape[2]
+	##Alternative experiment
+	M_Mod=d3.shape[1]
+	P_Mod=d3.shape[2]
+
+	#Initialize arrays for results
+	result1 = zeros([N1,numRuns_j])
+	result2 = zeros([N1,numRuns_j])
+	result3 = zeros([N1,numRuns_j])
+
+
+################################################################################
 
 	# Launch configuration: Block size and shape (as close to square as possible)
 	block = launch.optimal_blocksize(autoinit.device, dist_gpu1)
@@ -131,27 +153,6 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	# Determine required number of runs for i and j
 	numRuns_i = int(ceil(N1/grid_i))
 	numRuns_j = int(ceil(N2/grid_j))
-
-	# Prepare input data
-	d1 = dataRef[0:N1,:,:].astype(float64)
-	d2 = thetaRef[N1:(N1+N2),:,:].astype(float64)
-	d3 = dataMod[0:N1,:,:].astype(float64)
-	d4 = array(thetaMod)[N1:(N1+N2),:,:].astype(float64)
-	d6 = array(thetaRef)[(N1+N2):(N1+N2+N3),:,:].astype(float64)
-	d8 = array(thetaMod)[(N1+N2):(N1+N2+N4),:,:].astype(float64)
-
-	# Determine number of timepoints (M) and number of species (P)
-	##Reference experiment
-	M_Ref=d1.shape[1]
-	P_Ref=d1.shape[2]
-	##Alternative experiment
-	M_Mod=d3.shape[1]
-	P_Mod=d3.shape[2]
-
-	#Initialize arrays for results
-	result1 = zeros([N1,numRuns_j])
-	result2 = zeros([N1,numRuns_j])
-	result3 = zeros([N1,numRuns_j])
 
 	# Maximum number of particles per run in i direction
 	Ni = int(grid_i)
@@ -187,13 +188,9 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 			# Prepare data that depends on j for this run
 			data2 = d2[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
 			data4 = d4[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
-			data6 = d6[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
-			data8 = d8[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
 
 			# Prepare result arrays for this run
 			res1 = zeros([Ni,Nj]).astype(float64)
-			res2 = zeros([Ni,Nj]).astype(float64)
-			res3 = zeros([Ni,Nj]).astype(float64)
 
 			# Set j dimension of block and grid for this run
 			if(Nj<block_j):
@@ -205,14 +202,180 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 
 			# Call GPU kernel functions
 			dist_gpu1(int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_ref), float32(sigma_mod), float64(scale_ref), float64(scale_mod), driver.In(data1), driver.In(data2), driver.In(data3), driver.In(data4), driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
-			dist_gpu2(int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_ref), float32(sigma_mod), float64(scale_ref), float64(scale_mod), driver.In(data1), driver.In(data6), driver.Out(res2), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
-			dist_gpu3(int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_ref), float32(sigma_mod), float64(scale_ref), float64(scale_mod), driver.In(data3), driver.In(data8), driver.Out(res3), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 
 			# Summing rows in GPU output for this run
 			for k in range(Ni):
 				result1[(i*int(grid_i)+k),j] = sum(res1[k,:]) ###Could be done on GPU?
+
+
+
+
+
+################################################################################
+
+	# Launch configuration: Block size and shape (as close to square as possible)
+	block = launch.optimal_blocksize(autoinit.device, dist_gpu2)
+	block_i = launch.factor_partial(block)
+	block_j = block / block_i
+	print "Optimal blocksize:", block, "threads"
+	print "Block shape:", str(block_i)+"x"+str(block_j)
+
+	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
+	grid = launch.optimise_gridsize(15.0) ###Need to detect exact memory use here!
+	grid_prelim_i = launch.round_down(sqrt(grid),block_i)
+	grid_prelim_j = launch.round_down(grid/grid_prelim_i,block_j)
+	# If gridsize in one dimention too large, reshape grid to allow more threads in the second dimension
+	if N1 < grid_prelim_i:
+		grid_i = float(min(autoinit.device.max_grid_dim_x,N1))
+		grid_j = float(min(autoinit.device.max_grid_dim_y, launch.round_down(grid/grid_i,block_j)))
+	elif N3 < grid_prelim_j:
+		grid_j = float(min(autoinit.device.max_grid_dim_y,N3))
+		grid_i = float(min(autoinit.device.max_grid_dim_x, launch.round_down(grid/grid_j,block_i)))
+	else:
+		grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i))
+		grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j))
+	print "Maximum gridsize:", grid, "threads"
+	print "Grid shape:", str(grid_i)+"x"+str(grid_j)
+
+	# Determine required number of runs for i and j
+	numRuns_i = int(ceil(N1/grid_i))
+	numRuns_j = int(ceil(N3/grid_j))
+
+	# Maximum number of particles per run in i direction
+	Ni = int(grid_i)
+
+	# Main nested for-loop for mutual information calculations
+	for i in range(numRuns_i):
+		print "Runs left:", numRuns_i - i
+
+		# If last run with less that max remaining particles, set Ni to remaining number of particles
+		if((int(grid_i)*(i+1)) > N1):
+			Ni = int(N1 - grid_i*i)
+
+		# Prepare data that depends on i for this run
+		data1 = d1[(i*int(grid_i)):(i*int(grid_i)+Ni),:,:]
+
+		# Set i dimension of block and grid for this run
+		if(Ni<block_i):
+			gi = 1
+			bi = Ni
+		else:
+			bi = block_i
+			gi = ceil(Ni/block_i)
+
+		# Maximum number of particles per run in j direction
+		Nj = int(grid_j)
+
+		for j in range(numRuns_j):
+			# If last run with less that max remaining particles, set Nj to remaining number of particles
+			if((int(grid_j)*(j+1)) > N3):
+				Nj = int(N3 - grid_j*j)
+
+			# Prepare data that depends on j for this run
+			data6 = d6[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
+
+			# Prepare result arrays for this run
+			res2 = zeros([Ni,Nj]).astype(float64)
+
+			# Set j dimension of block and grid for this run
+			if(Nj<block_j):
+				gj = 1
+				bj = Nj
+			else:
+				bj = block_j
+				gj = ceil(Nj/block_j)
+
+			# Call GPU kernel functions
+			dist_gpu2(int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_ref), float32(sigma_mod), float64(scale_ref), float64(scale_mod), driver.In(data1), driver.In(data6), driver.Out(res2), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+
+			# Summing rows in GPU output for this run
+			for k in range(Ni):
 				result2[(i*int(grid_i)+k),j] = sum(res2[k,:]) ###Could be done on GPU?
+
+
+
+
+################################################################################
+
+	# Launch configuration: Block size and shape (as close to square as possible)
+	block = launch.optimal_blocksize(autoinit.device, dist_gpu3)
+	block_i = launch.factor_partial(block)
+	block_j = block / block_i
+	print "Optimal blocksize:", block, "threads"
+	print "Block shape:", str(block_i)+"x"+str(block_j)
+
+	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
+	grid = launch.optimise_gridsize(15.0) ###Need to detect exact memory use here!
+	grid_prelim_i = launch.round_down(sqrt(grid),block_i)
+	grid_prelim_j = launch.round_down(grid/grid_prelim_i,block_j)
+	# If gridsize in one dimention too large, reshape grid to allow more threads in the second dimension
+	if N1 < grid_prelim_i:
+		grid_i = float(min(autoinit.device.max_grid_dim_x,N1))
+		grid_j = float(min(autoinit.device.max_grid_dim_y, launch.round_down(grid/grid_i,block_j)))
+	elif N4 < grid_prelim_j:
+		grid_j = float(min(autoinit.device.max_grid_dim_y,N4))
+		grid_i = float(min(autoinit.device.max_grid_dim_x, launch.round_down(grid/grid_j,block_i)))
+	else:
+		grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i))
+		grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j))
+	print "Maximum gridsize:", grid, "threads"
+	print "Grid shape:", str(grid_i)+"x"+str(grid_j)
+
+	# Determine required number of runs for i and j
+	numRuns_i = int(ceil(N1/grid_i))
+	numRuns_j = int(ceil(N4/grid_j))
+
+	# Maximum number of particles per run in i direction
+	Ni = int(grid_i)
+
+	# Main nested for-loop for mutual information calculations
+	for i in range(numRuns_i):
+		print "Runs left:", numRuns_i - i
+
+		# If last run with less that max remaining particles, set Ni to remaining number of particles
+		if((int(grid_i)*(i+1)) > N1):
+			Ni = int(N1 - grid_i*i)
+
+		# Prepare data that depends on i for this run
+		data3 = d3[(i*int(grid_i)):(i*int(grid_i)+Ni),:,:]
+
+		# Set i dimension of block and grid for this run
+		if(Ni<block_i):
+			gi = 1
+			bi = Ni
+		else:
+			bi = block_i
+			gi = ceil(Ni/block_i)
+
+		# Maximum number of particles per run in j direction
+		Nj = int(grid_j)
+
+		for j in range(numRuns_j):
+			# If last run with less that max remaining particles, set Nj to remaining number of particles
+			if((int(grid_j)*(j+1)) > N4):
+				Nj = int(N4 - grid_j*j)
+
+			# Prepare data that depends on j for this run
+			data8 = d8[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
+
+			# Prepare result arrays for this run
+			res3 = zeros([Ni,Nj]).astype(float64)
+
+			# Set j dimension of block and grid for this run
+			if(Nj<block_j):
+				gj = 1
+				bj = Nj
+			else:
+				bj = block_j
+				gj = ceil(Nj/block_j)
+
+			# Call GPU kernel functions
+			dist_gpu3(int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_ref), float32(sigma_mod), float64(scale_ref), float64(scale_mod), driver.In(data3), driver.In(data8), driver.Out(res3), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+
+			# Summing rows in GPU output for this run
+			for k in range(Ni):
 				result3[(i*int(grid_i)+k),j] = sum(res3[k,:]) ###Could be done on GPU?
+
 
 	# Initialising required variables for next steps
 	sum1 = 0.0
