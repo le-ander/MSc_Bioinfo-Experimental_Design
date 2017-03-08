@@ -16,7 +16,7 @@ import launch
 ##scale - scaling constant to prevent nans and infs
 def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	# Kernel declaration using pycuda SourceModule
-	
+
 	mod = compiler.SourceModule("""
 	__device__ unsigned int idx3d(int i, int k, int l, int M, int P)
 	{
@@ -64,6 +64,9 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	}
 
 	""")
+
+
+########################Calulation 1############################################
 
 	# Creating handle for global kernel function
 	dist_gpu1 = mod.get_function("distance1")
@@ -170,7 +173,8 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 		else:
 			sum1 += log(sum(result[i,:])) - log(float(N2)) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
 
-	###### Part A finished with results saved in sum1
+
+########################Calulation 2############################################
 
 	# Creating handle for global kernel function
 	dist_gpu2 = mod.get_function("distance2")
@@ -241,7 +245,8 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 			sum2 += log(sum(result[i,:])) - log(float(N3[i])) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
 			#sumstatic += - log(float(N3[i])) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
 
-	###### Part B finished with results saved in sum2
+
+########################Final Computations######################################
 
 	print "Proportion of NAs", int(((count1_na+count2_na)/float(2*N1))*100), "%" ###Can we really get NAs??
 	print "Proportion of infs", int(((count1_inf+count2_inf)/float(2*N1))*100), "%"

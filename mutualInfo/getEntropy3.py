@@ -119,7 +119,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	P_Mod=d3.shape[2]
 
 
-################################################################################
+########################Calulation 1############################################
 
 	# Launch configuration: Block size and shape (as close to square as possible)
 	block = launch.optimal_blocksize(autoinit.device, dist_gpu1)
@@ -206,10 +206,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 				result1[(i*int(grid_i)+k),j] = sum(res1[k,:]) ###Could be done on GPU?
 
 
-
-
-
-################################################################################
+########################Calulation 2############################################
 
 	# Launch configuration: Block size and shape (as close to square as possible)
 	block = launch.optimal_blocksize(autoinit.device, dist_gpu2)
@@ -294,9 +291,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 				result2[(i*int(grid_i)+k),j] = sum(res2[k,:]) ###Could be done on GPU?
 
 
-
-
-################################################################################
+########################Calulation 3############################################
 
 	# Launch configuration: Block size and shape (as close to square as possible)
 	block = launch.optimal_blocksize(autoinit.device, dist_gpu3)
@@ -380,6 +375,8 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 			for k in range(Ni):
 				result3[(i*int(grid_i)+k),j] = sum(res3[k,:]) ###Could be done on GPU?
 
+
+########################Final Computations######################################
 
 	# Initialising required variables for next steps
 	sum1 = 0.0
