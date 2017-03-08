@@ -20,6 +20,8 @@
 
 - Check why we get such large numbers in res1 and result
 
+- Is memory use for launch configuration consistent across devices?
+
 - Stochastic implementation
   - Reuse code from MEANS package
   - Adapt CUDAsim SDE solver to handle multiple models
@@ -31,6 +33,8 @@
   - Catch div by 0 in gE due to all inf/na
 
 - Comment code extensively
+
+- Tackle memory issues of gE3 (split up computations)
 
 - Presentation of results
   - Terminal output
