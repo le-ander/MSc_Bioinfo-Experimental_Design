@@ -118,11 +118,6 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	M_Mod=d3.shape[1]
 	P_Mod=d3.shape[2]
 
-	#Initialize arrays for results
-	result1 = zeros([N1,numRuns_j])
-	result2 = zeros([N1,numRuns_j])
-	result3 = zeros([N1,numRuns_j])
-
 
 ################################################################################
 
@@ -134,7 +129,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	print "Block shape:", str(block_i)+"x"+str(block_j)
 
 	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
-	grid = launch.optimise_gridsize(15.0) ###Need to detect exact memory use here!
+	grid = launch.optimise_gridsize(9.0)
 	grid_prelim_i = launch.round_down(sqrt(grid),block_i)
 	grid_prelim_j = launch.round_down(grid/grid_prelim_i,block_j)
 	# If gridsize in one dimention too large, reshape grid to allow more threads in the second dimension
@@ -153,6 +148,9 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	# Determine required number of runs for i and j
 	numRuns_i = int(ceil(N1/grid_i))
 	numRuns_j = int(ceil(N2/grid_j))
+
+	#Initialize arrays for results
+	result1 = zeros([N1,numRuns_j])
 
 	# Maximum number of particles per run in i direction
 	Ni = int(grid_i)
@@ -221,7 +219,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	print "Block shape:", str(block_i)+"x"+str(block_j)
 
 	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
-	grid = launch.optimise_gridsize(15.0) ###Need to detect exact memory use here!
+	grid = launch.optimise_gridsize(9.0)
 	grid_prelim_i = launch.round_down(sqrt(grid),block_i)
 	grid_prelim_j = launch.round_down(grid/grid_prelim_i,block_j)
 	# If gridsize in one dimention too large, reshape grid to allow more threads in the second dimension
@@ -240,6 +238,9 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	# Determine required number of runs for i and j
 	numRuns_i = int(ceil(N1/grid_i))
 	numRuns_j = int(ceil(N3/grid_j))
+
+	#Initialize arrays for results
+	result2 = zeros([N1,numRuns_j])
 
 	# Maximum number of particles per run in i direction
 	Ni = int(grid_i)
@@ -305,7 +306,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	print "Block shape:", str(block_i)+"x"+str(block_j)
 
 	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
-	grid = launch.optimise_gridsize(15.0) ###Need to detect exact memory use here!
+	grid = launch.optimise_gridsize(9.0)
 	grid_prelim_i = launch.round_down(sqrt(grid),block_i)
 	grid_prelim_j = launch.round_down(grid/grid_prelim_i,block_j)
 	# If gridsize in one dimention too large, reshape grid to allow more threads in the second dimension
@@ -324,6 +325,9 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	# Determine required number of runs for i and j
 	numRuns_i = int(ceil(N1/grid_i))
 	numRuns_j = int(ceil(N4/grid_j))
+
+	#Initialize arrays for results
+	result3 = zeros([N1,numRuns_j])
 
 	# Maximum number of particles per run in i direction
 	Ni = int(grid_i)
@@ -426,6 +430,11 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 
 	# Final division to give mutual information
 	Info = sum1/float(N1-count_all)
+
+	###Testing block....REMOVE!
+	print Info
+	print "DONE"
+	sys.exit()
 
 	return(Info)
 
