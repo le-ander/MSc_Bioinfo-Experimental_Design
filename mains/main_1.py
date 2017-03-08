@@ -26,9 +26,10 @@ import plotbar
 from numpy import *
 
 #Initiates the program
+##Requires no arguments to run
 def main():
 	# Reads in command line arguments
-	input_file_SBMLs, input_file_datas, analysis, fname, usesbml, iname = error_check.input_checker(sys.argv,0)
+	input_file_SBMLs, input_file_datas, analysis, fname, usesbml, iname = error_check.input_checker(sys.argv)
 	# Calls SBML_checker - checks all the SBML files that have been inputted - basic check
 	SBML_check.SBML_checker([iname+"/"+input_file_SBMLs[i] for i, value in enumerate(usesbml) if value=="0"])
 	
@@ -70,6 +71,16 @@ def main():
 			else:
 				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, refmod = ref_model)
 
+
+# A function that works on one SBML or local code at a time
+##(gets called by main)
+##Arguments: 
+##input_file_SBML - either an SBML file or the input.xml file name (input.xml file used when doing local code)
+##analysis - the approach we want to carry out 1, 2, or 3
+##fname - string for the output file name
+##usesbml - indicates whether an SBML file is used or local code
+##refmod - used for approach 2 when the first SBML/local code is the reference model
+##input_file_data - this holds the additional data alongside an SBML file that is required such as total number of particles etc
 def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", input_file_data = ""):
 	#Used to remove the .xml at the end of the file if present to name directories
 	input_file_SBML_name = input_file_SBML
@@ -81,10 +92,11 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 			os.mkdir(fname+"/cudacodes")
 
 	#Workflow used is SBML file is used
-	if usesbml == True
+	if usesbml == True:
 		#Sets the outpath for where CUDA code is stored
 		if not(os.path.isdir("./"+fname+"/cudacodes/cudacodes_"+input_file_SBML_name)):
 			os.mkdir(fname+"/cudacodes/cudacodes_"+input_file_SBML_name)
+		#outPath is a string to where the cudacode is stored
 		outPath=fname+"/cudacodes/cudacodes_"+input_file_SBML_name
 
 		#Depending on the way changes have been made to the SBML files only require certain versions
@@ -92,88 +104,94 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 
 		#Start of making new SBML files depending on experiments
 		print "-----Creating SBML files for experiments-----"
+
 		#Sets directory to hold new SBML files
 		if not(os.path.isdir("./"+fname+"/exp_xml")):
 			os.mkdir(fname+"/exp_xml")
 		if not(os.path.isdir("./"+fname+"/exp_xml/exp_xml_"+input_file_SBML_name)):
 			os.mkdir(fname+"/exp_xml/exp_xml_"+input_file_SBML_name)
+		#inPath is a string for where the SBML files are stored
 		inPath = fname + "/exp_xml/exp_xml_" + input_file_SBML_name
 
-		#if parameter_change == True:
-			# Creates SBML files corresponding to changes in parameters and initial conditions
+		#Carries out the changes to the original SBML file and then creates a new SBML file in the directory made
 		no_exp = SBML_check.SBML_reactionchanges(input_file_SBML, iname, inPath,input_file_data)
+
+		#Start of creating cudacode from SBML files just made
 		print "-----Creating CUDA code-----"
+
+		#cudacode files are saved with a specific name and so make a list of these names
 		for i in range(0,no_exp):
 			input_files_SBML.append("Exp_" + repr(i+1) + ".xml")
-		#else:
-			# Creates SBML files corresponding to changes in initial conditions but not parameters
-			#SBML_check.SBML_initialcond(nu=1,input_file=input_file_SBML,init_cond=input_file_data,outputpath=inPath,indicate=True)
-			#copyfile(input_file_SBML,inPath + "/Exp_1.xml")
-			#print "-----Creating CUDA code-----"
-			#input_files_SBML.append("Exp_" + repr(1) + ".xml")
-		'''
-		elif parameter_change == True and init_condit == False:
-			# Creates SBML files corresponding to changes in parameters but not initial conditions
-			#copyfile(input_file_SBML,inPath + "/Exp_1_1.xml")
-			no_exp = SBML_check.SBML_reactionchanges(input_file_SBML, inPath,input_file_data,init_cond=False)
-			print "-----Creating CUDA code-----"
-			for i in range(0,no_exp):
-				input_files_SBML.append("Exp_" + repr(i+1) + "_1.xml")
-		elif parameter_change == False and init_condit == False:
-			# Creates one SBML file if only the species measured is changed
-			copyfile(input_file_SBML,inPath + "/Exp_1_1.xml")
-			print "-----Creating CUDA code-----"
-			input_files_SBML.append("Exp_" + repr(1) + "_1.xml")
-		'''
-		# Creates the required CUDA code if an SBML is used and CUDA code not provided
 
+		#Creates cudacode and saves to the directory made
 		cudacodecreater.cudacodecreater(input_files_SBML,inPath=inPath+"/",outPath=outPath)
 
+		#Creates directory to store the input.xml file along with a summary file
 		if not(os.path.isdir("./"+fname+"/input_xml")):
 			os.mkdir(fname+"/input_xml")
 		if not(os.path.isdir("./"+fname+"/input_xml/input_xml_"+input_file_SBML_name)):
 			os.mkdir(fname+"/input_xml/input_xml_"+input_file_SBML_name)
+		#xml_out is a string for where the input.xml file is stored
 		xml_out=fname+"/input_xml/input_xml_"+input_file_SBML_name
 
+		#Obtains a list of the new SBML files
 		exp_xml_files = os.listdir(inPath)
 		
+		#Start of creating the input.xml file
 		print "-----Input XML file-----"
 		comb_list = input_file_parser_new_2.generateTemplate(exp_xml_files, "input_xml", "summmary", input_file_data, inpath = inPath, outpath= xml_out, iname=iname)
-
+		
+		#input_xml holds the file name of the input.xml file
 		input_xml="/input_xml"
 
+	#Workflow used if local code is being used
 	elif usesbml == False:
-		outPath=iname
-		inPath=""
-		xml_out=iname
+		#Labels the variables to where arguments are
+		#These are given by the user
+		outPath=iname #Where the cudacode is stored
+		xml_out=iname #Where the input.xml file is
+		#Holds name of the input_.xml file
 		input_xml="/"+input_file_SBML_name
 		comb_list = []
 
+	#Starts making the object from the input.xml file
 	print "-----Creating object from input XML file-----"
+
+	#Calls function to make the object
 	sbml_obj = parse_infoEnt_new_2.algorithm_info(xml_out+input_xml+".xml", 0, comb_list)
+	
+	#Calls a function to make an attribute which is a dictionary that relates cudacode files to the initial conditions it needs
 	sbml_obj.getpairingCudaICs()
+
+	#Startes sampling from prior
 	print "-----Sampling from prior-----"
+	#Assigns attribute with which approach is being conducted 1, 2, or 3
 	sbml_obj.getAnalysisType(analysis)
+
+	#Samples from prior for approach 1, 2 and 3 only for the reference model
 	if sbml_obj.analysisType != 2 or refmod == "":
 		sbml_obj.THETAS(inputpath=iname, usesbml=usesbml)
 	else:
+		#For approach 3 copies over the samples from the reference model
 		sbml_obj.copyTHETAS(refmod)
 
+	#Starts CUDA sim
 	print "-----Running CUDA-Sim-----"
-	#cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath)
-	#if sbml_obj.analysisType != 2:
-	cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath)
-	#elif sbml_obj.analysisType == 2 and refmod == "":
-	#	cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath, analysis = 1)
-	#elif sbml_obj.analysisType == 2 and refmod != "":
-	#	cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath, analysis = 2)
 
+	#Calls function to run cudasim and sort output
+	cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath)
+	
+	#Calculates the scaling factor
 	print "-----Calculating scaling factor-----"
+	#Calculating scaling is different when doing approach 3 or not 
 	if sbml_obj.analysisType != 2:
+		#Scaling for when doing approach 1 or 2
 		sbml_obj.scaling()
 	else:
+		#Scaling for when doing approach 3
 		sbml_obj.scaling_ge3()
-	#print sbml_obj.scale
+
+	#Depending upon the approach different functions are run to calculate the mutual information
 	if sbml_obj.analysisType == 0:
 		MutInfo1=getEntropy1.run_getEntropy1(sbml_obj)
 		plotbar.plotbar(MutInfo1, sbml_obj.name ,sbml_obj.nmodels ,0)
@@ -184,31 +202,6 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 		return sbml_obj
 	elif sbml_obj.analysisType == 2 and refmod != "":
 		getEntropy3.run_getEntropy3(sbml_obj, refmod)
-		
 
-
-	#sbml_obj.print_info()
-	#pairings = organiser.organisePairings(sbml_obj, comb_list)
-	#print [x.shape for x in sbml_obj.cudaout]
-	#print sum(sbml_obj.cudaout[0][:,0:sbml_obj.cudaout[0].shape[1],:],axis=2)
-
-	#print sbml_obj.cudaout
-	#print sbml_obj.speciesSample
-	#print set(sbml_obj.cuda)
-	#print comb_list
-
-
-
+#Starts the program
 main()
-
-#info_new = error_check.parse_infoEnt.algorithm_info("input_file_repressilator.xml", 0)
-#print info_new.globalnparameters
-#p = obtain_thetas.THETAS(info_new, sampleFromPost = False)
-#s = obtain_thetas.SPECIES(info_new)
-#p,s=obtain_thetas.THETAS(info_new, sampleGiven = True, sampleFromPost= "data_1.txt", weight= "w_1.txt", analysisType = 1, N1 = 2, N3 = 3, parameter_i = [0,3])
-
-#obtain_thetas.ThetasGivenI(info_new,p,s,[0,3],[1],2,3)
-
-#print p[1,:]
-#print s[1,:]
-#print concatenate((p,s),axis=1).shape[1]

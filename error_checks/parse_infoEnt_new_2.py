@@ -472,21 +472,28 @@ class algorithm_info:
 			print "\t", "comp_prior:", self.compprior[i]
 			print "\n"
 
-
+	# A method to sample from the priors
+	##(method gets called by sorting_files)
+	##Arguments: 
+	##inputpath - if a sample for the prior is given then inputpath is where this file is
+	##usesbml - input indicating whether an SBML file is used or not
 	def THETAS(self, inputpath="", usesbml = False):
-		#create array which holds parameters
+		
+		#Compartments are always defined in SBML file and so if local code used but number of compartments > 0 then change usesbml to TRUE in order to sample from compartment prior
 		if self.ncompparams_all!=0:
 			usesbml = True
 
+		#If statement determines whether to sample from a given sample or use an in-built one
 		if self.sampleFromPost==False:
-			parameters = numpy.zeros([self.particles,self.nparameters_all]) #we might  want to change prior[0] to a globally defined prior in the object
 
-			#obtain Thetas from prior distributions, wich are either constant, uniform, normal or lognormal
+			#Sets up matrix for parameters
+			parameters = numpy.zeros([self.particles,self.nparameters_all]) 
 
-			for j in range(len(self.prior[0])): # loop through number of parameter
+			#Loop through number of parameters
+			for j in range(len(self.prior[0])): 
 
 				#####Constant prior#####
-				if(self.prior[0][j][0]==0):  # j paramater self.index
+				if(self.prior[0][j][0]==0):
 					parameters[:,j] = self.prior[0][j][1]
 
 				#####Uniform prior#####
@@ -501,19 +508,22 @@ class algorithm_info:
 				elif(self.prior[0][j][0]==3):
 					parameters[:,j] = lognormal(mean=self.prior[0][j][1], sigma=self.prior[0][j][2], size=(self.particles))
 
-				####
+				####If prior not defined####
 				else:
 					print " Prior distribution not defined for parameters"
 					sys.exit()
 
+			#If the initial conditions have a prior distribution over them then sample
 			if self.initialprior == True:
 
-				species = numpy.zeros([self.particles,self.nspecies_all])  # number of repeats x species in system
-
-				for j in range(len(self.x0prior[0])): # loop through number of parameter
+				#Sets up initial conditions array
+				species = numpy.zeros([self.particles,self.nspecies_all])  
+				
+				#Loop through number of species
+				for j in range(len(self.x0prior[0])): 
 
 					#####Constant prior#####
-					if(self.x0prior[0][j][0]==0):  # j paramater self.index
+					if(self.x0prior[0][j][0]==0):
 						species[:,j] = self.x0prior[0][j][1]
 
 					#####Uniform prior#####
@@ -528,35 +538,44 @@ class algorithm_info:
 					elif(self.x0prior[0][j][0]==3):
 						species[:,j] = lognormal(mean=self.x0prior[0][j][1], sigma=self.x0prior[0][j][2], size=(self.particles))
 
-					####
+					####If prior not defined####
 					else:
 						print " Prior distribution not defined on initial conditions"
 						sys.exit()
 
+			#If using constant initial conditions then create species matrix
 			else:
-
+				#Finds the set of initial conditions (no repeated elements)
 				x0prior_uniq = [self.x0prior[0]]
 				for ic in self.x0prior[1:]:
 					if ic not in x0prior_uniq:
 						x0prior_uniq.append(ic)
 
+				#Sets up the species array
+				species = [numpy.zeros([self.particles,self.nspecies_all]) for x in range(len(x0prior_uniq))] 
 
-				species = [numpy.zeros([self.particles,self.nspecies_all]) for x in range(len(x0prior_uniq))]  # number of repeats x species in system
-
+				#Loop over each initial condition
 				for ic in range(len(x0prior_uniq)):
-					for j in range(len(x0prior_uniq[ic])): # loop through number of parameter
+					#Loop through number of species
+					for j in range(len(x0prior_uniq[ic])):
+
 						#####Constant prior#####
-						if(x0prior_uniq[ic][j][0]==0):  # j paramater self.index
+						if(x0prior_uniq[ic][j][0]==0): 
 							species[ic][:,j] = x0prior_uniq[ic][j][1]
+
+						####If prior not defined####
 						else:
 							print " Prior distribution not defined on initial conditions"
 							sys.exit()
 
+			#If usesbml ==True then means that compartments are used
 			if usesbml == True:
 
+				#Sets up compartment matrix
 				compartments = numpy.zeros([self.particles,self.ncompparams_all])
 
-				for j in range(len(self.compprior[0])): # loop through number of parameter
+				#Loop through number of compartments
+				for j in range(len(self.compprior[0])): 
 
 					#####Constant prior#####
 					if(self.compprior[0][j][0]==0):  # j paramater self.index
@@ -574,13 +593,14 @@ class algorithm_info:
 					elif(self.compprior[0][j][0]==3):
 						compartments[:,j] = lognormal(mean=self.compprior[0][j][1], sigma=self.compprior[0][j][2], size=(self.particles))
 
-					####
+					####If prior not defined#####
 					else:
 						print " Prior distribution not defined on compartments"
 						sys.exit()
 
+		#If a sample from the prior is given then go here
+		#obtain Thetas from posterior sample and associated weights
 		elif self.sampleFromPost==True:
-			#obtain Thetas from posterior sample and associated weights
 			######Reading in sample from posterior#####
 			infileName = inputpath+"/"+self.post_sample_file
 			in_file=open(infileName, "r")
@@ -607,27 +627,37 @@ class algorithm_info:
 				counter2=counter2+1
 			in_file.close
 
+			#If no compartments then fall here
 			if usesbml == False:
 				####Obtain Theta from posterior samples through weigths####
-				if(counter==counter2):#and len(self.nparameters[0])==len(param[0])): ### model object needs to include nparameters information
+				#Checks to make sure the number of samples is equal to the number of weights
+				if(counter==counter2):
+					#Sets up arrays for parameters and initial conditions
 					parameters = numpy.zeros( [self.particles,self.nparameters_all] )
 					species = numpy.zeros([self.particles,self.nspecies_all])
-					for i in range(self.particles): #repeats
-						index = getWeightedSample(weights)  #manually defined function
-						parameters[i,:] = param[index][:self.nparameters_all] #self.index indefies list which is used to assign parameter value.  j corresponds to different parameters defines column
+					#For loop draws samples one at a time
+					for i in range(self.particles): 
+						#Function that gives sample
+						index = getWeightedSample(weights)  
+						parameters[i,:] = param[index][:self.nparameters_all] 
 						species[i,:] = param[index][-self.nspecies_all:]
 				else:
 					print "Please provide equal number of particles and weights in model!"
 					sys.exit()
 
+			#If compartments used then fall here
 			elif usesbml == True:
 				####Obtain Theta from posterior samples through weigths####
-				if(counter==counter2):#and len(self.nparameters[0])==len(param[0])): ### model object needs to include nparameters information
+				#Checks to make sure the number of samples is equal to the number of weights
+				if(counter==counter2):
+					#Sets up arrays for compartments, parameters and initial conditions
 					compartments = numpy.zeros([self.particles,self.ncompparams_all])
 					parameters = numpy.zeros( [self.particles,self.nparameters_all] )
 					species = numpy.zeros([self.particles,self.nspecies_all])
-					for i in range(self.particles): #repeats
-						index = getWeightedSample(weights)  #manually defined function
+					#For loop draws samples one at a time
+					for i in range(self.particles): 
+						#Function that gives sample
+						index = getWeightedSample(weights)  
 						compartments[i,:] = param[index][:self.ncompparams_all]
 						parameters[i,:] = param[index][self.ncompparams_all:self.ncompparams_all+self.nparameters_all] #self.index indefies list which is used to assign parameter value.  j corresponds to different parameters defines column
 						species[i,:] = param[index][-self.nspecies_all:]
@@ -635,85 +665,118 @@ class algorithm_info:
 					print "Please provide equal number of particles and weights in model!"
 					sys.exit()
 
+		#Approach 2 requires a different way to sampling from the prior and is dealt with here
 		if self.analysisType == 1:
+			#Extracts the N3 sample from the parameter matrix
 			paramsN3 = parameters[(self.particles-self.N3sample):,:]
+
+			#Sets up the N1xN3 parameter sample
 			params_final = numpy.concatenate((paramsN3,)*self.N1sample,axis=0)
 
+			#For loop changes parameters in N1xN3 sample to be the same as the parameter that is to be estimated in the N1 sample
 			for j in range(0,self.N1sample):
 				for i in self.param_fit:
 					params_final[range((j*self.N3sample),((j+1)*self.N3sample)),i] = parameters[j,i]
 
+			#Concatenates the N1 and N2 sample with the N1xN3 sample
 			parameters = numpy.concatenate((parameters[range(self.particles-self.N3sample),:],params_final),axis=0)
 
+			#Has to do the same if the initial conditions were drawn from a prior
 			if self.initialprior == True:
+				#Extracts the N3 sample from the initial values matrix
 				speciesN3 = species[(self.particles-self.N3sample):,:]
+
+				#Sets up the N1xN3 initial values sample
 				species_final = numpy.concatenate((speciesN3,)*self.N1sample,axis=0)
 
+				#For loop changes initial conditions in N1xN3 sample to be the same as the initial conditions that is to be estimated in the N1 sample
 				for j in range(0,self.N1sample):
 					for i in self.init_fit:
 						species_final[range((j*self.N3sample),((j+1)*self.N3sample)),i] = species[j,i]
 
+				#Concatenates the N1 and N2 sample with the N1xN3 sample
 				species = numpy.concatenate((species[range(self.particles-self.N3sample),:],species_final),axis=0)
+			
 			else:
+				#Just creates a new intial values matrix that is the same but of size (N1+N2+N1xN3)x(number of species) since initial values are constant
 				for ic in range(len(species)):
 					species[ic] = numpy.tile(species[ic][0,:],(self.N1sample*self.N3sample+self.N1sample+self.N2sample,1))
 
+			#Has to do the same if compartments are used
 			if usesbml == True:
+				#Extracts the N3 sample from the initial values matrix
 				compsN3 = compartments[(self.particles-self.N3sample):,:]
+
+				#Sets up the N1xN3 initial values sample
 				comp_final = numpy.concatenate((compsN3,)*self.N1sample,axis=0)
+
+				#For loop changes compartments in N1xN3 sample to be the same as the compartmetns that is to be estimated in the N1 sample
 				for j in range(0,self.N1sample):
 					for i in self.comp_fit:
 						comp_final[range((j*self.N3sample),((j+1)*self.N3sample)),i] = compartments[j,i]
 
+				#Concatenates the N1 and N2 sample with the N1xN3 sample
 				compartments = numpy.concatenate((compartments[range(self.particles-self.N3sample),:],comp_final),axis=0)
 
+		#Creates attribute for object with compartment sample
 		if usesbml == True:
 			self.compsSample = compartments
 
+		#Need to treat each approach differently
 		if self.analysisType !=2:
+			#For approach 1 and 2 just simply make attributes
 			self.parameterSample = parameters
 			self.speciesSample = species
-		elif self.analysisType == 2:
-			self.N4parameterSample = parameters[self.N1sample+self.N2sample+self.N3sample:self.N1sample+self.N2sample+self.N3sample+self.N4sample,:]
-			self.parameterSample = parameters[:self.N1sample+self.N2sample+self.N3sample,:]
 
+		#For approach 3 need split up samples between those used by reference and those used by the experiments
+		elif self.analysisType == 2:
+			#Extract N4 sample
+			self.N4parameterSample = parameters[self.N1sample+self.N2sample+self.N3sample:self.N1sample+self.N2sample+self.N3sample+self.N4sample,:]
+			#Set attribute in reference model to N1, N2 and N3 sample
+			self.parameterSample = parameters[:self.N1sample+self.N2sample+self.N3sample,:]
+			#If prior used for initial conditions then do the same as parameters before
 			if self.initialprior == True:
+				#Extract the N4 sampel
 				self.N4speciesSample = species[self.N1sample+self.N2sample+self.N3sample:self.N1sample+self.N2sample+self.N3sample+self.N4sample,:]
+				#Set attribute in reference model to N1, N2 and N3 sample
 				self.speciesSample = species[:self.N1sample+self.N2sample+self.N3sample,:]
 			else:
+				#Otherwise just set the constant initial values to attribute
 				self.speciesSample = [x[:self.N1sample+self.N2sample+self.N3sample,:] for x in species]
 
+			#If compartments used
 			if usesbml == True:
+				#Extract N4 sample
 				self.N4compsSample = compartments[self.N1sample+self.N2sample+self.N3sample:self.N1sample+self.N2sample+self.N3sample+self.N4sample,:]
+				#Create attribute for reference object
 				self.compsSample = compartments[:self.N1sample+self.N2sample+self.N3sample,:]
-
+			#Reset the total number of particles
 			self.particles -= self.N4sample
+			#Set N4 to 0 as it is not used for the reference model
 			self.N4sample = 0
 
 
+	# A method to obtain the approach
+	##(method gets called by sorting_files)
+	##Arguments: 
+	##analysisType - type of approach
 	def getAnalysisType(self,analysisType):
 		self.analysisType = analysisType
 
-#	def getCombination(self, combination_list):
-#		self.combination = combination_list
-
-	'''
-	def getSampleSizes(self,N1=0,N2=0,N3=0,N4=0):
-		if N1+N2+N3+N4==self.particles:
-			self.N1sample = N1
-			self.N2sample = N2
-			self.N3sample = N3
-			self.N4sample = N4
-		else:initset2 paramexp3 fit3
-			print "Sum of N1, N2, N3, and N4 is not the number of particles given in the input XML file"
-			sys.exit()
-	'''
+	# A method to match each cudacode file to a list of initial conditions
+	##(method gets called by sorting_files)
+	##No arguments
 	def getpairingCudaICs(self):
+		#Initialises dictionary
 		self.pairParamsICS = {}
+
+		#First detect whether using given prior sample
 		if self.sampleFromPost == False:
+			#If using prior over initials then simply create dictionary with key of cuda code file and values with the prior distribution of the initial conditions
 			if self.initialprior == True:
 				for Cfile in set(self.cuda):
 					self.pairParamsICS[Cfile]  = [self.x0prior[j] for j in [i for i, x in enumerate(self.cuda) if x == Cfile]][0]
+			#If using constant initials then keys are cuda code and values is a list of the initial conditions used with the cuda code file
 			elif self.initialprior == False:
 				for Cfile in set(self.cuda):
 					temp = [[l[1] for l in self.x0prior[j]] for j in [i for i, x in enumerate(self.cuda) if x == Cfile]]
@@ -725,8 +788,12 @@ class algorithm_info:
 
 					self.pairParamsICS[Cfile] = temp_uniq
 		
-
-	def sortCUDASimoutput(self,cudaorder,cudaout,control = 0):
+	# A method to that sorts the output from CUDA-sim
+	##(method gets called by run_cudasim)
+	##Arguments: 
+	##cudaorder - order in which cudacode files are passed in CUDA-sim
+	##cudaout - output from cudasim
+	def sortCUDASimoutput(self,cudaorder,cudaout):
 
 		self.cudaout=[""]*len(self.cuda)
 

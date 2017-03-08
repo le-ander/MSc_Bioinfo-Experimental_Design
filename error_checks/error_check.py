@@ -1,22 +1,22 @@
 import sys
 import os
 
-
+# A function that prints the flag options when run in the command line
+##(input_checker)
+##Has no arguments
 def printOptions():
 
 	print "\nList of possible options:"
 
 	print "\n Input options:"
-	print "-i1\t--infile_SBML\t declaration of the input SBML file. This input file has to be provided to run the program!"
-	print "-i2\t--infile_data\t declaration of the input data file. This input file has to be provided to run the program!"
+	print "-i1\t--infile_SBML\t declaration of the input SBML file or input.xml file if using local code. This input file has to be provided to run the program!"
+	print "-i2\t--infile_data\t declaration of the input data file for the associated SBML file. This input file has to be provided to run the program if using an SBML file!"
 	print "-a\t--analysis\t declaration of the type of analysis to be carried out. This input file has to be provided to run the program!"
 	print "\t0: prediction for all parameters"
 	print "\t1: prediction for a subset of parameters"
 	print "\t2: prediction for an experiment"
-	print "-lc\t--localcode\t do not import model from sbml intead use a local .py, .hpp/.cpp or .cu file"
-	print "-s\t--species\t to specify whether you are measuring different species in each experiment"
-	print "-p\t--params\t to specify whether you are changing the parameters by some multiplicative factor in each experiment"
-	print "-ic\t--init\t to specify whether you are changing the initial conditions of each experiment"
+	print "-lc\t--localcode\t do not import model from sbml intead use a local .py, .hpp/.cpp or .cu file. This requires an input.xml file to be run."
+	print "-if\t--infolder\t is the location as to where the input data is. All input data must be in here. Cannot search this location recursively inside sub-directories."
 
 	print "\n Output options:"
 	print "-of\t--outfolder\t write results to folder eg -of=/full/path/to/folder (default is _results_ in current directory)"
@@ -25,29 +25,31 @@ def printOptions():
 
 	print "\n"
 
-def input_checker(sys_arg,mode):
-	file_exist_SBML=False
-	file_exist_data=False
-	usesbml=True
-	rawout_p=False
-	rawout_cu=False
-	rawout_traj=False
-	rawout_odesol=False
-	fname = "_results_"
-	iname = ""
-	analysis = 3
-	which_species = False
-	parameter_change = False
-	init_condit = False
-	Nsamples = [0]*4
-	input_file_data=[]
 
+# A function that sorts out the command line inputs
+##(gets called by main)
+##Arguments: 
+##sys_arg - list of the command line arguments
+##analysis - the approach we want to carry out 1, 2, or 3
+def input_checker(sys_arg):
+	#Defines the default for variables
+	file_exist_SBML=False #for when the SBML or input.xml file exists
+	file_exist_data=False #whether the assocaited input file for an SBML file is also provided
+	usesbml=True #whether SBML or local code used
+	fname = "_results_" #string for the output file
+	iname = "" #string for where the input files are
+	analysis = 3 #sets the type of approach
+	input_file_data=[] #list containing associated input files for SBML files
+
+	#For loop cycles over the command line arguments
 	for i in range(1,len(sys_arg)):
 		if sys_arg[i].startswith('--'):
+			#If help flag is used calls printOptions()
 			option = sys_arg[i][2:]
 			if option == 'help':
 				printOptions()
 				sys.exit()
+			#Sets analysis type
 			elif option == 'analysis':
 				analysis = int(sys_arg[i+1])
 				if analysis == 0:
@@ -56,11 +58,14 @@ def input_checker(sys_arg,mode):
 					print "Type of Analysis: Prediction for a subset of parameters\n"
 				elif analysis == 2:
 					print "Type of Analysis: Prediction of experiment\n"
+			#Sets whether local code or SBMLs used
 			elif option == 'localcode' :
 				usesbml = sys_arg[i+1]
+			#Sets output folder
 			elif option[0:10] == 'outfolder=' :
 				fname = option[10:]
 				print "Output file destination: " + fname + "\n"
+			#Reads in the SBML/input.xml files
 			elif option == 'infile_SBML':
 				input_file_SBML=sys_arg[i+1:]
 				file_exist_SBML=True
@@ -74,6 +79,7 @@ def input_checker(sys_arg,mode):
 						break
 				input_file_SBML=input_file_SBML[:keep]
 				print ""
+			#Reads in input files associated to SBML files
 			elif option == 'infile_data':
 				input_file_data=sys_arg[i+1:]
 				file_exist_data=True
@@ -87,9 +93,11 @@ def input_checker(sys_arg,mode):
 						break
 				input_file_data=input_file_data[:keep]
 				print ""
+			#Sets directory with input files
 			elif option[0:9] == "infolder=":
 				iname = option[9:]
 				print "Input file destination: " + iname + "\n"
+			#If flag not recognised calls printOptions()
 			elif not(sys_arg[i-1][2:] == 'infile_SBML'):
 				print "\nunknown option "+sys_arg[i]
 				printOptions()
@@ -97,9 +105,11 @@ def input_checker(sys_arg,mode):
 
 		elif sys_arg[i].startswith('-'):
 			option = sys_arg[i][1:]
+			#If help flag is used calls printOptions()
 			if option == 'h':
 				printOptions()
 				sys.exit()
+			#Sets type of approach
 			elif option == 'a':
 				analysis = int(sys_arg[i+1])
 				if analysis == 0:
@@ -108,11 +118,14 @@ def input_checker(sys_arg,mode):
 					print "Type of Analysis: Prediction for a subset of parameters\n"
 				elif analysis == 2:
 					print "Type of Analysis: Prediction of experiment\n"
+			#Sets whether local code or SBMLs used
 			elif option == 'lc' :
 				usesbml = sys_arg[i+1]
+			#Sets output folder
 			elif option[0:3] == 'of=' :
 				fname = option[3:]
 				print "Output file destination: " + fname + "\n"
+			#Reads in list of SBML/input.xml files
 			elif option == 'i1':
 				input_file_SBML=sys_arg[i+1:]
 				file_exist_SBML=True
@@ -126,6 +139,7 @@ def input_checker(sys_arg,mode):
 						break
 				input_file_SBML=input_file_SBML[:keep]
 				print ""
+			#Reads in list of input files associated to SBML files
 			elif option == 'i2':
 				input_file_data=sys_arg[i+1:]
 				file_exist_data=True
@@ -139,21 +153,31 @@ def input_checker(sys_arg,mode):
 						break
 				input_file_data=input_file_data[:keep]
 				print ""
+			#Sets the input folder
 			elif option[0:3] == "if=":
 				iname = option[3:]
 				print "Input file destination: " + iname + "\n"
+			#If an unrecognised flag is called and calls printOptions
 			elif not(sys_arg[i-1][2:] == 'i1'):
 				print "\nunknown option "+sys_arg[i]
 				printOptions()
 				sys.exit()
 
+	#Checks whether an SBML or input.xml file was passed
 	if file_exist_SBML == False:
 		print "\nNo input_file_SBML is given!\nUse: \n\t-i1 'inputfile' \nor: \n\t--infile_SBML 'inputfile' \n"
 		sys.exit()
+
+	#Checks if an SBML file has been given and whether it has an associated input file
+	if sum([int(x) for x in usesbml])!=0:
+		print "\nSBML file is being used but no associated input file given!\nUse: \n\t-i2 'inputfile' \nor: \n\t--infile_data 'inputfile' \n"
+
+	#Check whether an approach has been given
 	if analysis not in [0,1,2]:
 		print "\nNo analysis type is given!\nUse: \n\t-a 'analysis type' \nor: \n\t --analysis 'analysis type' \n"
 		sys.exit()
 
+	#Sets up the output folder
 	if not(os.path.isdir("./"+fname)):
 		os.mkdir(fname)
 

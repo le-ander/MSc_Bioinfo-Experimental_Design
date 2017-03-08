@@ -11,7 +11,7 @@ import launch
 ##data - array of tracjectories with noise added
 ##theta - array of trajectories without noise
 ##N1,N2 - Number of particles
-##sigma - stadard deviation
+##sigma - standard deviation
 ##scale - scaling constant to prevent nans and infs
 def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,scale_ref,scale_mod):
 	# Kernel declaration using pycuda SourceModule
