@@ -65,6 +65,7 @@ class Lsoda(sim.Simulator):
     
         _textures_ = "texture<float, 2, cudaReadModeElementType> param_tex;\n"
         _common_block_ = "__device__ struct cuLsodaCommonBlock common[" + repr(1*1) + "];\n"
+        
         _code_ =  _isize_ + _rsize_ + _textures_ + step_code + _sourceFromFile_ + _common_block_ + self._lsoda_source_
         
         

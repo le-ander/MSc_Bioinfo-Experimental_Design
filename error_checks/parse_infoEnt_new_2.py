@@ -724,6 +724,7 @@ class algorithm_info:
 							temp_uniq.append(ic)
 
 					self.pairParamsICS[Cfile] = temp_uniq
+		
 
 	def sortCUDASimoutput(self,cudaorder,cudaout,control = 0):
 
@@ -809,7 +810,7 @@ class algorithm_info:
 		#	print "-----Adding noise to CUDA-Sim outputs-----"
 		#	self.addNoise(cudaorder, cudaout)
 
-
+		
 
 		#print ""
 		#print cuda_NAs
@@ -833,7 +834,7 @@ class algorithm_info:
 		if self.initialprior == False:
 			for model, cudafile in enumerate(self.cuda):
 				cudaout_temp = cudaout[cudaorder.index(cudafile)]
-				#print cudaout_temp.shape
+			
 
 				pos = self.pairParamsICS[cudafile].index([x[1] for x in self.x0prior[model]])
 				#print cudaout_temp[pos*sum(cuda_NAs[cudafile][pos]):(pos+1)*sum(cuda_NAs[cudafile][pos]),:,:]
@@ -856,6 +857,7 @@ class algorithm_info:
 		#print ""
 		#print [x.shape for x in self.cudaout]
 		#print self.cudaout_structure
+	
 	#def removeNAs(self):
 		#for
 
@@ -976,8 +978,8 @@ class algorithm_info:
 
 			scale1 = math.log(preci)/(2.0*M_Max*P_Max) + (maxDistTraj*maxDistTraj)/(2.0*self.sigma*self.sigma)
 			scale2 = math.log(pow(10,300))/(2.0*M_Max*P_Max)
-			#print scale1
-			#print scale2
+			print scale1
+			print scale2
 			if(scale1<scale2): self.scale[model] = scale1
 			else: self.scale[model] = 0.0
 

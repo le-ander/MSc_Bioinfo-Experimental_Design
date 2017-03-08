@@ -7,7 +7,6 @@ import re
 
 import cudasim.Lsoda as Lsoda
 
-
 try:
 	import cPickle as pickle
 except:
@@ -39,8 +38,10 @@ def run_cudasim(m_object,inpath=""):
 	else:
 		result = [result[:,0]]
 	#print ""
-	#print result[0][1,:,:]
-	
+	#print "----------------"
+	#print result
+	#print "----------------"
+
 	print "-----Sorting NaNs from CUDA-Sim output-----"
 	m_object.sortCUDASimoutput(list(set(m_object.cuda)),result)
 	

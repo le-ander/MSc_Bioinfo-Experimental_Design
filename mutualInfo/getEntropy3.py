@@ -392,6 +392,8 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	count3_na = 0
 	count3_inf = 0
 
+	#print result1
+
 	# Sum all content of new results matrix and add/subtract constants for each row if there are no NANs or infs
 	for i in range(N1):
 		if(isinf(log(sum(result1[i,:])))):
@@ -420,9 +422,10 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	#print "a1: ", a1/float(N1-count1_na-count1_inf) , "a2: ", a2/float(N1-count2_na-count2_inf), "a3: ", a3/float(N1-count3_na-count3_inf)
 	#print "all: ", a1/float(N1-count1_na-count1_inf) + a2/float(N1-count2_na-count2_inf) + a3/float(N1-count3_na-count3_inf)
 	#print "sum1: ", sum1
-	print count1_inf, count1_na
-	print count2_inf, count2_na
-	print count3_inf, count3_na
+	print "", "Infs", "NAs"
+	print "1", count1_inf, count1_na
+	print "2", count2_inf, count2_na
+	print "3", count3_inf, count3_na
 
 	# Final division to give mutual information
 	Info = sum1/float(N1-count_all)

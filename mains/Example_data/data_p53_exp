@@ -37,6 +37,7 @@ uniform 0 2
 uniform 0 2
 uniform 0 0.1
 <prior
+
 >fit
 species2+species3
 <fit
