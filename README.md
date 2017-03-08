@@ -1,24 +1,15 @@
 # Experimental-Design ToDo
 
-# Important
-
-
-- gE3:
-  - Determine 2x gE3 mem use
-  - Work on scaling_gE3
-    - Ensure that different number of timepoints can exist for each model in gE3
-
-- Combine all parts together and test
-
-
 # Next steps
-
-- Make sure cudaSim works wit gE3 (Scott)
 
 - Reduce number of simulations before gE3 (gE1&2 as well?) and slice arrays more efficiently (gE2 as well?)
   - dataRef/Mod (N1); thetaRef (N2+N3); thetaMod (N2+N4)
 
 - Check why we get such large numbers in res1 and result
+
+- Is memory use for launch configuration consistent across devices?
+
+- Sort out scaling
 
 - Stochastic implementation
   - Reuse code from MEANS package
@@ -32,6 +23,8 @@
 
 - Comment code extensively
 
+- Tackle memory issues of gE3 (split up computations)
+
 - Presentation of results
   - Terminal output
     - Log file
@@ -40,6 +33,8 @@
 - Group report
   - Split work (assign sections)
   - Write it
+
+- REMOVE SEEDS
 
 # Extra
 

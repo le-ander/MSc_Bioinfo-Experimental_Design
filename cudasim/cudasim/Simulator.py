@@ -14,21 +14,21 @@ class Simulator:
     # private variables
     _compiledRunMethod = None
     _completeCode = None
-    
+
     _beta = None
     _timepoints = None
     _dt = None
-    
+
     _stepCode = None
     _runtimeCompile = False
-    
+
     _parameterNumber = None
     _speciesNumber = None
     _hazardNumber = None
     _resultNumber = None
-    
+
     #_seedValue = None
-    
+
     # device used
     # ToDo enable more than default device to be used
     _device = None
@@ -36,17 +36,17 @@ class Simulator:
     _maxBlocksPerMP = None
 
     _dump = False
-    
+
     def __init__(self, timepoints, stepCode, beta=1, dt=0.01, inpath=""):
-        # only beta which are factors of _MAXBLOCKSPERDEVICE are accepted, 
+        # only beta which are factors of _MAXBLOCKSPERDEVICE are accepted,
         # else _MAXBLOCKSPERDEVICE is reduced to the next smallest acceptable value
         if(self._MAXBLOCKSPERDEVICE%int(beta) != 0):
             self._MAXBLOCKSPERDEVICE -= self._MAXBLOCKSPERDEVICE%int(beta)
             print "Beta must be a factor of", self._MAXBLOCKSPERDEVICE
             print "_MAXBLOCKSPERDEVICE reduced to", self._MAXBLOCKSPERDEVICE
-        
+
         if type(stepCode) == str:
-            stepCode = [stepCode] 
+            stepCode = [stepCode]
 
         self._cudafiles = stepCode
 
@@ -55,22 +55,22 @@ class Simulator:
         for i in stepCode:
             stepCode_temp.append(open(inpath+"/"+i,'r').read())
         stepCode = stepCode_temp
-       
+
         self._beta = int(beta)
         self._timepoints = np.array(timepoints,dtype=np.float32)
         self._dt = float(dt)
-        
+
         device = os.getenv("CUDA_DEVICE")
         if(device==None):
             self._device = 0
         else:
             self._device = int(device)
         print "cuda-sim: Using device", self._device
-        
+
         self._getKernelParams(stepCode[0])
-        
+
         self._resultNumber = len(timepoints)
-            
+
         compability = driver.Device(self._device).compute_capability()
         self._maxThreadsPerMP =  getMaxThreadsPerMP(compability)
         self._maxBlocksPerMP = getMaxBlocksPerMP(compability)
@@ -79,14 +79,13 @@ class Simulator:
             self._completeCode, self._compiledRunMethod = self._compile(stepCode)
         else:
             self._stepCode = stepCode
-     
-    
+
     ############ private methods ############
-    
+
     # method for generating seeds for random number generators
     #def _seed(self):
     #    return self._seedValue
-    
+
     # method for extracting the number of species, variables and reactions from CUDA kernel
     def _getKernelParams(self, stepCode):
         lines = str(stepCode).split("\n")
@@ -97,59 +96,59 @@ class Simulator:
                 self._parameterNumber = int(i.split("NPARAM")[1])
             elif(i.find("NREACT") != -1):
                 self._hazardNumber = int(i.split("NREACT")[1])
-    
+
     # method for calculating optimal number of blocks and threads per block
     def _getOptimalGPUParam(self, parameters, compiledRunMethod = None):
         if compiledRunMethod == None:
             compiledRunMethod = self._compiledRunMethod
-        
+
         # general parameters
         maxThreadsPerBlock = driver.Device(self._device).max_threads_per_block
         warp_size = 32
-        
+
         # calculate number of threads per block; assuming that registers are the limiting factor
         #maxThreads = min(driver.Device(self._device).max_registers_per_block/compiledRunMethod.num_regs,maxThreadsPerBlock)
-        
+
         # assume smaller blocksize creates less overhead; ignore occupancy..
         maxThreads = min(driver.Device(self._device).max_registers_per_block/compiledRunMethod.num_regs, self._MAXTHREADSPERBLOCK)
-        
+
         maxWarps = maxThreads / warp_size
         # warp granularity up to compability 2.0 is 2. Therefore if maxWarps is uneven only maxWarps-1 warps
         # can be run
         #if(maxWarps % 2 == 1):
             #maxWarps -= 1
-        
+
         # maximum number of threads per block
         threads = maxWarps * warp_size
-        
+
         # assign number of blocks
         if (len(parameters)*self._beta%threads == 0):
             blocks = len(parameters)*self._beta/threads
         else:
             blocks = len(parameters)*self._beta/threads + 1
-        
+
         return blocks, threads
-    
+
     # ABSTRACT
     # method for compiling, given some C code for every simulation step
     def _compile(self, step_code):
         return None
-    
+
     # ABSTRACT
     # method for compiling at runtime, given some C code for every simulation step
     def _compileAtRuntime(self, step_code, parameters):
         return None
-    
-    
+
+
     # ABSTRACT
     # method for running simulation
     def _runSimulation(self, parameters, initValues, blocks, threads):
         return None
-    
-    
-    
+
+
+
     ############ public methods ############
-    
+
     # specify GPU specific variables and _runSimulation()
     def run(self, parameters, initValues, timing=True, info=False, constant_sets=False, pairings=False):
 
@@ -166,12 +165,12 @@ class Simulator:
         #    print "Error: Number of sets of parameters (" + str(len(parameters)) + ") and species (" + str(len(initValues)) + ") do not match!"
         #    exit()
         ##########################################################################
-        
+
         #returnValue_final = [np.shape(parameters)[0],self._beta, self._resultNumber, self._speciesNumber]
         #returnValue_final = [np.zeros(returnValue_final) for x in self._stepCode]
         returnValue_final = [""]*len(self._cudafiles)
 
-        if constant_sets == True:   
+        if constant_sets == True:
             initValues_orig = initValues
             initValues_check = [x[0,:] for x in initValues_orig]
             parameters_orig = parameters
@@ -185,20 +184,20 @@ class Simulator:
                 initValues = np.zeros((np.shape(parameters)[0]*len(initValues_ind),self._speciesNumber))
                 for i, ICs in enumerate(initValues_ind):
                     index_IC = [sum(ICs==x) for x in initValues_check].index(self._speciesNumber)
-                    initValues[i*np.shape(parameters_orig)[0]:(i+1)*np.shape(parameters_orig)[0],:] = initValues_orig[index_IC] 
+                    initValues[i*np.shape(parameters_orig)[0]:(i+1)*np.shape(parameters_orig)[0],:] = initValues_orig[index_IC]
                 parameters = np.concatenate((parameters_orig,)*len(initValues_ind),axis=0)
                 #print parameters
-            
+
             if(self._runtimeCompile):
                 #compile to determine blocks and threads
                 self._completeCode, self._compiledRunMethod = self._compileAtRuntime(cuda, parameters)
-                        
+
             blocks, threads = self._getOptimalGPUParam(parameters)
             if info==True:
                 print "cuda-sim: threads/blocks:", threads, blocks
 
             # real runtime compile
-            
+
             #self._seedValue = seed
             #np.random.seed(self._seedValue)
 
@@ -217,7 +216,7 @@ class Simulator:
 
             if timing:
                 start = time.time()
-            
+
             # number of device calls
             runs = int(math.ceil(blocks / float(self._MAXBLOCKSPERDEVICE)))
             for i in range(runs):
@@ -236,7 +235,7 @@ class Simulator:
                 maxIndex = minIndex + threads*runblocks
                 runParameters = parameters[minIndex/self._beta:maxIndex/self._beta]
                 runInitValues = initValues[minIndex:maxIndex]
-                
+
                 #first run store return Value
                 if(i==0):
                     returnValue = self._runSimulation(runParameters, runInitValues, runblocks, threads)
@@ -249,7 +248,7 @@ class Simulator:
 
             if info:
                 print ""
-            
+
             returnValue_final[count] = returnValue
 
         print "cuda-sim: total running time:", round((total_time),4), "s"
@@ -258,8 +257,8 @@ class Simulator:
             return returnValue_final[0]
         else:
             return returnValue_final
-            
-    
+
+
 # static non-class methods
 def copy2D_host_to_device(dev, host, src_pitch, dst_pitch, width, height ):
     copy = driver.Memcpy2D()
@@ -303,7 +302,7 @@ def copy2D_host_to_array(arr, host, width, height ):
     copy.width_in_bytes = copy.src_pitch = width
     copy.height = height
     copy(aligned=True)
-    
+
 # Determine thread granularity
 #def getRegisterGranularity(compabilityTuple):
     #if(compabilityTuple[0] == 1):
@@ -313,9 +312,9 @@ def copy2D_host_to_array(arr, host, width, height ):
             #return 512
     #elif(compabilityTuple[0] == 2)
         #if(compabilityTuple[1] == 0):
-            #return 
+            #return
     #return 512
-    
+
 # Determine maximum number of threads per MP
 def getMaxThreadsPerMP(compabilityTuple):
     if(compabilityTuple[0] == 1):
@@ -331,5 +330,3 @@ def getMaxThreadsPerMP(compabilityTuple):
 # Determine maximum number of blocks per MP
 def getMaxBlocksPerMP(compabilityTuple):
     return 8
-    
-    
