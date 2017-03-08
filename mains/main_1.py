@@ -25,41 +25,45 @@ import cudacodecreater
 import plotbar
 from numpy import *
 
-
+#Initiates the program
 def main():
-	# Calls error_checker - reads in command line arguments and does some basic error checks
+	# Reads in command line arguments
 	input_file_SBMLs, input_file_datas, analysis, fname, usesbml, iname = error_check.input_checker(sys.argv,0)
-	# Calls SBML_checker - checks all the SBML files that have been inputted
+	# Calls SBML_checker - checks all the SBML files that have been inputted - basic check
 	SBML_check.SBML_checker([iname+"/"+input_file_SBMLs[i] for i, value in enumerate(usesbml) if value=="0"])
-	# Unpacks the following four command line arguments - each element corresponds to each SBML and data file pair
 	
+	#list of 1s and 0s with 1s indicating that an SBML file is used and 0s indicating local code is used
 	usesbml=[not(bool(int(i))) for i in list(usesbml)]
-	#parameter_change=[int(i) for i in list(parameter_change)]
-	#init_condit=[int(i) for i in list(init_condit)]
-	# Calls sorting_files which creates new SBML files for new experiments and creates CUDA code from SBML files if necessary
 
-
+	#If statement deals with whether we are doing 1st, 2nd or 3rd approach
 	if analysis != 2:
 		count = 0
+		#Cycles through the list of SBML and local code files
 		for i in range(0,len(input_file_SBMLs)):
+			#NEED TO REMOVE SEED
 			random.seed(123)
+			#If statment between whether SBML or local code used as requires two different workflows
 			if usesbml[i]==True:
 				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, input_file_data = input_file_datas[count])
 				count += 1
 			else:
 				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname)
 	else:
-		####Reference model
+		#In the case of the last approach the first file is always the reference model so is treated differently
 		count = 0
+		#If statment between whether SBML or local code used as requires two different workflows
+		#Reference model
 		if usesbml[0] == True:
-			random.seed(123)
+			random.seed(123) #NEED TO REMOVE SEED
 			ref_model = sorting_files(input_file_SBMLs[0],analysis,fname,usesbml[0], iname, input_file_data = input_file_datas[count])
 			count += 1 
 		else:
 			ref_model = sorting_files(input_file_SBMLs[0],analysis,fname,usesbml[0], iname)
-		####Not reference models
+		
+		#Not reference models
 		for i in range(1,len(input_file_SBMLs)):
-			random.seed(123)
+			random.seed(123) #NEED TO REMOVE SEED
+			#If statment between whether SBML or local code used as requires two different workflows
 			if usesbml[i] == True:
 				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, refmod = ref_model,input_file_data = input_file_datas[count])
 				count += 1 
@@ -67,25 +71,28 @@ def main():
 				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, refmod = ref_model)
 
 def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", input_file_data = ""):
-	# Used to remove the .xml at the end of the file if present to name directories
+	#Used to remove the .xml at the end of the file if present to name directories
 	input_file_SBML_name = input_file_SBML
 	if input_file_SBML_name[-4:]==".xml":
 		input_file_SBML_name = input_file_SBML_name[:-4]
-	# Following set of if statements takes SBML files and depending on the way it needs to be changed carries out parsers to create new SBML files for each experiment
-
+	
+	#Makes directory to hold the cudacode files
 	if not(os.path.isdir("./"+fname+"/cudacodes")):
 			os.mkdir(fname+"/cudacodes")
 
-	if usesbml == True:
-		# Creates CUDA code if local code not used
-		# Sets the outpath for where CUDA code is stored
+	#Workflow used is SBML file is used
+	if usesbml == True
+		#Sets the outpath for where CUDA code is stored
 		if not(os.path.isdir("./"+fname+"/cudacodes/cudacodes_"+input_file_SBML_name)):
 			os.mkdir(fname+"/cudacodes/cudacodes_"+input_file_SBML_name)
 		outPath=fname+"/cudacodes/cudacodes_"+input_file_SBML_name
-		# Depending on the way changes have been made to the SBML files only require certain versions
+
+		#Depending on the way changes have been made to the SBML files only require certain versions
 		input_files_SBML=[]
 
+		#Start of making new SBML files depending on experiments
 		print "-----Creating SBML files for experiments-----"
+		#Sets directory to hold new SBML files
 		if not(os.path.isdir("./"+fname+"/exp_xml")):
 			os.mkdir(fname+"/exp_xml")
 		if not(os.path.isdir("./"+fname+"/exp_xml/exp_xml_"+input_file_SBML_name)):

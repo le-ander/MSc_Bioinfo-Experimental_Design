@@ -13,10 +13,6 @@ import launch
 ##N1,N2 - Number of particles
 ##sigma - stadard deviation
 ##scale - scaling constant to prevent nans and infs
-
-#MutInfo3.append(getEntropy3(ref_obj.trajectories[0],model_obj.trajectories[experiment],ref_obj.cudaout[0], model_obj.cudaout[experiment],N1,N2,N3,N4,ref_obj.sigma,model_obj.sigma,max(model_obj.scale[experiment],ref_obj.scale[0])))
-#dataRef = ref traj
-#thetaRef
 def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,scale_ref,scale_mod):
 	# Kernel declaration using pycuda SourceModule
 	mod = compiler.SourceModule("""
