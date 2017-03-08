@@ -12,102 +12,102 @@ from struct import unpack
 
 class Lsoda(sim.Simulator):
 
-    
+
     _param_tex = None
-    
+
     _step_code = None
     _runtimeCompile = True
-    
+
     _lsoda_source_ = """
-    
+
     extern "C"{
-    
+
     __device__ myFex myfex;
     __device__ myJex myjex;
-    
+
     __global__ void init_common(){
     int tid = blockDim.x * blockIdx.x + threadIdx.x;
     cuLsodaCommonBlockInit( &(common[tid]) );
     }
-    
-    __global__ void cuLsoda(int *neq, double *y, double *t, double *tout, int *itol, 
-                double *rtol, double *atol, int *itask, int *istate, int *iopt, 
+
+    __global__ void cuLsoda(int *neq, double *y, double *t, double *tout, int *itol,
+                double *rtol, double *atol, int *itask, int *istate, int *iopt,
                             double *rwork, int *lrw, int *iwork, int *liw, int *jt)
     {
     int tid = blockDim.x * blockIdx.x + threadIdx.x;
-    
-    dlsoda_(myfex, neq+tid, y+tid*NSPECIES, t+tid, tout+tid, itol+tid, rtol+tid, atol+tid, itask+tid, 
+
+    dlsoda_(myfex, neq+tid, y+tid*NSPECIES, t+tid, tout+tid, itol+tid, rtol+tid, atol+tid, itask+tid,
         istate+tid, iopt+tid, rwork+tid*RSIZE, lrw+tid, iwork+tid*ISIZE, liw+tid, myjex, jt+tid, &(common[tid]) );
     }
     }
-    
+
     """
-    
-    
+
+
     def _compileAtRuntime(self, step_code, parameters):
         # set beta to 1 - deterministic!!
         self._beta = 1
-        
+
         fc = open( os.path.join(os.path.split(os.path.realpath(__file__))[0],'cuLsoda_all.cu'),'r')
         _sourceFromFile_ = fc.read()
-        
+
         # Options?
         options = []
-        
+
         # Write Code?
         write = False
-    
+
         isize = 20 + self._speciesNumber
         rsize = 22 + self._speciesNumber * max(16, self._speciesNumber + 9)
-    
+
         _isize_ = "#define ISIZE " + repr( 20 + self._speciesNumber ) + "\n"
         _rsize_ = "#define RSIZE " + repr( 22 + self._speciesNumber * max(16, self._speciesNumber + 9) ) + "\n"
-    
+
         _textures_ = "texture<float, 2, cudaReadModeElementType> param_tex;\n"
         _common_block_ = "__device__ struct cuLsodaCommonBlock common[" + repr(1*1) + "];\n"
         _code_ =  _isize_ + _rsize_ + _textures_ + step_code + _sourceFromFile_ + _common_block_ + self._lsoda_source_
-        
-        
+
+
         # dummy compile to determine optimal blockSize and gridSize
         compiled = pycuda.compiler.SourceModule( _code_, nvcc="nvcc", options=options, no_extern_c=True )
-        
+
         blocks, threads = self._getOptimalGPUParam(parameters, compiled.get_function("cuLsoda"))
         blocks = self._MAXBLOCKSPERDEVICE
-        
+
         # real compile
         _common_block_ = "__device__ struct cuLsodaCommonBlock common[" + repr(blocks*threads) + "];\n"
         _code_ =  _isize_ + _rsize_ + _textures_ + step_code + _sourceFromFile_ + _common_block_ + self._lsoda_source_
-        
+
         compiled = pycuda.compiler.SourceModule( _code_, nvcc="nvcc", options=options, no_extern_c=True)
-        
+
         self._param_tex = compiled.get_texref("param_tex")
-        
+
         lsoda_Kernel = compiled.get_function("cuLsoda")
         return (compiled, lsoda_Kernel)
-        
-            
+
+
     def _runSimulation(self, parameters, initValues, blocks, threads, in_atol=1e-12,in_rtol=1e-6 ):
-        
+
         totalThreads = threads * blocks
         experiments = len(parameters)
-        
+
         neqn = self._speciesNumber
-        
-        # compile 
+
+        # compile
         timer = time.time()
         ## print "Init Common..",
         init_common_Kernel = self._completeCode.get_function("init_common")
         init_common_Kernel( block=(threads,1,1), grid=(blocks,1) )
         ## print "finished in", round(time.time()-timer,4), "s"
-        
+
         start_time = time.time()
         # output array
         ret_xt = np.zeros( [totalThreads, 1, self._resultNumber, self._speciesNumber] )
-    
+
         # calculate sizes of work spaces
         isize = 20 + self._speciesNumber
         rsize = 22 + self._speciesNumber * max(16, self._speciesNumber + 9)
-            
+
         # local variables
         t      = np.zeros( [totalThreads], dtype=np.float64)
         jt     = np.zeros( [totalThreads], dtype=np.int32)
@@ -120,14 +120,14 @@ class Lsoda(sim.Simulator):
         itask  = np.zeros( [totalThreads], dtype=np.int32)
         istate = np.zeros( [totalThreads], dtype=np.int32)
         atol   = np.zeros( [totalThreads], dtype=np.float64)
-    
+
         liw    = np.zeros( [totalThreads], dtype=np.int32)
         lrw    = np.zeros( [totalThreads], dtype=np.int32)
         iwork  = np.zeros( [isize*totalThreads], dtype=np.int32)
         rwork  = np.zeros( [rsize*totalThreads], dtype=np.float64)
         y      = np.zeros( [self._speciesNumber*totalThreads], dtype=np.float64)
-        
-        
+
+
         for i in range(totalThreads):
             neq[i] = neqn
             #t[i] = self._timepoints[0]
@@ -139,10 +139,10 @@ class Lsoda(sim.Simulator):
             jt[i] = 2
             atol[i] = in_atol
             rtol[i] = in_rtol
-    
+
             liw[i] = isize
             lrw[i] = rsize
-    
+
             try:
             # initial conditions
                 for j in range(self._speciesNumber):
@@ -151,7 +151,7 @@ class Lsoda(sim.Simulator):
                     ret_xt[i, 0, 0, j] = initValues[i][j]
             except IndexError:
                 pass
-    
+
         # allocate on device
         d_t      = driver.mem_alloc(t.size      * t.dtype.itemsize)
         d_jt     = driver.mem_alloc(jt.size     * jt.dtype.itemsize)
@@ -169,7 +169,7 @@ class Lsoda(sim.Simulator):
         d_atol   = driver.mem_alloc(atol.size   * atol.dtype.itemsize)
         d_iwork  = driver.mem_alloc(iwork.size  * iwork.dtype.itemsize)
         d_rwork  = driver.mem_alloc(rwork.size  * rwork.dtype.itemsize)
-    
+
         # copy to device
         driver.memcpy_htod(d_t, t)
         driver.memcpy_htod(d_jt, jt)
@@ -187,7 +187,7 @@ class Lsoda(sim.Simulator):
         driver.memcpy_htod(d_atol, atol)
         driver.memcpy_htod(d_iwork, iwork)
         driver.memcpy_htod(d_rwork, rwork)
-    
+
         param = np.zeros((totalThreads,self._parameterNumber),dtype=np.float32)
         try:
             for i in range(len(parameters)):
@@ -195,67 +195,66 @@ class Lsoda(sim.Simulator):
                     param[i][j] = parameters[i][j]
         except IndexError:
             pass
-    
+
         # parameter texture
         ary = sim.create_2D_array( param )
         sim.copy2D_host_to_array(ary, param, self._parameterNumber*4, totalThreads )
         self._param_tex.set_array(ary)
-    
+
         if self._dt <= 0:
             start_time = time.time()
             #for i in range(1,self._resultNumber):
-            for i in range(0,self._resultNumber):    
-    
+            for i in range(0,self._resultNumber):
+
                 for j in range(totalThreads):
-                    tout[j] = self._timepoints[i]; 
-                driver.memcpy_htod( d_tout, tout ) 
-    
+                    tout[j] = self._timepoints[i];
+                driver.memcpy_htod( d_tout, tout )
+
                 self._compiledRunMethod( d_neq, d_y, d_t, d_tout, d_itol, d_rtol, d_atol, d_itask, d_istate,
                             d_iopt, d_rwork, d_lrw, d_iwork, d_liw, d_jt, block=(threads,1,1), grid=(blocks,1) );
-    
+
                 driver.memcpy_dtoh(t, d_t)
                 driver.memcpy_dtoh(y, d_y)
                 driver.memcpy_dtoh(istate, d_istate)
-    
+
                 for j in range(totalThreads):
                     for k in range(self._speciesNumber):
                         ret_xt[j, 0, i, k] = y[j*self._speciesNumber + k]
-    
+
             # end of loop over time points
-    
+
         else:
             tt = self._timepoints[0]
-            
+
             start_time = time.time()
             #for i in range(1,self._resultNumber):
-            for i in range(0,self._resultNumber):  
+            for i in range(0,self._resultNumber):
                 while 1:
-                    
+
                     next_time = min(tt+self._dt, self._timepoints[i])
-                    
+
                     for j in range(totalThreads):
-                        tout[j] = next_time; 
-                    driver.memcpy_htod( d_tout, tout ) 
-    
+                        tout[j] = next_time;
+                    driver.memcpy_htod( d_tout, tout )
+
                     self._compiledRunMethod( d_neq, d_y, d_t, d_tout, d_itol, d_rtol, d_atol, d_itask, d_istate,
                                 d_iopt, d_rwork, d_lrw, d_iwork, d_liw, d_jt, block=(threads,1,1), grid=(blocks,1) );
-    
+
                     driver.memcpy_dtoh(t, d_t)
                     driver.memcpy_dtoh(y, d_y)
                     driver.memcpy_dtoh(istate, d_istate)
-    
+
                     if np.abs(next_time - self._timepoints[i]) < 1e-5:
                         tt = next_time
                         break
-    
+
                     tt = next_time
-                    
-    
+
+
                 for j in range(totalThreads):
                     for k in range(self._speciesNumber):
                         ret_xt[j, 0, i, k] = y[j*self._speciesNumber + k]
-    
-            # end of loop over time points
-        
-        return ret_xt[0:experiments]
 
+            # end of loop over time points
+
+        return ret_xt[0:experiments]
