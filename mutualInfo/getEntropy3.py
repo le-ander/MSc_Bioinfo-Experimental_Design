@@ -103,9 +103,9 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	dist_gpu3 = mod.get_function("distance3")
 
 	# Prepare input data
-	d1 = dataRef[0:N1,:,:].astype(float64)
+	d1 = dataRef.astype(float64)
 	d2 = thetaRef[N1:(N1+N2),:,:].astype(float64)
-	d3 = dataMod[0:N1,:,:].astype(float64)
+	d3 = dataMod.astype(float64)
 	d4 = array(thetaMod)[N1:(N1+N2),:,:].astype(float64)
 	d6 = array(thetaRef)[(N1+N2):(N1+N2+N3),:,:].astype(float64)
 	d8 = array(thetaMod)[(N1+N2):(N1+N2+N4),:,:].astype(float64)
