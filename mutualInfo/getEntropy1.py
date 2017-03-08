@@ -2,27 +2,8 @@ from numpy import *
 
 from pycuda import compiler, driver
 from pycuda import autoinit
-#from numba import jit
 
 import launch
-
-# @jit
-# def summation(N1, result, logN2, mplogscale, mplogpisigma):
-# 	sum1 = 0.0
-# 	count_na = 0
-# 	count_inf = 0
-# 	for i in range(N1):
-# 		if(isnan(sum(result[i,:]))): count_na += 1
-# 		elif(isinf(log(sum(result[i,:])))): count_inf += 1
-# 		else:
-# 			sum1 -= log(sum(result[i,:])) - logN2 - mplogscale -  mplogpisigma
-# 	return sum1, count_na, count_inf
-
-# @jit
-# def init_res1(Ni, Nj):
-# 	res1 = zeros([Ni,Nj]).astype(float64)
-# 	return res1
-
 
 # A function to calculate the mutual information between all parameters of a system and an experiment
 ##(gets called by run_getEntropy1)
@@ -38,15 +19,15 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 
 	mod = compiler.SourceModule("""
 	
-	__device__ __constant__ double scaled;
-	__device__ __constant__ float sigmad;
-	__device__ __constant__ int Md;
-	__device__ __constant__ int Pd;
+	__device__ __constant__ double scale_const;
+	__device__ __constant__ float sigma_const;
+	__device__ __constant__ int M_const;
+	__device__ __constant__ int P_const;
 
 
 	__device__ unsigned int idx3d(int i, int k, int l)
 	{
-		return k*Pd + i*Md*Pd + l;
+		return k*P_const + i*M_const*P_const + l;
 	}
 
 	__device__ unsigned int idx2d(int i, int j, int M)
@@ -64,9 +45,9 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 
 	double x1;
 	x1 = 0.0;
-	for(int k=0; k<Md; k++){
-		for(int l=0; l<Pd; l++){
-			x1 = x1 + scaled - ( d2[idx3d(j,k,l)]-d1[idx3d(i,k,l)])*( d2[idx3d(j,k,l)]-d1[idx3d(i,k,l)])/(sigmad);
+	for(int k=0; k<M_const; k++){
+		for(int l=0; l<P_const; l++){
+			x1 += scale_const - ( d2[idx3d(j,k,l)]-d1[idx3d(i,k,l)])*( d2[idx3d(j,k,l)]-d1[idx3d(i,k,l)])/(sigma_const);
 		}
 	}
 
@@ -111,21 +92,7 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 
 	# Determine number of timepoints (M) and number of species (P)
 	M = d1.shape[1]
-#	print M
 	P = d1.shape[2]
-#	print P
-#	print M
-	CONSTm = array(M).astype(int32)
-#	print CONSTm
-	CONST_M,_ = mod.get_global("Md") 
-	driver.memcpy_htod(CONST_M, CONSTm)
-	
-	#print P
-	CONSTp = array(P).astype(int32)
-	#print CONSTp
-	CONST_P,_ = mod.get_global("Pd") 
-	driver.memcpy_htod(CONST_P, CONSTp)
-
 
 	#Initialize array for results
 	result = zeros([N1,numRuns_j])
@@ -133,24 +100,26 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 	# Maximum number of particles per run in i direction
 	Ni = int(grid_i)
 
-	# Calculate log scale
-	logscale = math.log(scale)
-#	print logscale
-	CONST = array(logscale).astype(float64)
-#	print CONST
-	CONSTd,_ = mod.get_global("scaled") 
-	driver.memcpy_htod(CONSTd, CONST) 
-	
+	# Determine log(scale) for GPU calculation
+	logscale = log(scale)
 
+	# Determine 2*sigma*sigma for GPU calculation
+	sigmasq = 2*sigma*sigma
 
+	# Transfer constants into constant memory on GPU
+	CONSTm = array(M).astype(int32)
+	CONST_M,_ = mod.get_global("M_const")
+	CONSTp = array(P).astype(int32)
+	CONST_P,_ = mod.get_global("P_const")
+	CONSTscale = array(logscale).astype(float64)
+	CONST_scale,_ = mod.get_global("scale_const") 
+	CONSTsq = array(sigmasq).astype(float32)
+	CONST_sq,_ = mod.get_global("sigma_const")
 
-	# 2 sigma squared
-	sigmasqr = 2*sigma*sigma
-#	print sigmasqr
-	CONSTsqr = array(sigmasqr).astype(float32)
-#	print CONSTsqr
-	CONST_sqr,_ = mod.get_global("sigmad") 
-	driver.memcpy_htod(CONST_sqr, CONSTsqr)
+	driver.memcpy_htod(CONST_M, CONSTm)
+	driver.memcpy_htod(CONST_P, CONSTp)
+	driver.memcpy_htod(CONST_scale, CONSTscale)
+	driver.memcpy_htod(CONST_sq, CONSTsq)
 
 	# Main nested for-loop for mutual information calculations
 	for i in range(numRuns_i):
@@ -196,7 +165,7 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 				bj = block_j
 
 			# Call GPU kernel function
-			dist_gpu1(int32(Ni),int32(Nj), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+			dist_gpu1(int32(Ni),int32(Nj), driver.In(data1), driver.In(data2), driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 
 			# Summing rows in GPU output for this run
 			for k in range(Ni):
@@ -209,8 +178,8 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 	logN2 = log(float(N2))
 	mplogscale= M*P*logscale
 	mplogpisigma= M*P*log(2.0*pi*sigma*sigma)
+
 	# Sum all content of new results matrix and add/subtract constants for each row if there are no NANs or infs
-#	sum1, count_na, count_inf = summation(N1, result, logN2, mplogscale, mplogpisigma)
 	for i in range(N1):
 		if(isnan(sum(result[i,:]))): count_na += 1
 		elif(isinf(log(sum(result[i,:])))): count_inf += 1

@@ -3,11 +3,11 @@
 <dt
 
 >particles
-220000
+4600
 <particles
 
 >nsample
-4000 18000 0 0
+100 4500 0 0
 <nsample
 
 >sigma
@@ -46,7 +46,7 @@ constant 0
 
 
 >fit
-species1 species2 species3
+All
 <fit
 
 >paramfit

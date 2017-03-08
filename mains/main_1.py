@@ -25,6 +25,7 @@ import time
 
 
 def main():
+	time3=time.time()
 	# Calls error_checker - reads in command line arguments and does some basic error checks
 	input_file_SBMLs, input_file_datas, analysis, fname, usesbml, iname = error_check.input_checker(sys.argv,0)
 	# Calls SBML_checker - checks all the SBML files that have been inputted
@@ -63,6 +64,8 @@ def main():
 				count += 1 
 			else:
 				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, refmod = ref_model)
+	time4=time.time()
+	print "Total", time4-time3
 
 def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", input_file_data = ""):
 	# Used to remove the .xml at the end of the file if present to name directories
@@ -169,8 +172,6 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 		time1=time.time()
 		MutInfo1=getEntropy1.run_getEntropy1(sbml_obj)
 		time2=time.time()
-		print "MutInfo1 runtime", time2-time1
-		print sbml_obj.prior
 		plotbar.plotbar(MutInfo1, sbml_obj.name ,sbml_obj.nmodels ,0)
 	elif sbml_obj.analysisType == 1:
 		MutInfo2=getEntropy2.run_getEntropy2(sbml_obj)
@@ -179,6 +180,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 		return sbml_obj
 	elif sbml_obj.analysisType == 2 and refmod != "":
 		getEntropy3.run_getEntropy3(sbml_obj, refmod)
+	print "MutInfo1 runtime", time2-time1
 		
 
 

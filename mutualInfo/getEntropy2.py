@@ -19,9 +19,15 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	# Kernel declaration using pycuda SourceModule
 	
 	mod = compiler.SourceModule("""
-	__device__ unsigned int idx3d(int i, int k, int l, int M, int P)
+
+	__device__ __constant__ double scale_const;
+	__device__ __constant__ float sigma_const;
+	__device__ __constant__ int M_const;
+	__device__ __constant__ int P_const;
+
+	__device__ unsigned int idx3d(int i, int k, int l)
 	{
-		return k*P + i*M*P + l;
+		return k*P_const + i*M_const*P_const + l;
 	}
 
 	__device__ unsigned int idx2d(int i, int j, int M)
@@ -29,9 +35,7 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 		return i*M + j;
 	}
 
-	__device__ __constant__ double scale;
-
-	__global__ void distance1(int Ni, int Nj, int M, int P, float sigma, double scale, double *d1, double *d2, double *res1)
+	__global__ void distance1(int Ni, int Nj, double *d1, double *d2, double *res1)
 	{
 	int i = threadIdx.x + blockDim.x * blockIdx.x;
 	int j = threadIdx.y + blockDim.y * blockIdx.y;
@@ -40,16 +44,16 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 
 	double x1;
 	x1 = 0.0;
-	for(int k=0; k<M; k++){
-		for(int l=0; l<P; l++){
-			x1 = x1 + scale - ( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])/(sigma);
+	for(int k=0; k<M_const; k++){
+		for(int l=0; l<P_const; l++){
+			x1 += scale_const - ( d2[idx3d(j,k,l)]-d1[idx3d(i,k,l)])*( d2[idx3d(j,k,l)]-d1[idx3d(i,k,l)])/(sigma_const);
 		}
 	}
 
 	res1[idx2d(i,j,Nj)] = exp(x1);
 	}
 
-	__global__ void distance2(int Nj, int M, int P, float sigma, double scale, double *d1, double *d3, double *res2)
+	__global__ void distance2(int Nj, double *d1, double *d3, double *res2)
 	{
 	int j = threadIdx.x + blockDim.x * blockIdx.x;
 
@@ -57,9 +61,9 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 
 	double x1;
 	x1 = 0.0;
-	for(int k=0; k<M; k++){
-		for(int l=0; l<P; l++){
-			x1 = x1 + scale - (d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])*(d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])/(sigma);
+	for(int k=0; k<M_const; k++){
+		for(int l=0; l<P_constant; l++){
+			x1 += scale_const - (d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])*(d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])/(sigma_const);
 		}
 	}
 
@@ -114,20 +118,26 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	Ni = int(grid_i)
 	
 	######################Optimisation####################
-	# Calculate log scale
+	# Determine log(scale) for GPU calculations
 	logscale = log(scale)
 
-	# 2 sigma squared
+	# Determine 2*sigma*sigma for GPU calculations
 	sigmasqr = 2*sigma*sigma
 
+	# Transfer constants into constant memory on GPU
+	CONSTm = array(M).astype(int32)
+	CONST_M,_ = mod.get_global("M_const")
+	CONSTp = array(P).astype(int32)
+	CONST_P,_ = mod.get_global("P_const")
+	CONSTscale = array(logscale).astype(float64)
+	CONST_scale,_ = mod.get_global("scale_const") 
+	CONSTsq = array(sigmasq).astype(float32)
+	CONST_sq,_ = mod.get_global("sigma_const")
 
-
-
-
-
-
-
-
+	driver.memcpy_htod(CONST_M, CONSTm)
+	driver.memcpy_htod(CONST_P, CONSTp)
+	driver.memcpy_htod(CONST_scale, CONSTscale)
+	driver.memcpy_htod(CONST_sq, CONSTsq)
 
 	##################################################
 	# Main nested for-loop for mutual information calculations
@@ -182,15 +192,11 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	sum1 = 0.0
 	count1_na = 0
 	count1_inf = 0
-
-	# Sum all content of new results matrix and add/subtract constants for each row if there are no NANs or infs
 	mplogscale= M*P*log(scale)
 	mplogpisigma= M*P*log(2.0*pi*sigma*sigma)
 	logN2 = log(float(N2))
 
-
-
-
+	# Sum all content of new results matrix and add/subtract constants for each row if there are no NANs or infs
 	for i in range(N1):
 		if(isnan(sum(result[i,:]))): count1_na += 1
 		elif(isinf(log(sum(result[i,:])))): count1_inf += 1
