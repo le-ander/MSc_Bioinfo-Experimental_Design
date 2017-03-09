@@ -167,11 +167,9 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 		sbml_obj.scaling()
 	else:
 		sbml_obj.scaling_ge3()
-	#print sbml_obj.scale
+	time1=time.time()
 	if sbml_obj.analysisType == 0:
-		time1=time.time()
 		MutInfo1=getEntropy1.run_getEntropy1(sbml_obj)
-		time2=time.time()
 		plotbar.plotbar(MutInfo1, sbml_obj.name ,sbml_obj.nmodels ,0)
 	elif sbml_obj.analysisType == 1:
 		MutInfo2=getEntropy2.run_getEntropy2(sbml_obj)
@@ -180,8 +178,8 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 		return sbml_obj
 	elif sbml_obj.analysisType == 2 and refmod != "":
 		getEntropy3.run_getEntropy3(sbml_obj, refmod)
-	if time1:
-		print "MutInfo1 runtime", time2-time1
+	time2=time.time()
+	print "MutInfo runtime", time2-time1
 		
 
 

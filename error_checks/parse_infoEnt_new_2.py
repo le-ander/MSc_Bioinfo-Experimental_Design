@@ -9,6 +9,7 @@ re_prior_const=re.compile('constant')
 re_prior_uni=re.compile('uniform')
 re_prior_normal=re.compile('normal')
 re_prior_logn=re.compile('lognormal')
+re_prior_posterior=re.compile('posterior')
 
 # True/False
 re_true=re.compile('True')
@@ -103,6 +104,10 @@ def process_prior( tmp ):
 		except:
 			print "\nValue of the prior for model ", self.name[self.nmodels-1], "has the wrong format:", tmp[1]
 			sys.exit()
+
+	elif re_prior_posterior.match( tmp[0] ):
+		prior_tmp[0] = 4
+
 	else:
 		print "\nSupplied parameter prior ", tmp[0], " unsupported"
 		sys.exit()

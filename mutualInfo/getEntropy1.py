@@ -93,7 +93,7 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 	# Maximum number of particles per run in i direction
 	Ni = int(grid_i)
 
-	# Determine log(scale) for GPU calculation
+	# Determine M*P*log(scale) for GPU calculation
 	mplogscale= M*P*log(scale)
 
 	# Determine 1/2*sigma*sigma for GPU calculation
