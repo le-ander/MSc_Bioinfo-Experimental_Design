@@ -31,7 +31,7 @@ def main():
 	input_file_SBMLs, input_file_datas, analysis, fname, usesbml, iname = error_check.input_checker(sys.argv)
 	# Calls SBML_checker - checks all the SBML files that have been inputted - basic check
 	SBML_check.SBML_checker([iname+"/"+input_file_SBMLs[i] for i, value in enumerate(usesbml) if value=="0"])
-	
+
 	#list of 1s and 0s with 1s indicating that an SBML file is used and 0s indicating local code is used
 	usesbml=[not(bool(int(i))) for i in list(usesbml)]
 
@@ -56,17 +56,17 @@ def main():
 		if usesbml[0] == True:
 			random.seed(123) #NEED TO REMOVE SEED
 			ref_model = sorting_files(input_file_SBMLs[0],analysis,fname,usesbml[0], iname, input_file_data = input_file_datas[count])
-			count += 1 
+			count += 1
 		else:
 			ref_model = sorting_files(input_file_SBMLs[0],analysis,fname,usesbml[0], iname)
-		
+
 		#Not reference models
 		for i in range(1,len(input_file_SBMLs)):
 			random.seed(123) #NEED TO REMOVE SEED
 			#If statment between whether SBML or local code used as requires two different workflows
 			if usesbml[i] == True:
 				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, refmod = ref_model,input_file_data = input_file_datas[count])
-				count += 1 
+				count += 1
 			else:
 				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, refmod = ref_model)
 	time4=time.time()
@@ -75,7 +75,7 @@ def main():
 
 # A function that works on one SBML or local code at a time
 ##(gets called by main)
-##Arguments: 
+##Arguments:
 ##input_file_SBML - either an SBML file or the input.xml file name (input.xml file used when doing local code)
 ##analysis - the approach we want to carry out 1, 2, or 3
 ##fname - string for the output file name
@@ -87,7 +87,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 	input_file_SBML_name = input_file_SBML
 	if input_file_SBML_name[-4:]==".xml":
 		input_file_SBML_name = input_file_SBML_name[:-4]
-	
+
 	#Makes directory to hold the cudacode files
 	if not(os.path.isdir("./"+fname+"/cudacodes")):
 			os.mkdir(fname+"/cudacodes")
@@ -137,11 +137,11 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 
 		#Obtains a list of the new SBML files
 		exp_xml_files = os.listdir(inPath)
-		
+
 		#Start of creating the input.xml file
 		print "-----Input XML file-----"
 		comb_list = input_file_parser_new_2.generateTemplate(exp_xml_files, "input_xml", "summmary", input_file_data, inpath = inPath, outpath= xml_out, iname=iname)
-		
+
 		#input_xml holds the file name of the input.xml file
 		input_xml="/input_xml"
 
@@ -160,7 +160,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 
 	#Calls function to make the object
 	sbml_obj = parse_infoEnt_new_2.algorithm_info(xml_out+input_xml+".xml", 0, comb_list)
-	
+
 	#Calls a function to make an attribute which is a dictionary that relates cudacode files to the initial conditions it needs
 	sbml_obj.getpairingCudaICs()
 
@@ -181,15 +181,14 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 
 	#Calls function to run cudasim and sort output
 	cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath)
-	
+
 	#Calculates the scaling factor
 	print "-----Calculating scaling factor-----"
-	#Calculating scaling is different when doing approach 3 or not 
+	#Calculating scaling is different when doing approach 3 or not
 	if sbml_obj.analysisType != 2:
 		#Scaling for when doing approach 1 or 2
 		sbml_obj.scaling()
 	else:
-<<<<<<< HEAD
 		#Scaling for when doing approach 3
 		if refmod == "":
 			sbml_obj.scaling_ge3()
@@ -197,10 +196,6 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 			sbml_obj.scaling_ge3(len(refmod.times),len(refmod.fitSpecies[0]))
 
 	#Depending upon the approach different functions are run to calculate the mutual information
-=======
-		sbml_obj.scaling_ge3()
-	time1=time.time()
->>>>>>> jonas-branch
 	if sbml_obj.analysisType == 0:
 		MutInfo1=getEntropy1.run_getEntropy1(sbml_obj)
 		plotbar.plotbar(MutInfo1, sbml_obj.name ,sbml_obj.nmodels ,0)
@@ -211,35 +206,6 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 		return sbml_obj
 	elif sbml_obj.analysisType == 2 and refmod != "":
 		getEntropy3.run_getEntropy3(sbml_obj, refmod)
-<<<<<<< HEAD
-=======
-	time2=time.time()
-	print "MutInfo runtime", time2-time1
-		
-
-
-	#sbml_obj.print_info()
-	#pairings = organiser.organisePairings(sbml_obj, comb_list)
-	#print [x.shape for x in sbml_obj.cudaout]
-	#print sum(sbml_obj.cudaout[0][:,0:sbml_obj.cudaout[0].shape[1],:],axis=2)
-
-	#print sbml_obj.cudaout
-	#print sbml_obj.speciesSample
-	#print set(sbml_obj.cuda)
-	#print comb_list
-
-
-
-main()
-
-#info_new = error_check.parse_infoEnt.algorithm_info("input_file_repressilator.xml", 0)
-#print info_new.globalnparameters
-#p = obtain_thetas.THETAS(info_new, sampleFromPost = False)
-#s = obtain_thetas.SPECIES(info_new)
-#p,s=obtain_thetas.THETAS(info_new, sampleGiven = True, sampleFromPost= "data_1.txt", weight= "w_1.txt", analysisType = 1, N1 = 2, N3 = 3, parameter_i = [0,3])
-
-#obtain_thetas.ThetasGivenI(info_new,p,s,[0,3],[1],2,3)
->>>>>>> jonas-branch
 
 #Starts the program
 main()
