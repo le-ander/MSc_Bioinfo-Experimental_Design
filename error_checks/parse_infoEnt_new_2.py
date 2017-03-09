@@ -1024,10 +1024,10 @@ class algorithm_info:
 	
 	#Scaling method for approach 3
 	##(method gets called by sorting_files)
-	##M_ref - number of timepoints in reference model
-	##P_ref - number of measurable species in reference model
+	##M_Ref - number of timepoints in reference model
+	##P_Ref - number of measurable species in reference model
 	##Note if scaling_ge3 called for reference model then M_ref and P_ref take default values
-	def scaling_ge3(self,M_ref = 0,P_ref = 0):
+	def scaling_ge3(self,M_Ref = 0,P_Ref = 0):
 		
 		#Initiates list of maximum distances between trajectories
 		maxDistList =[]

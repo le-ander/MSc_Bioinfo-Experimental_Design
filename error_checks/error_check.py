@@ -169,7 +169,7 @@ def input_checker(sys_arg):
 		sys.exit()
 
 	#Checks if an SBML file has been given and whether it has an associated input file
-	if "0" in usesbml:
+	if "0" in list(usesbml) and len([x for x in list(usesbml) if x=="0"]) != len(input_file_data):
 		print "\nSBML file is being used but no associated input file given!\nUse: \n\t-i2 'inputfile' \nor: \n\t--infile_data 'inputfile' \n"
 		sys.exit()
 		
