@@ -8,10 +8,7 @@ sys.path.insert(1, '../mutualInfo')
 sys.path.insert(1, '../abc-sysbio')
 sys.path.insert(1, '../cudasim')
 
-#sys.path.insert(1, '../abc-sysbio/abcsysbio_parser')
-#sys.path.insert(1, '/cluster/home/saw112/work/Test_code/abcsysbio_parser') ## not sure what it does as directory doesn't exist
 
-#import obtain_thetas
 import simulation_functions
 import organiser
 import error_check
@@ -24,10 +21,12 @@ import getEntropy3
 import cudacodecreater
 import plotbar
 from numpy import *
+import time
 
 #Initiates the program
 ##Requires no arguments to run
 def main():
+	time3=time.time()
 	# Reads in command line arguments
 	input_file_SBMLs, input_file_datas, analysis, fname, usesbml, iname = error_check.input_checker(sys.argv)
 	# Calls SBML_checker - checks all the SBML files that have been inputted - basic check
@@ -70,6 +69,8 @@ def main():
 				count += 1 
 			else:
 				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, refmod = ref_model)
+	time4=time.time()
+	print "Total", time4-time3
 
 
 # A function that works on one SBML or local code at a time
@@ -188,6 +189,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 		#Scaling for when doing approach 1 or 2
 		sbml_obj.scaling()
 	else:
+<<<<<<< HEAD
 		#Scaling for when doing approach 3
 		if refmod == "":
 			sbml_obj.scaling_ge3()
@@ -195,6 +197,10 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 			sbml_obj.scaling_ge3(len(refmod.times),len(refmod.fitSpecies[0]))
 
 	#Depending upon the approach different functions are run to calculate the mutual information
+=======
+		sbml_obj.scaling_ge3()
+	time1=time.time()
+>>>>>>> jonas-branch
 	if sbml_obj.analysisType == 0:
 		MutInfo1=getEntropy1.run_getEntropy1(sbml_obj)
 		plotbar.plotbar(MutInfo1, sbml_obj.name ,sbml_obj.nmodels ,0)
@@ -205,6 +211,35 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 		return sbml_obj
 	elif sbml_obj.analysisType == 2 and refmod != "":
 		getEntropy3.run_getEntropy3(sbml_obj, refmod)
+<<<<<<< HEAD
+=======
+	time2=time.time()
+	print "MutInfo runtime", time2-time1
+		
+
+
+	#sbml_obj.print_info()
+	#pairings = organiser.organisePairings(sbml_obj, comb_list)
+	#print [x.shape for x in sbml_obj.cudaout]
+	#print sum(sbml_obj.cudaout[0][:,0:sbml_obj.cudaout[0].shape[1],:],axis=2)
+
+	#print sbml_obj.cudaout
+	#print sbml_obj.speciesSample
+	#print set(sbml_obj.cuda)
+	#print comb_list
+
+
+
+main()
+
+#info_new = error_check.parse_infoEnt.algorithm_info("input_file_repressilator.xml", 0)
+#print info_new.globalnparameters
+#p = obtain_thetas.THETAS(info_new, sampleFromPost = False)
+#s = obtain_thetas.SPECIES(info_new)
+#p,s=obtain_thetas.THETAS(info_new, sampleGiven = True, sampleFromPost= "data_1.txt", weight= "w_1.txt", analysisType = 1, N1 = 2, N3 = 3, parameter_i = [0,3])
+
+#obtain_thetas.ThetasGivenI(info_new,p,s,[0,3],[1],2,3)
+>>>>>>> jonas-branch
 
 #Starts the program
 main()
