@@ -19,9 +19,15 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 
 	mod = compiler.SourceModule("""
 	
-	__device__ unsigned int idx3d(int i, int k, int l, int M, int P)
+	__device__ __constant__ double mp_scale_const;
+	__device__ __constant__ float sigma_inv_const;
+	__device__ __constant__ int M_const;
+	__device__ __constant__ int P_const;
+
+
+	__device__ unsigned int idx3d(int i, int k, int l)
 	{
-		return k*P + i*M*P + l;
+		return k*P_const + i*M_const*P_const + l;
 	}
 
 	__device__ unsigned int idx2d(int i, int j, int M)
@@ -30,7 +36,7 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 	}
 
 
-	__global__ void distance1(int Ni, int Nj, int M, int P, float sigma, double scale, double *d1, double *d2, double *res1)
+	__global__ void distance1(int Ni, int Nj, double *d1, double *d2, double *res1)
 	{
 	int i = threadIdx.x + blockDim.x * blockIdx.x;
 	int j = threadIdx.y + blockDim.y * blockIdx.y;
@@ -39,13 +45,13 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 
 	double x1;
 	x1 = 0.0;
-	for(int k=0; k<M; k++){
-		for(int l=0; l<P; l++){
-			x1 -= ( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)]);
+	for(int k=0; k<M_const; k++){
+		for(int l=0; l<P_const; l++){
+			x1 -= ( d2[idx3d(j,k,l)]-d1[idx3d(i,k,l)])*( d2[idx3d(j,k,l)]-d1[idx3d(i,k,l)]);
 		}
 	}
 
-	res1[idx2d(i,j,Nj)] = exp(scale + sigma*x1);
+	res1[idx2d(i,j,Nj)] = exp(mp_scale_const+sigma_inv_const*x1);
 	}
 	""")
 
@@ -95,10 +101,35 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 	Ni = int(grid_i)
 
 	# Determine log(scale) for GPU calculation
-	mplogscale= M*P*log(scale)
+	logscale = log(scale)
+	mplogscale= M*P*logscale
 
-	# Determine 1/2*sigma*sigma for GPU calculation
+	# Determine 2*sigma*sigma for GPU calculation
+	sigmasq = 2*sigma*sigma
 	sigmasq_inv = 1/(2*sigma*sigma)
+
+	# Transfer constants into constant memory on GPU
+	CONSTm = array(M).astype(int32)
+	CONST_M,_ = mod.get_global("M_const")
+	CONSTp = array(P).astype(int32)
+	CONST_P,_ = mod.get_global("P_const")
+	
+	#CONSTscale = array(logscale).astype(float64)
+	#CONST_scale,_ = mod.get_global("scale_const") 
+	#CONSTsq = array(sigmasq).astype(float32)
+	#CONST_sq,_ = mod.get_global("sigma_const")
+
+	CONSTmpscale = array(mplogscale).astype(float64)
+	CONST_mpscale,_ = mod.get_global("mp_scale_const") 
+	CONSTsq_inv = array(sigmasq_inv).astype(float32)
+	CONST_sq_inv,_ = mod.get_global("sigma_inv_const")
+
+	driver.memcpy_htod(CONST_M, CONSTm)
+	driver.memcpy_htod(CONST_P, CONSTp)
+	#driver.memcpy_htod(CONST_scale, CONSTscale)
+	#driver.memcpy_htod(CONST_sq, CONSTsq)
+	driver.memcpy_htod(CONST_mpscale, CONSTmpscale)
+	driver.memcpy_htod(CONST_sq_inv, CONSTsq_inv)
 
 	# Main nested for-loop for mutual information calculations
 	for i in range(numRuns_i):
@@ -144,11 +175,11 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 				bj = block_j
 
 			# Call GPU kernel function
-			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigmasq_inv), float64(mplogscale), driver.In(data1), driver.In(data2), driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+			dist_gpu1(int32(Ni),int32(Nj), driver.In(data1), driver.In(data2), driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 
 			# Summing rows in GPU output for this run
 			for k in range(Ni):
-				result[(i*int(grid_i)+k),j] = sum(res1[k,:]) 
+				result[(i*int(grid_i)+k),j] = sum(res1[k,:]) ###Could be done on GPU?
 
 	# Initialising required variables for next steps
 	sum1 = 0.0

@@ -180,7 +180,8 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 		return sbml_obj
 	elif sbml_obj.analysisType == 2 and refmod != "":
 		getEntropy3.run_getEntropy3(sbml_obj, refmod)
-	print "MutInfo1 runtime", time2-time1
+	if time1:
+		print "MutInfo1 runtime", time2-time1
 		
 
 
