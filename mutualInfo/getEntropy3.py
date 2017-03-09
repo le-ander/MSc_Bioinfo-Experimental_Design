@@ -400,7 +400,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 		elif(isinf(log(sum(result2[i,:])))):
 			count2_inf=count2_inf+1
 		elif(isnan(log(sum(result2[i,:])))):
-			count_na=count2_na+1
+			count2_na=count2_na+1
 		elif(isinf(log(sum(result3[i,:])))):
 			count3_inf=count3_inf+1
 		elif(isnan(log(sum(result3[i,:])))):
@@ -445,7 +445,7 @@ def run_getEntropy3(model_obj, ref_obj):
 	#Cycles through experiments
 	for experiment in range(model_obj.nmodels):
 
-		#Extracts N1,N2,N3,N4 
+		#Extracts N1,N2,N3,N4
 		if model_obj.initialprior == False:
 			pos = model_obj.pairParamsICS[model_obj.cuda[experiment]].index([x[1] for x in model_obj.x0prior[experiment]])
 			pos2 = ref_obj.pairParamsICS[ref_obj.cuda[0]].index([x[1] for x in ref_obj.x0prior[0]])
