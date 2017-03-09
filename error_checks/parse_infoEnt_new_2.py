@@ -794,48 +794,62 @@ class algorithm_info:
 	##cudaorder - order in which cudacode files are passed in CUDA-sim
 	##cudaout - output from cudasim
 	def sortCUDASimoutput(self,cudaorder,cudaout):
-
+		#Sets up attribute for output of CUDA-sim
 		self.cudaout=[""]*len(self.cuda)
 
+		#If approach is of type 2 then total particles is N1+N2+N1xN3 otherwise just sum of Ni
 		if self.analysisType == 1:
 			Nparticles = self.N1sample+self.N2sample+self.N1sample*self.N3sample
 		else:
 			Nparticles = self.particles
 
+		#cuda_NAs holds the number of particles which don't result in NAs from cuda-sim
+		##Format of cuda_NAs:
+		##For approach 1 and 3: {"Exp_1.cu":[N1,N2,N3,N4],"Exp_2.cu:[N1,N2,N3,N4],...etc"}
+		##For approach 2: {"Exp_1.cu":[N1,N2,[N3_1,...,N3_N1]],"Exp_2.cu:[N1,N2,[N3_1,...,N3_N1]],...etc"}
 		cuda_NAs = dict((k, []) for k in cudaorder)
+
+		#For loop iterates over distinct cuda codes
 		for i, cudafile in enumerate(cudaorder):
+			#Index_NA finds the particle indices for which there are NAs
 			index_NA = [p for p, e in enumerate(numpy.isnan(numpy.sum(numpy.sum(cudaout[i][:,:,:],axis=2),axis=1))) if e==True]
-			#print self.pairParamsICS.values()[i]
+			
+			#Detects whether we have priors over the initial conditions or not and sets pairings_ICs for iteration over in the next part
 			if self.initialprior == False:
 				pairing_ICs = enumerate(self.pairParamsICS.values()[i])
 			else:
 				pairing_ICs = enumerate(range(1))
 
+			#Iteration over different initial conditions
 			for j, IC in pairing_ICs:
+				#Splits up the NAs belong to each specific initial condition
 				index_NA_IC = [s for s in index_NA if s < (j+1)*Nparticles  and s >= j*Nparticles]
-				#index_NA_IC = [p for p, e in enumerate(numpy.isnan(numpy.sum(numpy.sum(cudaout[i][j*Nparticles:(j+1)*Nparticles,:,:],axis=2),axis=1))) if e==True]
-				#print index_NA_IC
+
+				#Need to distinguish between approach 2 and the others as NAs handled differently
 				if self.analysisType !=1:
+					#For approach 1 and 3 simply count the NAs and remove
 					N1_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample]
 					N2_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample and x >= j*Nparticles + self.N1sample]
 					N3_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample+self.N3sample and x >= j*Nparticles + self.N1sample + self.N2sample]
 					N4_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample+self.N3sample+self.N4sample and x >= j*Nparticles + self.N1sample + self.N2sample+self.N3sample]
+					#Key is the cuda code file string and the values is a list corresponding to the remaining samples after removing NAs
 					cuda_NAs[cudafile].append([self.N1sample-len(N1_NA),self.N2sample-len(N2_NA),self.N3sample-len(N3_NA),self.N4sample-len(N4_NA)])
-				#elif self.analysisType == 2:
-				#	N1_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample]
-				#	N2_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample and x >= j*Nparticles + self.N1sample]
-				#	N3_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample+self.N3sample and x >= j*Nparticles + self.N1sample + self.N2sample]
-				#	N4_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample+self.N3sample+self.N4sample and x >= j*Nparticles + self.N1sample + self.N2sample+self.N3sample]
-				#	cuda_NAs[cudafile].append([self.N1sample-len(N1_NA),self.N2sample-len(N2_NA),self.N3sample-len(N3_NA),self.N4sample-len(N4_NA)])
-				#	sys.exit()
+				
+				#Approach 2 needs to be considered more carefully
+				#If there is an NA for N1 then need to remove all of the corresponding N3
+				#If there is an NA in an N3 then the N1 which this corresponds to has a different N3, i.e. after removing NAs
 				elif self.analysisType == 1:
+					#start and end are the position for the N1xN3 sample for a specific initial condition
 					start = j*Nparticles + self.N1sample+self.N2sample
 					end = j*Nparticles + self.N1sample+self.N2sample + self.N1sample*self.N3sample
+					
+					#Counts NAs in N1 and N2
 					N1_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample]
 					N2_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample and x >= j*Nparticles + self.N1sample]
 					new_N2 = self.N2sample-len(N2_NA)
+					
+					#Calculates the number of NAs in N1xN3 sample but seperates out between each N3 belonging to a specific N1
 					additional_N1N3_NAs = [range(int(j*Nparticles + self.N1sample + self.N2sample + x*self.N3sample),int(j*Nparticles + self.N1sample + self.N2sample + (x+1)*self.N3sample)) for x in N1_NA - j*Nparticles*numpy.ones([len(N1_NA)])]
-
 					y = []
 
 					for temp in additional_N1N3_NAs:
@@ -843,68 +857,53 @@ class algorithm_info:
 
 					additional_N1N3_NAs = y
 
+					#Collects all detected NAs into one list
 					index_NA_IC = list(set().union(index_NA_IC,additional_N1N3_NAs))
 
+					#Finds the NAs in the N1xN3 sample
 					N1N3_NA = [x for x in index_NA_IC if x < end and x >= start]
-					#new_N1N3 = self.N1sample*self.N3sample-len(N1N3_NA)
+					
+					#Finds the remaining particles in N1xN3 sample
 					remaining_N1N3 = [item for item in range(start,end) if item not in N1N3_NA]
 
+
+
+					#Splits up the N1xN3 into a list for each N1
 					keep_N1N3 = [[z for z in y if z not in index_NA_IC] for y in [list(range(x,x+self.N3sample)) for x in range(start,end,self.N3sample)]]
+
+					#Finds the number remaining in the N1xN3 sample
 					new_N1N3 = [len(x) for x in keep_N1N3 if len(x)!=0]
 
+					#Adds to indicies to remove
 					index_NA_IC = set().union(index_NA_IC, [x+j*Nparticles for x,y in enumerate(new_N1N3) if y == 0])
-					#print remaining_N1N3
+					
+					#Calculates new NAs in N1 sample
 					N1_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample]
 					new_N1 = self.N1sample-len(N1_NA)
-					#print new_N1N3%new_N1
-
-
-					#print range(j*Nparticles + self.N1sample+self.N2sample,j*Nparticles + self.N1sample+self.N2sample+ self.N1sample*self.N3sample)
-					#print ""
-					#print [item for item in range(j*Nparticles + self.N1sample+self.N2sample,j*Nparticles + self.N1sample+self.N2sample+ self.N1sample*self.N3sample) if item not in N1N3_NA]
-					#print (self.N1sample*self.N3sample-len(N1N3_NA))%(self.N1sample-len(N1_NA))
-					#print remaining_N1N3
+					
+					#Sets the number remaining in the sample
 					cuda_NAs[cudafile].append([new_N1,new_N2,new_N1N3])
+
+					#Adds NAs to entire list index_NA
 					index_NA = list(set().union(index_NA,index_NA_IC))
-					#cuda_NAs[cudafile].append([self.N1sample-len(N1_NA),self.N2sample-len(N2_NA),self.N1sample*self.N3sample-len(N1N3_NA)])
+			
+			#Removes the NAs in the cuda output
 			cudaout[i] = numpy.delete(cudaout[i], index_NA, axis=0)
 
+		#Sets the size of the sample to attribute after NAs removed
 		self.cudaout_structure = cuda_NAs
-		#print "-----Sorting out measurable species-----"
-		#self.fitSort()
 
-		#if self.type[0] == "ODE":
-		#	print "-----Adding noise to CUDA-Sim outputs-----"
-		#	self.addNoise(cudaorder, cudaout)
-
-		
-
-		#print ""
-		#print cuda_NAs
-		#print ""
-		#print self.pairParamsICS
-		#print ""
-		#print cudaorder
-		#print ""
-		#print self.cudaout_structure
-		#print [x.shape for x in cudaout]
-		#print ""
-		#print self.cuda
-		#print ""
-		#print [numpy.isnan(numpy.sum(numpy.sum(cudaout[i][:,:,:],axis=2),axis=1)) for i in range(2)]
-		#print cudaout[1][4,:,:]
-		#np.sum(np.sum(a, axis=-2), axis=1)
-		#[p for p, i in enumerate(isnan(sum(asarray(modelTraj[0])[:,7:8,:],axis=2))) if i==True]
-		#print numpy.sum(cudaout[0][:,0:cudaout[0].shape[1],:],axis=2)
-
-
+		#Copies the correct cuda output to the correct experiment
 		if self.initialprior == False:
+			#For loop over the cuda codes in the experiments
 			for model, cudafile in enumerate(self.cuda):
+				#Picks corresponding sample for each cuda code
 				cudaout_temp = cudaout[cudaorder.index(cudafile)]
 			
-
+				#Finds which initial condition this experiment has
 				pos = self.pairParamsICS[cudafile].index([x[1] for x in self.x0prior[model]])
-				#print cudaout_temp[pos*sum(cuda_NAs[cudafile][pos]):(pos+1)*sum(cuda_NAs[cudafile][pos]),:,:]
+				
+				#Find total number of particles associated with cuda file
 				if self.analysisType!=1:
 					size_cudaout_start = [sum(cuda_NAs[cudafile][x]) for x in range(pos-1)]
 					size_cudaout_start = sum(size_cudaout_start)
@@ -914,72 +913,63 @@ class algorithm_info:
 					size_cudaout_start = sum(size_cudaout_start)
 					size_cudaout_end = size_cudaout_start + sum([cuda_NAs[cudafile][pos][0]]+[cuda_NAs[cudafile][pos][1]]+cuda_NAs[cudafile][pos][2])
 
+				#Copies associated cudaoutput to corresponding experiement
 				self.cudaout[model] = cudaout_temp[size_cudaout_start:size_cudaout_end,:,:]
-
-			#print cudaout
+		#If priors over initial conditions then assign just corresponding cuda code
 		else:
 			for model, cudafile in enumerate(self.cuda):
 				self.cudaout[model] = cudaout[cudaorder.index(cudafile)]
 
-		#print ""
-		#print [x.shape for x in self.cudaout]
-		#print self.cudaout_structure
-	
-	#def removeNAs(self):
-		#for
-
-		#print [x for x in self.cudaout]
+		#Calls fitSort() which accounts for which species are measurable
 		print "-----Sorting out measurable species-----"
 		self.fitSort()
 
-
+		#Adds noise to the N1 trajectories if ODEs used
 		if self.type[0] == "ODE":
 			print "-----Adding noise to CUDA-Sim outputs-----"
 			self.addNoise(cudaorder)
 
-
+	# A method to add noise to the N1 sample
+	##(method gets called by sortCUDASimoutput)
+	##Arguments: 
+	##cudaorder - order in which cudacode files are passed in CUDA-sim
 	def addNoise(self,cudaorder):
-		#print self.sigma
-		#print [x.shape for x in cudaout_red]
-		#print self.cudaout_structure
-		'''
-		model_trajs = dict((k, []) for k in cudaorder)
-		for i, cudafile in enumerate(cudaorder):
 
-			for j, IC in enumerate(self.pairParamsICS.values()[i]):
-				noise = normal(loc=0.0, scale=self.sigma, size=(self.cudaout_structure[cudafile][j][0],len(self.times),self.nspecies_all))
-				#model_trajs[cudafile] =  + noise
-				pos = self.pairParamsICS.values()[cudaorder.index(cudafile)].index(IC)
-				if self.analysisType!=1:
-					size_cudaout = sum(self.cudaout_structure[cudafile][pos])
-				else:
-					size_cudaout = sum([self.cudaout_structure[cudafile][pos][0]]+[self.cudaout_structure[cudafile][pos][1]]+self.cudaout_structure[cudafile][pos][2])
-
-				model_trajs[cudafile].append(cudaout_red[i][j*size_cudaout:j*size_cudaout+self.cudaout_structure[cudafile][j][0],:,:]+noise)
-		'''
-		#for m in model_trajs.values():
-		#	print [x.shape for x in m]
-
+		#Sets attribute to hold trajectories
 		self.trajectories=[""]*len(self.cuda)
 
+
 		if self.initialprior == False:
+			#Iterates over cuda code files for each experiment
 			for model, cudafile in enumerate(self.cuda):
-				#cudaout_temp = cudaout_red[cudaorder.index(cudafile)]
-				#print cudaout_temp.shape
-				#pos = self.pairParamsICS.values()[cudaorder.index(cudafile)].index([x[1] for x in self.x0prior[model]])
+				
+				#Finds position of initial condition used for a cuda code file
 				pos = self.pairParamsICS[cudafile].index([x[1] for x in self.x0prior[model]])
-				#print cudaout_temp[pos*sum(cuda_NAs[cudafile][pos]):(pos+1)*sum(cuda_NAs[cudafile][pos]),:,:]
+				
+				#Finds the corresponding N1 to that cuda file
 				N1_temp = self.cudaout_structure[cudafile][pos][0]
+				
+				#Samples the noise
 				noise = normal(loc=0.0, scale=self.sigma, size=(N1_temp,len(self.times),len(self.fitSpecies[model])))
+				
+				#Adds the noise to the trajectories
 				self.trajectories[model] = self.cudaout[model][:N1_temp,:,:] + noise
-			#cudaout_red[i][j*size_cudaout:j*size_cudaout+self.cudaout_structure[cudafile][j][0],:,:]+noise
-			#print cudaout
 		else:
+			#Iterates over the cuda files for each experiment
 			for model, cudafile in enumerate(self.cuda):
+				
+				#Finds N1 corresponding to that cuda file
 				N1_temp = self.cudaout_structure[cudafile][0][0]
+				
+				#Samples noise
 				noise = normal(loc=0.0, scale=self.sigma, size=(N1_temp,len(self.times),len(self.fitSpecies[model])))
+				
+				#Adds noise to trajectories
 				self.trajectories[model] = self.cudaout[model][:N1_temp,:,:] + noise
 
+	# A method to sort out measurable species
+	##(method gets called by sortCUDASimoutput)
+	##No arguments
 	def fitSort(self):
 
 		for i, exp_n in enumerate(self.cudaout):
