@@ -439,10 +439,13 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 ##model_obj - an object containing all alternative experiments and all their associated information
 ##ref_obj - an object containing the reference experiment and all associated information
 def run_getEntropy3(model_obj, ref_obj):
-
+	#Initiates list for mutual information
 	MutInfo3 = []
+
+	#Cycles through experiments
 	for experiment in range(model_obj.nmodels):
 
+		#Extracts N1,N2,N3,N4 
 		if model_obj.initialprior == False:
 			pos = model_obj.pairParamsICS[model_obj.cuda[experiment]].index([x[1] for x in model_obj.x0prior[experiment]])
 			pos2 = ref_obj.pairParamsICS[ref_obj.cuda[0]].index([x[1] for x in ref_obj.x0prior[0]])
@@ -464,11 +467,14 @@ def run_getEntropy3(model_obj, ref_obj):
 			N3 = pos2[2]
 			N4 = pos[3]
 
+		#Need to take minimum as N1 and N2 may differ between reference and experiments
 		N1 = min(N1_mod,N1_ref)
 		N2 = min(N2_mod,N2_ref)
 
+		#Calculates mutual information
 		print "-----Calculating Mutual Information for Experiment", experiment+1,"-----"
 		MutInfo3.append(getEntropy3(ref_obj.trajectories[0],ref_obj.cudaout[0],model_obj.trajectories[experiment], model_obj.cudaout[experiment],N1,N2,N3,N4,ref_obj.sigma,model_obj.sigma,ref_obj.scale[0],model_obj.scale[experiment]))
-		print "Mutual Information for Experiment", str(experiment+1)+":", MutInfo1[experiment]
+		print "Mutual Information for Experiment", str(experiment+1)+":", MutInfo3[experiment]
 
+	#Returns mutual information
 	return MutInfo3

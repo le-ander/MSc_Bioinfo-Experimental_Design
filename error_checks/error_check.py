@@ -169,9 +169,10 @@ def input_checker(sys_arg):
 		sys.exit()
 
 	#Checks if an SBML file has been given and whether it has an associated input file
-	if sum([int(x) for x in usesbml])!=0:
+	if "0" in usesbml:
 		print "\nSBML file is being used but no associated input file given!\nUse: \n\t-i2 'inputfile' \nor: \n\t--infile_data 'inputfile' \n"
-
+		sys.exit()
+		
 	#Check whether an approach has been given
 	if analysis not in [0,1,2]:
 		print "\nNo analysis type is given!\nUse: \n\t-a 'analysis type' \nor: \n\t --analysis 'analysis type' \n"

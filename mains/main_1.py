@@ -189,7 +189,10 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 		sbml_obj.scaling()
 	else:
 		#Scaling for when doing approach 3
-		sbml_obj.scaling_ge3()
+		if refmod == "":
+			sbml_obj.scaling_ge3()
+		else:
+			sbml_obj.scaling_ge3(len(refmod.times),len(refmod.fitSpecies[0]))
 
 	#Depending upon the approach different functions are run to calculate the mutual information
 	if sbml_obj.analysisType == 0:

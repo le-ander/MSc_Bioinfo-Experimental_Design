@@ -972,11 +972,18 @@ class algorithm_info:
 	##No arguments
 	def fitSort(self):
 
+		#Iterates over the potential measurable species for each experiment
 		for i, exp_n in enumerate(self.cudaout):
+			#Initiates an array to store changes to cuda output depending upon the measurable species
 			cudaout_temp = numpy.zeros((exp_n.shape[0],exp_n.shape[1],len(self.fitSpecies[i])))
+
+			#Iterates over each fittable species to the experiment
 			for j, fit in enumerate(self.fitSpecies[i]):
+				#Picks out measurable species if not combined with other
 				if len(fit) == 1:
 					cudaout_temp[:,:,j] = exp_n[:,:,fit[0]]
+				
+				#Calculates the fits if combinations required e.g. species1+species2-species3
 				else:
 					if fit[1] == "+":
 						cudaout_temp[:,:,j] = exp_n[:,:,fit[0]] + exp_n[:,:,fit[2]]
@@ -987,81 +994,116 @@ class algorithm_info:
 							cudaout_temp[:,:,j] += exp_n[:,:,fit[2*k+4]]
 						elif part == "-":
 							cudaout_temp[:,:,j] -= exp_n[:,:,fit[2*k+4]]
+
+			#Replaces the old attribute assigned to cudaout with new one
 			self.cudaout[i] = cudaout_temp
 
+	#Scaling method for approach 1 and 2
+	##(method gets called by sorting_files)
+	##No arguments
 	def scaling(self):
+		#Initiates list for each experiment
 		self.scale = [""]*self.nmodels
+
+		#Iterates over each experiment
 		for model in range(self.nmodels):
+			#Calculates the maximum difference between trajectores and output from cuda sim
 			maxDistTraj = max([math.fabs(numpy.amax(self.trajectories[model]) - numpy.amin(self.cudaout[model])),math.fabs(numpy.amax(self.cudaout[model]) - numpy.amin(self.trajectories[model]))])
 			
-			#print maxDistTraj
+			#Sets an arbitray precision
 			preci = pow(10,-34)
-			FmaxDistTraj = 1.0*math.exp(-(maxDistTraj*maxDistTraj)/(2.0*self.sigma*self.sigma))
-			#print FmaxDistTraj
-			#print len(self.fitSpecies[model])
 
+			#Calculates number proportional to normal distribution based on maximum distance
+			FmaxDistTraj = 1.0*math.exp(-(maxDistTraj*maxDistTraj)/(2.0*self.sigma*self.sigma))
+
+			#Depending on how FmaxDistTraj compares to precision set an appropriate scale
 			if FmaxDistTraj<preci:
 				self.scale[model] = pow(1.79*pow(10,300),1.0/(len(self.fitSpecies[model])*len(self.times)))
 			else:
 				self.scale[model] = pow(preci,1.0/(len(self.fitSpecies[model])*len(self.times)))*1.0/FmaxDistTraj
-		#sys.exit()
+	
+	#Scaling method for approach 3
+	##(method gets called by sorting_files)
+	##M_ref - number of timepoints in reference model
+	##P_ref - number of measurable species in reference model
+	##Note if scaling_ge3 called for reference model then M_ref and P_ref take default values
+	def scaling_ge3(self,M_ref = 0,P_ref = 0):
 		
-	def scaling_ge3(self):
-		
+		#Initiates list of maximum distances between trajectories
 		maxDistList =[]
+
+		#Iterates over experiments
 		for model in range(self.nmodels):
+			#Initiates list for distances
 			distance = []
-			# Only dealing with constant number of timepoints over all models here, need to change!
+			
+			#Calculates distances between trajectories at timepoints
 			for tp in range(len(self.times)):
 				distance.append(max([math.fabs(numpy.amax(self.trajectories[model][:,tp,:]) - numpy.amin(self.cudaout[model][:,tp,:])),math.fabs(numpy.amax(self.cudaout[model][:,tp,:]) - numpy.amin(self.trajectories[model][:,tp,:]))]))
-			#print distance
+			
+			#Assigns maximum of distance to maxDistList
 			maxDistList.append(numpy.amax(numpy.array(distance)))
-		maxDistTraj = max(maxDistList)
+		
+		#MIGHT NOT BE NEEDED
+		#maxDistTraj = max(maxDistList)
 
+		#Initiates scales list
 		self.scale = [""]*self.nmodels
+		
+		#Sets arbitrary precision level
 		preci = pow(10,-34)
-		# Only dealing with constant number of timepoints over all models here, need to change!
-		M_Ref = len(self.times)
-		P_Ref = len(self.fitSpecies[0])
 
+		#Iterates over experiments
 		for model in range(self.nmodels):
 
-			# Only dealing with constant number of timepoints over all models here, need to change!
+			#Extracts timepoints and measurable species for each experiment
 			M_Alt = len(self.times)
 			P_Alt = len(self.fitSpecies[model])
-			# Only dealing with constant number of timepoints over all models here, need to change!
+			
+			#Finds maximum between reference and experiment
 			M_Max = float(max(M_Ref,M_Alt))
 			P_Max = float(max(P_Ref,P_Alt))
 
-			scale1 = math.log(preci)/(2.0*M_Max*P_Max) + (maxDistTraj*maxDistTraj)/(2.0*self.sigma*self.sigma)
+			#Calculates proportional to normal based on maximum distance between trajectories on log scale
+			scale1 = math.log(preci)/(2.0*M_Max*P_Max) + (maxDistList[model]*maxDistList[model])/(2.0*self.sigma*self.sigma)
+			
+			#Calculates comparative scale
 			scale2 = math.log(pow(10,300))/(2.0*M_Max*P_Max)
-			print scale1
-			print scale2
+
+			#Compares scales and assigns appropriate one
 			if(scale1<scale2): self.scale[model] = scale1
 			else: self.scale[model] = 0.0
 
-		#print self.scale
-		#sys.exit()
-
+	#A method to copy prior sample from reference model for approach 3
+	##(method gets called by sorting_files)
+	##refmod - object for the reference model
 	def copyTHETAS(self,refmod):
+		#Sets the N3 sample for experiments
 		self.particles -= self.N3sample
 		self.N3sample = 0
 
+		#Sets parameter sample for experiment
 		self.parameterSample = numpy.concatenate((refmod.parameterSample[:self.N1sample+self.N2sample,:],refmod.N4parameterSample),axis = 0)
 
+		#Sets sample for initial conditions
 		if self.initialprior == True and refmod.initialprior == True:
 			self.speciesSample = numpy.concatenate((refmod.speciesSample[:self.N1sample+self.N2sample,:],refmod.N4speciesSample),axis = 0)
+		
+		#For when constant initial conditions are used
 		elif self.initialprior == False and refmod.initialprior == False:
+			#Finds set of constant initial conditions
 			x0prior_uniq = [self.x0prior[0]]
 			for ic in self.x0prior[1:]:
 				if ic not in x0prior_uniq:
 					x0prior_uniq.append(ic)
 
-
+			#Initiates list of arrays for species sample
 			species = [numpy.zeros([self.particles,self.nspecies_all]) for x in range(len(x0prior_uniq))]  # number of repeats x species in system
 
+			#Copies the initial conditions into species list of arrays
 			for ic in range(len(x0prior_uniq)):
-				for j in range(len(x0prior_uniq[ic])): # loop through number of parameter
+				#Loop through number of parameter
+				for j in range(len(x0prior_uniq[ic])): 
 					#####Constant prior#####
 					if(x0prior_uniq[ic][j][0]==0):  # j paramater self.index
 						species[ic][:,j] = x0prior_uniq[ic][j][1]
@@ -1069,10 +1111,12 @@ class algorithm_info:
 						print " Prior distribution not defined on initial conditions"
 						sys.exit()
 
+			#Sets attribute for species sample
 			self.speciesSample = species
 		else:
 			print "Not sampling from the same prior between reference and experimental models"
 			sys.exit()
 
-		if refmod.ncompparams_all > 0:
+		#For when compartments are used
+		if refmod.ncompparams_all > 0:	
 			self.compsSample = numpy.concatenate((refmod.compsSample[:self.N1sample+self.N2sample,:],refmod.N4compsSample),axis = 0)

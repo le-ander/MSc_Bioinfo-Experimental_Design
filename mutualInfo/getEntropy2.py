@@ -259,9 +259,11 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 # A function calling getEntropy2 for all provided experiments and outputs the mutual information
 ##Argument: model_obj - an object containing all experiments and all their associated information
 def run_getEntropy2(model_obj):
+	#Initiates list for mutual information
 	MutInfo2 = []
+	#Cycles through experiments
 	for experiment in range(model_obj.nmodels):
-
+		#Extracts N1, N2, N3
 		if model_obj.initialprior == False:
 			pos = model_obj.pairParamsICS[model_obj.cuda[experiment]].index([x[1] for x in model_obj.x0prior[experiment]])
 			N1 = model_obj.cudaout_structure[model_obj.cuda[experiment]][pos][0]
@@ -273,9 +275,10 @@ def run_getEntropy2(model_obj):
 			N2 = pos[1]
 			N3 = pos[2]
 
+		#Calculates mutual information
 		print "-----Calculating Mutual Information for Experiment", experiment+1,"-----"
-
 		MutInfo2.append(getEntropy2(model_obj.trajectories[experiment],model_obj.cudaout[experiment],N1,N2,N3,model_obj.sigma,model_obj.scale[experiment]))
-		print "Mutual Information for Experiment", str(experiment+1)+":", MutInfo1[experiment]
+		print "Mutual Information for Experiment", str(experiment+1)+":", MutInfo2[experiment]
 
+	#Returns mutual information
 	return MutInfo2
