@@ -189,7 +189,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 		#Scaling for when doing approach 1 or 2
 		sbml_obj.scaling()
 	else:
-<<<<<<< HEAD
+
 		#Scaling for when doing approach 3
 		if refmod == "":
 			sbml_obj.scaling_ge3()
@@ -197,10 +197,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 			sbml_obj.scaling_ge3(len(refmod.times),len(refmod.fitSpecies[0]))
 
 	#Depending upon the approach different functions are run to calculate the mutual information
-=======
-		sbml_obj.scaling_ge3()
 	time1=time.time()
->>>>>>> jonas-branch
 	if sbml_obj.analysisType == 0:
 		MutInfo1=getEntropy1.run_getEntropy1(sbml_obj)
 		plotbar.plotbar(MutInfo1, sbml_obj.name ,sbml_obj.nmodels ,0)
@@ -211,35 +208,9 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 		return sbml_obj
 	elif sbml_obj.analysisType == 2 and refmod != "":
 		getEntropy3.run_getEntropy3(sbml_obj, refmod)
-<<<<<<< HEAD
-=======
 	time2=time.time()
-	print "MutInfo runtime", time2-time1
-		
 
-
-	#sbml_obj.print_info()
-	#pairings = organiser.organisePairings(sbml_obj, comb_list)
-	#print [x.shape for x in sbml_obj.cudaout]
-	#print sum(sbml_obj.cudaout[0][:,0:sbml_obj.cudaout[0].shape[1],:],axis=2)
-
-	#print sbml_obj.cudaout
-	#print sbml_obj.speciesSample
-	#print set(sbml_obj.cuda)
-	#print comb_list
-
-
-
-main()
-
-#info_new = error_check.parse_infoEnt.algorithm_info("input_file_repressilator.xml", 0)
-#print info_new.globalnparameters
-#p = obtain_thetas.THETAS(info_new, sampleFromPost = False)
-#s = obtain_thetas.SPECIES(info_new)
-#p,s=obtain_thetas.THETAS(info_new, sampleGiven = True, sampleFromPost= "data_1.txt", weight= "w_1.txt", analysisType = 1, N1 = 2, N3 = 3, parameter_i = [0,3])
-
-#obtain_thetas.ThetasGivenI(info_new,p,s,[0,3],[1],2,3)
->>>>>>> jonas-branch
+	print time2-time1
 
 #Starts the program
 main()

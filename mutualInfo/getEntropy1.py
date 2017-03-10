@@ -13,6 +13,7 @@ import launch
 ##N1,N2 - Number of particles
 ##sigma - stadard deviation
 ##scale - scaling constant to prevent nans and infs
+@profile
 def getEntropy1(data,theta,N1,N2,sigma,scale):
 	# Kernel declaration using pycuda SourceModule
 
@@ -60,6 +61,7 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 
 	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
 	grid = launch.optimise_gridsize(8.59)
+	#grid = 384
 	grid_prelim_i = launch.round_down(sqrt(grid),block_i)
 	grid_prelim_j = launch.round_down(grid/grid_prelim_i,block_j)
 	# If gridsize in one dimention too large, reshape grid to allow more threads in the second dimension
@@ -99,6 +101,8 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 	# Determine 1/2*sigma*sigma for GPU calculation
 	sigmasq_inv = 1/(2*sigma*sigma)
 
+	empty_maker = empty
+
 	# Main nested for-loop for mutual information calculations
 	for i in range(numRuns_i):
 		print "Runs left:", numRuns_i - i
@@ -131,7 +135,16 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 			data2 = d2[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
 
 			# Prepare results array for this run
-			res1 = zeros([Ni,Nj]).astype(float64) ###Could move into if statements (only if ni or nj change)
+#			res1 = zeros([Ni,Nj]).astype(float64)
+			
+			if (i == numRuns_i-1 and j == 0):
+				res1 = empty_maker([Ni,Nj]).astype(float64)
+			elif (i==0 and j==0) :
+				res1 = empty_maker([Ni,Nj]).astype(float64)
+			elif (j==numRuns_j-1):
+				res1 = empty_maker([Ni,Nj]).astype(float64)
+			
+			###Could move into if statements (only if ni or nj change)
 			#res1 = init_res1(Ni, Nj)
 
 			# Set j dimension of block and grid for this run
@@ -146,8 +159,9 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigmasq_inv), float64(mplogscale), driver.In(data1), driver.In(data2), driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 
 			# Summing rows in GPU output for this run
-			for k in range(Ni):
-				result[(i*int(grid_i)+k),j] = sum(res1[k,:]) 
+#			for k in range(Ni):
+#				result[(i*int(grid_i)+k),j] = sum(res1[k,:])
+			result[:,j]=sum(res1, axis=1) 
 
 	# Initialising required variables for next steps
 	sum1 = 0.0
@@ -157,16 +171,27 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 	mplogpisigma= M*P*log(2.0*pi*sigma*sigma)
 
 	# Sum all content of new results matrix and add/subtract constants for each row if there are no NANs or infs
+	
+	sum_result=ma.log(sum(result,axis=1))
+	np_count_inf=ma.count_masked(sum_result)
+	sum2 = -sum(sum_result)+logN2*(N1-np_count_inf)+mplogscale*(N1-np_count_inf)+mplogpisigma*(N1-np_count_inf)
+	'''
 	for i in range(N1):
 		if(isnan(sum(result[i,:]))): count_na += 1
 		elif(isinf(log(sum(result[i,:])))): count_inf += 1
 		else:
 			sum1 -= log(sum(result[i,:])) - logN2 - mplogscale -  mplogpisigma
+
 	print "Proportion of NAs", int((count_na/float(N1))*100), "%" ###Can we really get NAs??
 	print "Proportion of infs", int((count_inf/float(N1))*100), "%"
 
 	# Final division to give mutual information
 	Info = (sum1 / float(N1 - count_na - count_inf)) - M*P/2.0*(log(2.0*pi*sigma*sigma)+1)
+	'''
+
+
+	print "Proportion of infs and NAs", int((np_count_inf/float(N1))*100), "%"
+	Info = (sum2 / float(N1- np_count_inf) - M*P/2.0*(log(2.0*pi*sigma*sigma)+1))
 
 	return(Info)
 
