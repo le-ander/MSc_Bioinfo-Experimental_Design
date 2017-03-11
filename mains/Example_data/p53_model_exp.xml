@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<sbml xmlns="http://www.sbml.org/sbml/level2" level="2" version="1">
+	<model id="p53Model" name="p53">
+		
+		<listOfUnitDefinitions>
+			<unitDefinition id="substance">
+				<listOfUnits>
+					<unit kind="item"/>
+				</listOfUnits>
+			</unitDefinition>
+		</listOfUnitDefinitions>
+
+		<listOfCompartments>
+			<compartment id="Cell" size="1"/>
+		</listOfCompartments>
+
+		<listOfSpecies>
+			<species id="p53" initialAmount="70" compartment="Cell" hasOnlySubstanceUnits="true"/>
+			<species id="pMDM2" initialAmount="30" compartment="Cell" hasOnlySubstanceUnits="true"/>
+			<species id="MDM2" initialAmount="60" compartment="Cell" hasOnlySubstanceUnits="true"/>
+		</listOfSpecies>
+
+		<listOfParameters>
+			<parameter id="k1" value="1"/>
+			<parameter id="k2" value="1"/>
+			<parameter id="k3" value="1"/>
+			<parameter id="k4" value="1"/>
+			<parameter id="k5" value="1"/>
+			<parameter id="k6" value="1"/>
+			<parameter id="k7" value="1"/>
+		</listOfParameters>
+
+		<listOfReactions>
+
+			<reaction id="p53Transcription" reversible="false">
+				<listOfReactants>
+					<speciesReference species="EmptySet"/>
+				</listOfReactants>
+				<listOfProducts>
+					<speciesReference species="p53"/>
+				</listOfProducts>
+				<kineticLaw>
+					<math xmlns="http://www.w3.org/1998/Math/MathML">
+							<ci> k1 </ci> 
+					</math>
+				</kineticLaw>
+			</reaction>
+
+			<reaction id="p53DegradationInd" reversible="false">
+				<listOfReactants>
+					<speciesReference species="p53"/>
+				</listOfReactants>
+				<listOfProducts>
+					<speciesReference species="EmptySet"/>
+				</listOfProducts>
+				<kineticLaw>
+					<math xmlns="http://www.w3.org/1998/Math/MathML">
+						<apply>
+							<times/>
+							<ci> k2 </ci>
+							<ci> p53 </ci>
+						</apply> 
+					</math>
+				</kineticLaw>
+			</reaction>
+
+			<reaction id="p53DegradationByMDM2" reversible="false">
+				<listOfReactants>
+					<speciesReference species="p53"/>
+				</listOfReactants>
+				<listOfProducts>
+					<speciesReference species="EmptySet"/>
+				</listOfProducts>
+				<listOfModifiers>
+					<modifierSpeciesReference species="MDM2"/>
+				</listOfModifiers>
+				<kineticLaw>
+					<math xmlns="http://www.w3.org/1998/Math/MathML">
+						<apply>
+							<times/>
+							<ci> k3 </ci>
+							<apply>
+								<divide/>
+								<apply>
+									<times/>
+									<ci> p53 </ci>
+									<ci> MDM2 </ci>
+								</apply>
+
+								<apply>
+									<plus/>
+									<ci> p53 </ci>
+									<ci> k7 </ci>
+								</apply> 
+							</apply>
+						</apply>
+					</math>
+				</kineticLaw>
+			</reaction>
+
+			<reaction id="pMDM2Production" reversible="false">
+				<listOfReactants>
+					<speciesReference species="EmptySet"/>
+				</listOfReactants>
+				<listOfProducts>
+					<speciesReference species="pMDM2"/>
+				</listOfProducts>
+				<listOfModifiers>
+					<modifierSpeciesReference species="p53"/>
+				</listOfModifiers>
+				<kineticLaw>
+					<math xmlns="http://www.w3.org/1998/Math/MathML">
+						<apply>
+							<times/>
+							<ci> k4 </ci>
+							<ci> p53 </ci>
+						</apply> 
+					</math>
+				</kineticLaw>
+			</reaction>
+
+			<reaction id="pMDM2toMDM2" reversible="false">
+				<listOfReactants>
+					<speciesReference species="pMDM2"/>
+				</listOfReactants>
+				<listOfProducts>
+					<speciesReference species="MDM2"/>
+				</listOfProducts>
+				<kineticLaw>
+					<math xmlns="http://www.w3.org/1998/Math/MathML">
+						<apply>
+							<times/>
+							<ci> k5 </ci>
+							<ci> pMDM2 </ci>
+						</apply> 
+					</math>
+				</kineticLaw>
+			</reaction>
+
+			<reaction id="MDM2Degradation" reversible="false">
+				<listOfReactants>
+					<speciesReference species="MDM2"/>
+				</listOfReactants>
+				<listOfProducts>
+					<speciesReference species="EmptySet"/>
+				</listOfProducts>
+				<kineticLaw>
+					<math xmlns="http://www.w3.org/1998/Math/MathML">
+						<apply>
+							<times/>
+							<ci> k6 </ci>
+							<ci> MDM2 </ci>
+						</apply> 
+					</math>
+				</kineticLaw>
+			</reaction>
+		</listOfReactions>
+
+	</model>
+</sbml>

@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="416"
+   name=""
+   committed-date="2011-09-28T15:06:31.721237Z"
+   url="https://abc-sysbio.svn.sourceforge.net/svnroot/abc-sysbio/trunk/abcsysbio"
+   last-author="finalstate"
+   kind="dir"
+   uuid="9fd3cdd8-cb19-473b-9a16-0324ff0cf891"
+   revision="419"/>
+<entry
+   committed-rev="416"
+   name="abcsmc.py"
+   text-time="2011-10-05T12:10:01.000000Z"
+   committed-date="2011-09-28T15:06:31.721237Z"
+   checksum="8c39d126255f015b91ebac75bc59636b"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:57.000000Z"/>
+<entry
+   committed-rev="350"
+   name="statistics.py"
+   text-time="2011-10-05T12:10:01.000000Z"
+   committed-date="2011-07-26T13:50:26.244371Z"
+   checksum="1c31ec77c2666bfde4e8b2f9a560b823"
+   last-author="sarahfilippi"
+   kind="file"
+   prop-time="2011-10-05T12:09:57.000000Z"/>
+<entry
+   committed-rev="324"
+   name="euclidian.py"
+   text-time="2011-10-05T12:10:02.000000Z"
+   committed-date="2011-07-21T11:25:51.591968Z"
+   checksum="cdc8199b8ad0b5078ca7a0ced53d8cf8"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:57.000000Z"/>
+<entry
+   committed-rev="335"
+   name="__init__.py"
+   text-time="2011-10-05T12:10:02.000000Z"
+   committed-date="2011-07-21T19:58:43.813974Z"
+   checksum="a960b1680e2409b13e51d22974d57fb9"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:09:57.000000Z"/>
+<entry
+   committed-rev="14"
+   name="relations.py"
+   text-time="2011-10-05T12:10:02.000000Z"
+   committed-date="2009-11-11T22:14:51.448314Z"
+   checksum="d30646c0c1b0be8c50c340c6b2ced21a"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:00.000000Z"/>
+<entry
+   name="src"
+   kind="dir"/>
+<entry
+   committed-rev="300"
+   name="getResults.py"
+   text-time="2011-10-05T12:10:02.000000Z"
+   committed-date="2011-07-14T19:13:00.541083Z"
+   checksum="0fe6b43826aa9b00ee3e494c4ba203cb"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:00.000000Z"/>
+<entry
+   committed-rev="404"
+   name="model_c.py"
+   text-time="2011-10-05T12:10:02.000000Z"
+   committed-date="2011-09-23T15:49:27.405854Z"
+   checksum="69487495315aafdf746dad2cc590d181"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:00.000000Z"/>
+<entry
+   committed-rev="414"
+   name="kernels.py"
+   text-time="2011-10-05T12:10:02.000000Z"
+   committed-date="2011-09-28T15:02:21.814377Z"
+   checksum="ae14f4a80a68a2925f2522603a07579b"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:00.000000Z"/>
+<entry
+   committed-rev="415"
+   name="model_py.py"
+   text-time="2011-10-05T12:10:02.000000Z"
+   committed-date="2011-09-28T15:03:21.055784Z"
+   checksum="eebda7cef399b21de351d76a5014c2b9"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:00.000000Z"/>
+<entry
+   committed-rev="330"
+   name="data.py"
+   text-time="2011-10-05T12:10:02.000000Z"
+   committed-date="2011-07-21T19:02:12.918151Z"
+   checksum="423d0669dae177aa1aa46f17f198cb79"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:01.000000Z"/>
+<entry
+   committed-rev="408"
+   name="input_output.py"
+   text-time="2011-10-05T12:10:02.000000Z"
+   committed-date="2011-09-26T10:36:24.192243Z"
+   checksum="f0a238ef48f9cc202ada902bcd0439da"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:01.000000Z"/>
+<entry
+   committed-rev="406"
+   name="checkInputArguments.py"
+   text-time="2011-10-05T12:10:03.000000Z"
+   committed-date="2011-09-23T15:50:43.200365Z"
+   checksum="2e1f437e82d1fb222c5ee71093c04d98"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:01.000000Z"/>
+<entry
+   committed-rev="62"
+   name="GillespieAlgorithm.py"
+   text-time="2011-10-05T12:10:03.000000Z"
+   committed-date="2010-01-18T11:35:18.450741Z"
+   checksum="38d607d74fa910ffa34f71ada73191c9"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:01.000000Z"/>
+<entry
+   committed-rev="406"
+   name="parse_info.py"
+   text-time="2011-10-05T12:10:03.000000Z"
+   committed-date="2011-09-23T15:50:43.200365Z"
+   checksum="a529b117578a9b1c19f98f68504db422"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:01.000000Z"/>
+<entry
+   committed-rev="323"
+   name="generateTemplate.py"
+   text-time="2011-10-05T12:10:03.000000Z"
+   committed-date="2011-07-21T11:05:44.509570Z"
+   checksum="6c85687c517ffd5d35d3d3a7471ff35c"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:01.000000Z"/>
+<entry
+   committed-rev="163"
+   name="abcodesolve.py"
+   text-time="2011-10-05T12:10:03.000000Z"
+   committed-date="2010-05-24T15:05:28.247083Z"
+   checksum="7b435301bcfd82d2d1e24154ac323ec0"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:01.000000Z"/>
+<entry
+   committed-rev="218"
+   name="sdeint.py"
+   text-time="2011-10-05T12:10:03.000000Z"
+   committed-date="2010-08-11T20:57:14.804836Z"
+   checksum="33e1b0bf0fefa7573e156703d1f53e88"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:01.000000Z"/>
+<entry
+   committed-rev="404"
+   name="model_cu.py"
+   text-time="2011-10-05T12:10:03.000000Z"
+   committed-date="2011-09-23T15:49:27.405854Z"
+   checksum="387b7b389f7ee91ad95fe0002dda4bfd"
+   last-author="finalstate"
+   kind="file"
+   prop-time="2011-10-05T12:10:01.000000Z"/>
+</wc-entries>

@@ -1,0 +1,13 @@
+Metadata-Version: 1.1
+Name: cuda-sim
+Version: 0.08
+Summary: Biochemical network simulation using NVIDIA CUDA
+Home-page: http://sourceforge.net/projects/cuda-sim/
+Author: Yanxiang Zhou, Chris Barnes
+Author-email: christopher.barnes@imperial.ac.uk
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Requires: libSBML
+Requires: Numpy
+Requires: pycuda
