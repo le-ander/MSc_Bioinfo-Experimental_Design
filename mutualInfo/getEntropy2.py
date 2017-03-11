@@ -169,10 +169,9 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigmasq_inv), float64(mplogscale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 
 			# Summing rows in GPU output for this run
-#			for k in range(Ni):
-#				result[(i*int(grid_i)+k),j] = sum(res1[k,:]) ###Could be done on GPU?
-            result[:,j]=sum(res1, axis=1)
-            
+			for k in range(Ni):
+				result[(i*int(grid_i)+k),j] = sum(res1[k,:]) ###Could be done on GPU?
+
 	# Initialising required variables for next steps
 	sum1 = 0.0
 	count1_na = 0
@@ -182,16 +181,12 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	logN2 = log(float(N2))
 
 	# Sum all content of new results matrix and add/subtract constants for each row if there are no NANs or infs
-	'''
-    for i in range(N1):
+	for i in range(N1):
 		if(isnan(sum(result[i,:]))): count1_na += 1
 		elif(isinf(log(sum(result[i,:])))): count1_inf += 1
 		else:
 			sum1 += log(sum(result[i,:])) - logN2 - mplogscale -  mplogpisigma
-    '''
-    sum_result=ma.log(sum(result,axis=1))
-	np_count_inf=ma.count_masked(sum_result)
-	sum1 = sum(sum_result) - logN2*(N1-np_count_inf)-mplogscale*(N1-np_count_inf)-mplogpisigma*(N1-np_count_inf)
+
 
 ########################Calulation 2############################################
 
