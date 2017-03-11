@@ -138,7 +138,7 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 #			res1 = zeros([Ni,Nj]).astype(float64)
 			
 			if (i == numRuns_i-1 and j == 0):
-				res1 = empty_maker([Ni,Nj]).astype(float64)
+				res1 = empty_maker([Ni,Nj]).astype(float64)              
 			elif (i==0 and j==0) :
 				res1 = empty_maker([Ni,Nj]).astype(float64)
 			elif (j==numRuns_j-1):
@@ -161,7 +161,7 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 			# Summing rows in GPU output for this run
 #			for k in range(Ni):
 #				result[(i*int(grid_i)+k),j] = sum(res1[k,:])
-			result[:,j]=sum(res1, axis=1) 
+			result[0:Ni,j:j+1]=sum(res1, axis=1) 
 
 	# Initialising required variables for next steps
 	sum1 = 0.0
