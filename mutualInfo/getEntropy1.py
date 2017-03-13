@@ -17,7 +17,7 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 	# Kernel declaration using pycuda SourceModule
 
 	mod = compiler.SourceModule("""
-	
+
 	__device__ unsigned int idx3d(int i, int k, int l, int M, int P)
 	{
 		return k*P + i*M*P + l;
@@ -147,7 +147,7 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 
 			# Summing rows in GPU output for this run
 			for k in range(Ni):
-				result[(i*int(grid_i)+k),j] = sum(res1[k,:]) 
+				result[(i*int(grid_i)+k),j] = sum(res1[k,:])
 
 	# Initialising required variables for next steps
 	sum1 = 0.0

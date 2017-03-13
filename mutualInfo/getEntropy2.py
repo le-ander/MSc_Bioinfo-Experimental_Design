@@ -114,7 +114,7 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 
 	# Maximum number of particles per run in i direction
 	Ni = int(grid_i)
-	
+
 	######################Optimisation####################
 	# Determine M*P*log(scale) for GPU calculations
 	mplogscale= M*P*log(scale)
@@ -252,7 +252,7 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	count2_inf = 0
 
 	# Sum all content of new results matrix and add/subtract constants for each row if there are no NANs or infs
-	
+
 
 	print "N3"
 	print N3

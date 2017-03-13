@@ -18,7 +18,7 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 	# Kernel declaration using pycuda SourceModule
 
 	mod = compiler.SourceModule("""
-	
+
 	__device__ __constant__ double mp_scale_const;
 	__device__ __constant__ float sigma_inv_const;
 	__device__ __constant__ int M_const;
@@ -113,14 +113,14 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 	CONST_M,_ = mod.get_global("M_const")
 	CONSTp = array(P).astype(int32)
 	CONST_P,_ = mod.get_global("P_const")
-	
+
 	#CONSTscale = array(logscale).astype(float64)
-	#CONST_scale,_ = mod.get_global("scale_const") 
+	#CONST_scale,_ = mod.get_global("scale_const")
 	#CONSTsq = array(sigmasq).astype(float32)
 	#CONST_sq,_ = mod.get_global("sigma_const")
 
 	CONSTmpscale = array(mplogscale).astype(float64)
-	CONST_mpscale,_ = mod.get_global("mp_scale_const") 
+	CONST_mpscale,_ = mod.get_global("mp_scale_const")
 	CONSTsq_inv = array(sigmasq_inv).astype(float32)
 	CONST_sq_inv,_ = mod.get_global("sigma_inv_const")
 
