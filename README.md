@@ -11,7 +11,7 @@
 
 - Optimise getEntropy function for speed
   - Optimise general code structure
-  - Reduction kernel on GPU
+  - Reduction kernel on GPU (reducing data to be move back onto host)
 
 - Stochastic implementation
   - Reuse code from MEANS package
@@ -44,7 +44,6 @@
 - Dynamically plotting trajectories on a graph
 
 - GPU optimisations
-  - Move first summations to GPU
   - Reduce bottleneck of shuttling files between device and host by reducing grid size and copying data for n runs onto GPU
   - Add third dimension to blocks/grid to improve performance, use smem?
 
