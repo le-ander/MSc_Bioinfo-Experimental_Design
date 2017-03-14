@@ -1079,9 +1079,10 @@ class algorithm_info:
 	##refmod - object for the reference model
 	def copyTHETAS(self,refmod):
 		#Sets the N3 sample for experiments
+		
 		self.particles -= self.N3sample
 		self.N3sample = 0
-
+		
 		#Sets parameter sample for experiment
 		self.parameterSample = numpy.concatenate((refmod.parameterSample[:self.N1sample+self.N2sample,:],refmod.N4parameterSample),axis = 0)
 
@@ -1091,6 +1092,7 @@ class algorithm_info:
 		
 		#For when constant initial conditions are used
 		elif self.initialprior == False and refmod.initialprior == False:
+			
 			#Finds set of constant initial conditions
 			x0prior_uniq = [self.x0prior[0]]
 			for ic in self.x0prior[1:]:
@@ -1120,3 +1122,4 @@ class algorithm_info:
 		#For when compartments are used
 		if refmod.ncompparams_all > 0:	
 			self.compsSample = numpy.concatenate((refmod.compsSample[:self.N1sample+self.N2sample,:],refmod.N4compsSample),axis = 0)
+

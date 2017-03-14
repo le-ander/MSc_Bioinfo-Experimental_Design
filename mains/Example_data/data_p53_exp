@@ -3,11 +3,11 @@
 <dt
 
 >particles
-48000
+164000
 <particles
 
 >nsample
-4000 12000 16000 16000
+4000 128000 16000 16000
 <nsample
 
 >sigma
@@ -29,13 +29,13 @@ False
 <initprior
 
 >prior
-uniform 0 100
-uniform 0 0.1
-uniform 0 2
-uniform 0 2
-uniform 0 2
-uniform 0 2
-uniform 0 0.1
+uniform 90 120
+uniform 1 5
+uniform 5 20
+uniform 10 20
+uniform 0 5
+uniform 0 5
+uniform 0 5
 <prior
 
 >fit

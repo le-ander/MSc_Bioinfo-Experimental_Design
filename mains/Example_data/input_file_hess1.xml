@@ -4,7 +4,7 @@
 <modelnumber> 1 </modelnumber>
 
 # Population size
-<particles> 75 </particles>
+<particles> 7200 </particles>
 
 # Make this small for a stiff model.
 <dt> 1 </dt>
@@ -14,9 +14,9 @@
 <times> 0.0 30.0 60.0 90.0 120.0 150.0 180.0 210.0 240.0  </times>
 
 <nsamples>
-<N1> 25 </N1>
-<N2> 25 </N2>
-<N3> 25 </N3>
+<N1> 200 </N1>
+<N2> 5600 </N2>
+<N3> 1400 </N3>
 <N4> 0 </N4>
 </nsamples>
 
