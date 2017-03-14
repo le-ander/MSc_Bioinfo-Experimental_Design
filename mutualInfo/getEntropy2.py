@@ -14,6 +14,7 @@ import launch
 ##N1,N2,N3 - Number of particles
 ##sigma - stadard deviation
 ##scale - scaling constant to prevent nans and infs
+#@profile
 def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	# Kernel declaration using pycuda SourceModule
 
@@ -28,6 +29,7 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 		return i*M + j;
 	}
 
+
 	__global__ void distance1(int Ni, int Nj, int M, int P, float sigma, double scale, double *d1, double *d2, double *res1)
 	{
 	int i = threadIdx.x + blockDim.x * blockIdx.x;
@@ -39,11 +41,11 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	x1 = 0.0;
 	for(int k=0; k<M; k++){
 		for(int l=0; l<P; l++){
-			x1 = x1 + log(scale) - ( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])/(2.0*sigma*sigma);
+			x1 -= ( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)]);
 		}
 	}
 
-	res1[idx2d(i,j,Nj)] = exp(x1);
+	res1[idx2d(i,j,Nj)] = exp(scale+sigma*x1);
 	}
 
 	__global__ void distance2(int Nj, int M, int P, float sigma, double scale, double *d1, double *d3, double *res2)
@@ -56,11 +58,11 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	x1 = 0.0;
 	for(int k=0; k<M; k++){
 		for(int l=0; l<P; l++){
-			x1 = x1 + log(scale) - (d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])*(d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])/(2.0*sigma*sigma);
+			x1 -= (d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])*(d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)]);
 		}
 	}
 
-	res2[j] = exp(x1);
+	res2[j] = exp(scale+sigma*x1);
 	}
 
 	""")
@@ -113,6 +115,15 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	# Maximum number of particles per run in i direction
 	Ni = int(grid_i)
 
+	######################Optimisation####################
+	# Determine M*P*log(scale) for GPU calculations
+	mplogscale= M*P*log(scale)
+
+	# Determine 1/(2*sigma*sigma) for
+	sigmasq_inv = 1/(2*sigma*sigma)
+
+
+	##################################################
 	# Main nested for-loop for mutual information calculations
 	for i in range(numRuns_i):
 		print "Runs left:", numRuns_i - i
@@ -155,7 +166,7 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 				bj = block_j
 
 			# Call GPU kernel function
-			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigmasq_inv), float64(mplogscale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 
 			# Summing rows in GPU output for this run
 			for k in range(Ni):
@@ -165,13 +176,16 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	sum1 = 0.0
 	count1_na = 0
 	count1_inf = 0
+	mplogscale= M*P*log(scale)
+	mplogpisigma= M*P*log(2.0*pi*sigma*sigma)
+	logN2 = log(float(N2))
 
 	# Sum all content of new results matrix and add/subtract constants for each row if there are no NANs or infs
 	for i in range(N1):
 		if(isnan(sum(result[i,:]))): count1_na += 1
 		elif(isinf(log(sum(result[i,:])))): count1_inf += 1
 		else:
-			sum1 += log(sum(result[i,:])) - log(float(N2)) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
+			sum1 += log(sum(result[i,:])) - logN2 - mplogscale -  mplogpisigma
 
 
 ########################Calulation 2############################################
@@ -226,7 +240,7 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 				bj = block
 
 			# Call GPU kernel function
-			dist_gpu2(int32(Nj), int32(M), int32(P), float32(sigma), float64(scale), driver.In(data1), driver.In(data3),  driver.Out(res2), block=(int(bj),1,1), grid=(int(gj),1))
+			dist_gpu2(int32(Nj), int32(M), int32(P), float32(sigmasq_inv), float64(mplogscale), driver.In(data1), driver.In(data3),  driver.Out(res2), block=(int(bj),1,1), grid=(int(gj),1))
 
 			# Sum all elements in results array for this run
 			result[i,j] = sum(res2[:])
@@ -238,11 +252,16 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	count2_inf = 0
 
 	# Sum all content of new results matrix and add/subtract constants for each row if there are no NANs or infs
+
+
+	print "N3"
+	print N3
+
 	for i in range(N1):
 		if(isnan(sum(result[i,:]))): count2_na += 1
 		elif(isinf(log(sum(result[i,:])))): count2_inf += 1
 		else:
-			sum2 += log(sum(result[i,:])) - log(float(N3[i])) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
+			sum2 += log(sum(result[i,:])) - log(float(N3[i])) - mplogscale -  mplogpisigma
 			#sumstatic += - log(float(N3[i])) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
 
 

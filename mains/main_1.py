@@ -8,10 +8,7 @@ sys.path.insert(1, '../mutualInfo')
 sys.path.insert(1, '../abc-sysbio')
 sys.path.insert(1, '../cudasim')
 
-#sys.path.insert(1, '../abc-sysbio/abcsysbio_parser')
-#sys.path.insert(1, '/cluster/home/saw112/work/Test_code/abcsysbio_parser') ## not sure what it does as directory doesn't exist
 
-#import obtain_thetas
 import simulation_functions
 import organiser
 import error_check
@@ -24,15 +21,17 @@ import getEntropy3
 import cudacodecreater
 import plotbar
 from numpy import *
+import time
 
 #Initiates the program
 ##Requires no arguments to run
 def main():
+	time3=time.time()
 	# Reads in command line arguments
 	input_file_SBMLs, input_file_datas, analysis, fname, usesbml, iname = error_check.input_checker(sys.argv)
 	# Calls SBML_checker - checks all the SBML files that have been inputted - basic check
 	SBML_check.SBML_checker([iname+"/"+input_file_SBMLs[i] for i, value in enumerate(usesbml) if value=="0"])
-	
+
 	#list of 1s and 0s with 1s indicating that an SBML file is used and 0s indicating local code is used
 	usesbml=[not(bool(int(i))) for i in list(usesbml)]
 
@@ -57,24 +56,26 @@ def main():
 		if usesbml[0] == True:
 			#random.seed(123) #NEED TO REMOVE SEED
 			ref_model = sorting_files(input_file_SBMLs[0],analysis,fname,usesbml[0], iname, input_file_data = input_file_datas[count])
-			count += 1 
+			count += 1
 		else:
 			ref_model = sorting_files(input_file_SBMLs[0],analysis,fname,usesbml[0], iname)
-		
+
 		#Not reference models
 		for i in range(1,len(input_file_SBMLs)):
 			#random.seed(123) #NEED TO REMOVE SEED
 			#If statment between whether SBML or local code used as requires two different workflows
 			if usesbml[i] == True:
 				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, refmod = ref_model,input_file_data = input_file_datas[count])
-				count += 1 
+				count += 1
 			else:
 				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, refmod = ref_model)
+	time4=time.time()
+	print "Total", time4-time3
 
 
 # A function that works on one SBML or local code at a time
 ##(gets called by main)
-##Arguments: 
+##Arguments:
 ##input_file_SBML - either an SBML file or the input.xml file name (input.xml file used when doing local code)
 ##analysis - the approach we want to carry out 1, 2, or 3
 ##fname - string for the output file name
@@ -86,7 +87,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 	input_file_SBML_name = input_file_SBML
 	if input_file_SBML_name[-4:]==".xml":
 		input_file_SBML_name = input_file_SBML_name[:-4]
-	
+
 	#Makes directory to hold the cudacode files
 	if not(os.path.isdir("./"+fname+"/cudacodes")):
 			os.mkdir(fname+"/cudacodes")
@@ -136,11 +137,11 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 
 		#Obtains a list of the new SBML files
 		exp_xml_files = os.listdir(inPath)
-		
+
 		#Start of creating the input.xml file
 		print "-----Input XML file-----"
 		comb_list = input_file_parser_new_2.generateTemplate(exp_xml_files, "input_xml", "summmary", input_file_data, inpath = inPath, outpath= xml_out, iname=iname)
-		
+
 		#input_xml holds the file name of the input.xml file
 		input_xml="/input_xml"
 
@@ -159,7 +160,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 
 	#Calls function to make the object
 	sbml_obj = parse_infoEnt_new_2.algorithm_info(xml_out+input_xml+".xml", 0, comb_list)
-	
+
 	#Calls a function to make an attribute which is a dictionary that relates cudacode files to the initial conditions it needs
 	sbml_obj.getpairingCudaICs()
 
@@ -180,10 +181,10 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 
 	#Calls function to run cudasim and sort output
 	cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath)
-	
+
 	#Calculates the scaling factor
 	print "-----Calculating scaling factor-----"
-	#Calculating scaling is different when doing approach 3 or not 
+	#Calculating scaling is different when doing approach 3 or not
 	if sbml_obj.analysisType != 2:
 		#Scaling for when doing approach 1 or 2
 		sbml_obj.scaling()

@@ -3,11 +3,11 @@
 <dt
 
 >particles
-200
+46000
 <particles
 
 >nsample
-100 100 0 0
+1000 45000 0 0
 <nsample
 
 >sigma
@@ -36,18 +36,16 @@ uniform 0 10
 <prior
 
 >initials
+constant 0
 constant 1
-uniform 1 10
-normal 10 2
-lognormal 10 15
-constant 3.0
-constant 4.0
+constant 0
+constant 0
+constant 0
+constant 0
 <initials
 
 
 >fit
-species1-species6+species3-species5
-species2+species3 species4
 All
 <fit
 
@@ -70,7 +68,12 @@ constant 1
 
 
 >Initial Conditions 1
-Unchanged
+constant 0
+constant 1
+constant 0
+constant 0
+constant 0
+constant 0
 <Initial Conditions 1
 
 >Initial Conditions 2
@@ -117,7 +120,6 @@ alpha 7 5
 
 
 >combination
-initset2 paramexp2 fit2
-initset3 paramexp3 fit3
+initset1 paramexp1 fit1
 <combination
 

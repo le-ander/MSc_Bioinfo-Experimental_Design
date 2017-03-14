@@ -2,12 +2,7 @@
 
 # Next steps
 
-- Reduce number of simulations before gE3 (gE1&2 as well?) and slice arrays more efficiently (gE2 as well?)
-  - dataRef/Mod (N1); thetaRef (N2+N3); thetaMod (N2+N4)
-
 - Check why we get such large numbers in res1 and result
-
-- Is memory use for launch configuration consistent across devices?
 
 - Sort out scaling
 
@@ -18,7 +13,6 @@
 - Error-checking
   - Catch user input errors
   - Only load packages when required (libsbml and means)
-  - To be done at the end
   - Catch div by 0 in gE due to all inf/na
 
 - Comment code extensively
@@ -43,8 +37,6 @@
 - Update abcsysbio parser to take local parameters
 
 - GPU optimisations
-  - Optimize grid shape and adaptive grid size
-  - Optimize Block shape and Grid shape
   - Move first summations to GPU
   - Reduce bottleneck of shuttling files between device and host by reducing grid size and copying data for n runs onto GPU
   - Add third dimension to blocks/grid to improve performance, use smem?

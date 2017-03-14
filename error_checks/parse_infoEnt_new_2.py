@@ -9,6 +9,7 @@ re_prior_const=re.compile('constant')
 re_prior_uni=re.compile('uniform')
 re_prior_normal=re.compile('normal')
 re_prior_logn=re.compile('lognormal')
+re_prior_posterior=re.compile('posterior')
 
 # True/False
 re_true=re.compile('True')
@@ -103,6 +104,10 @@ def process_prior( tmp ):
 		except:
 			print "\nValue of the prior for model ", self.name[self.nmodels-1], "has the wrong format:", tmp[1]
 			sys.exit()
+
+	elif re_prior_posterior.match( tmp[0] ):
+		prior_tmp[0] = 4
+
 	else:
 		print "\nSupplied parameter prior ", tmp[0], " unsupported"
 		sys.exit()
@@ -1018,7 +1023,8 @@ class algorithm_info:
 
 			#Depending on how FmaxDistTraj compares to precision set an appropriate scale
 			if FmaxDistTraj<preci:
-				self.scale[model] = pow(1.79*pow(10,300),1.0/(len(self.fitSpecies[model])*len(self.times)))
+#				self.scale[model] = math.log(pow(1.79*pow(10,300),1.0/(len(self.fitSpecies[model])*len(self.times))),math.e)
+				self.scale[model] = pow(1.79*pow(10,300),1.0/(len(self.fitSpecies[model])*len(self.times)))		
 			else:
 				self.scale[model] = pow(preci,1.0/(len(self.fitSpecies[model])*len(self.times)))*1.0/FmaxDistTraj
 	
@@ -1028,7 +1034,6 @@ class algorithm_info:
 	##P_Ref - number of measurable species in reference model
 	##Note if scaling_ge3 called for reference model then M_ref and P_ref take default values
 	def scaling_ge3(self,M_Ref = 0,P_Ref = 0):
-		
 		#Initiates list of maximum distances between trajectories
 		maxDistList =[]
 

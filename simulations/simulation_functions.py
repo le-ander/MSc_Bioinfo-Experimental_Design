@@ -24,7 +24,7 @@ import parse_infoEnt_new_2
 ##Arguments:
 ##inpath - input path for cuda code files
 def run_cudasim(m_object,inpath=""):
-	
+
 	#Makes instance of Lsoda object
 	modelInstance = Lsoda.Lsoda(m_object.times, list(set(m_object.cuda)), dt=m_object.dt, inpath=inpath)
 
@@ -39,7 +39,7 @@ def run_cudasim(m_object,inpath=""):
 
 	#Runs cuda-sim
 	result = modelInstance.run(parameters, species, constant_sets = not(m_object.initialprior), pairings=m_object.pairParamsICS)
-	
+
 	#Converts output of cuda-sim to a list
 	if type(result)==list:
 		result = [x[:,0] for x in result]
@@ -49,7 +49,7 @@ def run_cudasim(m_object,inpath=""):
 	#Sorts the output from cuda-sim
 	print "-----Sorting NaNs from CUDA-Sim output-----"
 	m_object.sortCUDASimoutput(list(set(m_object.cuda)),result)
-	
+
 # A function to pickle object
 ##(method gets called when required)
 ##Arguments:
