@@ -99,7 +99,7 @@ Unchanged
 <Parameter - Experiment 1
 
 >Parameter - Experiment 2
-alpha0 0.1 1
+alpha0 0.1 1  
 alpha0 0.1 3
 alpha0 0.1 5
 <Parameter - Experiment 2

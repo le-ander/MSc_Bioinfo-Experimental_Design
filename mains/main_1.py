@@ -126,7 +126,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 
 		#Creates cudacode and saves to the directory made
 		cudacodecreater.cudacodecreater(input_files_SBML,inPath=inPath+"/",outPath=outPath)
-
+		
 		#Creates directory to store the input.xml file along with a summary file
 		if not(os.path.isdir("./"+fname+"/input_xml")):
 			os.mkdir(fname+"/input_xml")

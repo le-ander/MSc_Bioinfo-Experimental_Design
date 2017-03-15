@@ -257,7 +257,7 @@ class algorithm_info:
 		self.nparameters_all = parse_required_single_value(dataref, "nparameters_all", "Please provide an integer value for <data><nparameters_all>", int)
 
 		### sigma
-		self.sigma = parse_required_single_value(dataref, "sigma", "Please provide an integer value for <data><sigma>", float)
+		self.sigma = parse_required_single_value(dataref, "sigma", "Please provide an float value for <data><sigma>", float)
 
 		### get information about sample from posterior
 		if parse_required_single_value( dataref, "samplefrompost", "Please provide a boolean value for <samplefrompost>", str ).strip()=="True":
@@ -383,10 +383,16 @@ class algorithm_info:
 					print "\nNo initial conditions specified in model ", self.name[self.nmodels-1]
 					sys.exit()
 
-				self.fitSpecies.append( parse_fitting_information('fit', m, ninit )  )
+				try:
+					self.fitSpecies.append( parse_fitting_information('fit', m, ninit )  )
+				except:
+					print "Measurable species are not defined properly with <fit> ... </fit> for model", self.nmodels
+					sys.exit()
+
 				self.nparameters.append( nparameter )
 				self.nspecies.append( ninit )
 				self.ncompparams.append( ncompparam )
+
 
 		if self.nmodels == 0:
 			print "\nNo models specified"
@@ -413,15 +419,27 @@ class algorithm_info:
 
 
 		### paramter fit
-		self.param_fit =( parse_fitting_information_parameters('paramfit', dataref, 'parameter' ,self.nparameters_all )  )
+		try:
+			self.param_fit =( parse_fitting_information_parameters('paramfit', dataref, 'parameter' ,self.nparameters_all )  )
+		except:
+			print "Parameters to predict are not defined properly with <paramfit> ... </paramfit> for model"
+			sys.exit()
 		###
 
 		### initial fit
-		self.init_fit =( parse_fitting_information_parameters('initfit', dataref, 'initial' ,self.nspecies_all )  )
+		try:
+			self.init_fit =( parse_fitting_information_parameters('initfit', dataref, 'initial' ,self.nspecies_all )  )
+		except:
+			print "Initial conditions to predict are not defined properly with <initfit> ... </initfit> for model"
+			sys.exit()
 		###
 
 		### compartment fit
-		self.comp_fit=( parse_fitting_information_parameters('compfit', dataref, 'compartment' ,self.ncompparams_all )  )
+		try:
+			self.comp_fit=( parse_fitting_information_parameters('compfit', dataref, 'compartment' ,self.ncompparams_all )  )
+		except:
+			print "Compartments to predict are not defined properly with <compfit> ... </compfit> for model"
+			sys.exit()
 		###
 
 

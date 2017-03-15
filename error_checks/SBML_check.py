@@ -111,11 +111,35 @@ def SBML_reactionchanges(input_file, inpath="", fname="", param_changes=""):
 	start_index = re.compile(r'>Parameter - Experiment (\d+)\s*\n(.+?)\n<Parameter - Experiment (\d+)', re.DOTALL)
 	#lines contains a list of tuples containing the changes for each experiment
 	lines = start_index.findall(data)
-	#exp_list contains the number associated to each experiment
+	#exp_list contains the number associated to each experiment at beginning
 	exp_list = [int(lines[i][0]) for i in range(0,len(lines))]
+	##exp_list_end contains the number associated to each experiment at end
+	exp_list_end = [int(lines[i][2]) for i in range(0,len(lines))]
 	#Unpacks the original lines to only hold the changes for each experiment
 	lines = [lines[i][1] for i in range(0,len(lines))]
 
+	#Checking if parameters in the input file are properly defined
+	if exp_list_end != exp_list or sum(exp_list)!=len(exp_list)*(len(exp_list)+1)/2:
+		print ""
+		print "Parameters not defined properly in input file"
+		print "Need to be defined sequentially e.g."
+		print ">Parameter - Experiment 1"
+		print "..."
+		print "<Parameter - Experiment 1"
+		print ""
+		print ">Parameter - Experiment 2"
+		print "..."  
+		print "<Parameter - Experiment 2"
+		print ""
+		print ">Parameter - Experiment 3"
+		print "..."
+		print "<Parameter - Experiment 3"
+		print ""
+		print "Also if you plan to run an unchanged version of SBML file this must be Experiment 1 as:"
+		print ">Parameter - Experiment 1"
+		print "Unchanged"
+		print "<Parameter - Experiment 1"
+		sys.exit()
 
 	start_point = 0
 	#Unchanged SBML has to the be the first experiment if this is the case
@@ -133,7 +157,7 @@ def SBML_reactionchanges(input_file, inpath="", fname="", param_changes=""):
 		param_reaction=[] #holds which reaction the change needs to be made to
 		#For loop fills the lists defined above
 		for end in line:
-			el_temp=end.split(' ')
+			el_temp=end.split()
 			param_to_change.append(el_temp[0])
 			mult_fact.append(el_temp[1])
 			param_reaction.append(int(el_temp[2]))
