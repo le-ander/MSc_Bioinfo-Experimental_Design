@@ -8,7 +8,7 @@ then
 	export CUDA_DEVICE=4
 fi
 
-cd $GPUDIR/mains
+cd /cluster
 
 ##gE1 (SBML input):
 #python main_1.py -a 0 -of=results -i1 rep_test.xml -i2 new_file2 -lc 0 -if=Example_data

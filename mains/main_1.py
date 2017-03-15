@@ -25,7 +25,6 @@ import time
 
 #Initiates the program
 ##Requires no arguments to run
-@profile
 def main():
 	time3=time.time()
 	# Reads in command line arguments
@@ -83,7 +82,6 @@ def main():
 ##usesbml - indicates whether an SBML file is used or local code
 ##refmod - used for approach 2 when the first SBML/local code is the reference model
 ##input_file_data - this holds the additional data alongside an SBML file that is required such as total number of particles etc
-@profile
 def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", input_file_data = ""):
 	#Used to remove the .xml at the end of the file if present to name directories
 	input_file_SBML_name = input_file_SBML
@@ -205,7 +203,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 		plotbar.plotbar(MutInfo1, sbml_obj.name ,sbml_obj.nmodels ,0)
 	elif sbml_obj.analysisType == 1:
 		MutInfo2=getEntropy2.run_getEntropy2(sbml_obj)
-		plotbar.plotbar(MutInfo2, sbml_obj.name ,sbml_obj.nmodels ,1)
+	#	plotbar.plotbar(MutInfo2, sbml_obj.name ,sbml_obj.nmodels ,1)
 	elif sbml_obj.analysisType == 2 and refmod == "":
 		return sbml_obj
 	elif sbml_obj.analysisType == 2 and refmod != "":
