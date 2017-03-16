@@ -4,9 +4,7 @@
 <modelnumber> 1 </modelnumber>
 
 # Population size
-
-<particles> 900 </particles>
-
+<particles> 45000 </particles>
 
 # Make this small for a stiff model.
 <dt> 1 </dt>
