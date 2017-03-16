@@ -14,7 +14,7 @@ import launch
 ##N1,N2,N3 - Number of particles
 ##sigma - stadard deviation
 ##scale - scaling constant to prevent nans and infs
-#@profile
+@profile
 def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	# Kernel declaration using pycuda SourceModule
 
@@ -266,36 +266,13 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 
 	# Sum all content of new results matrix and add/subtract constants for each row if there are no NANs or infs
 	
-
-	
-	'''
-	for i in range(N1):
-		if(isnan(sum(result[i,:]))): count2_na += 1
-		elif(isinf(log(sum(result[i,:])))): count2_inf += 1
-		else:
-			sum2 += log(sum(result[i,:])) - log(float(N3[i])) - mplogscale -  mplogpisigma
-			#sumstatic += - log(float(N3[i])) - M*P*log(scale) -  M*P*log(2.0*pi*sigma*sigma)
-	'''
-	print result
-	print result.shape
 	sum_result2=ma.log(sum(result, axis=1))
-	print sum_result2.shape
-	print sum_result2
 	count_inf2=ma.count_masked(sum_result)
-	print count_inf2
-	print sum(sum_result2)
-	print log(ma.masked_array(N3,sum_result2.mask))
-	print ma.masked_array(N3,~sum_result2.mask)
-	print sum(log(ma.masked_array(N3,~sum_result2.mask)))  
-	print mplogscale*(N1-count_inf2)
-	print mplogpisigma*(N1-count_inf2)
-
 	sum2 = sum(sum_result2) - sum(log(ma.masked_array(N3,sum_result2.mask))) - mplogscale*(N1-count_inf2) - mplogpisigma*(N1-count_inf2)
-	print sum2
+	
 
 ########################Final Computations######################################
 
-#	print "Proportion of NAs", int(((count1_na+count2_na)/float(2*N1))*100), "%" ###Can we really get NAs??
 	print "Proportion of infs", int(((count_inf1+count_inf2)/float(2*N1))*100), "%"
 
 	# Final division to give mutual information

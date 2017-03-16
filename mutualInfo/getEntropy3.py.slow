@@ -26,7 +26,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 		return i*M + j;
 	}
 
-	__global__ void distance1(int Ni, int Nj, int M_Ref, int P_Ref, int M_Mod, int P_Mod, float sigma_inv_ref, float sigma_inv_mod, double mplogscale_ref, double mplogscale_mod, double *d1, double *d2, double *d3, double *d4, double *res1)
+	__global__ void distance1(int Ni, int Nj, int M_Ref, int P_Ref, int M_Mod, int P_Mod, float sigma_ref, float sigma_mod, double scale_ref, double scale_mod, double *d1, double *d2, double *d3, double *d4, double *res1)
 	{
 	int i = threadIdx.x + blockDim.x * blockIdx.x;
 	int j = threadIdx.y + blockDim.y * blockIdx.y;
@@ -40,20 +40,20 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 
 	for(int k=0; k<M_Ref; k++){
 		for(int l=0; l<P_Ref; l++){
-			x1 -= mplogscale_ref + ( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])*( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)]);
+			x1 = x1 + scale_ref - ( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])*( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])/(2.0*sigma_ref*sigma_ref);
 		}
 	}
 
 	for(int k=0; k<M_Mod; k++){
 		for(int l=0; l<P_Mod; l++){
-			x3 -= mplogscale_mod + ( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])*( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)]);
+			x3 = x3 + scale_mod - ( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])*( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])/(2.0*sigma_mod*sigma_mod);
 		}
 	}
 
-	res1[idx2d(i,j,Nj)] = exp(sigma_inv_ref*x1+sigma_inv_mod*x3);
+	res1[idx2d(i,j,Nj)] = exp(x1+x3);
 	}
 
-	__global__ void distance2(int Ni, int Nj, int M, int P, float sigma_inv, double mplogscale, double *d5, double *d6, double *res2)
+	__global__ void distance2(int Ni, int Nj, int M_Ref, int P_Ref, int M_Mod, int P_Mod, float sigma_ref, float sigma_mod, double scale_ref, double scale_mod, double *d1, double *d6, double *res2)
 	{
 	int i = threadIdx.x + blockDim.x * blockIdx.x;
 	int j = threadIdx.y + blockDim.y * blockIdx.y;
@@ -63,13 +63,32 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	double x2;
 	x2 = 0.0;
 
-	for(int k=0; k<M; k++){
-		for(int l=0; l<P; l++){
-			x2 -= ( d6[idx3d(j,k,l,M,P)]-d5[idx3d(i,k,l,M,P)])*( d6[idx3d(j,k,l,M,P)]-d5[idx3d(i,k,l,M,P)]);
+	for(int k=0; k<M_Ref; k++){
+		for(int l=0; l<P_Ref; l++){
+			x2 = x2 + scale_ref - ( d6[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])*( d6[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])/(2.0*sigma_ref*sigma_ref);
 		}
 	}
 
-	res2[idx2d(i,j,Nj)] = exp(mplogscale + sigma_inv*x2);
+	res2[idx2d(i,j,Nj)] = exp(x2);
+	}
+
+	__global__ void distance3(int Ni, int Nj, int M_Ref, int P_Ref, int M_Mod, int P_Mod, float sigma_ref, float sigma_mod, double scale_ref, double scale_mod, double *d3, double *d8, double *res3)
+	{
+	int i = threadIdx.x + blockDim.x * blockIdx.x;
+	int j = threadIdx.y + blockDim.y * blockIdx.y;
+
+	if((i>=Ni)||(j>=Nj)) return;
+
+	double x3;
+	x3 = 0.0;
+
+	for(int k=0; k<M_Mod; k++){
+		for(int l=0; l<P_Mod; l++){
+			x3 = x3 + scale_mod - ( d8[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])*( d8[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])/(2.0*sigma_mod*sigma_mod);
+		}
+	}
+
+	res3[idx2d(i,j,Nj)] = exp(x3);
 	}
 
 	""")
@@ -77,7 +96,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	# Creating handles for global kernel functions
 	dist_gpu1 = mod.get_function("distance1")
 	dist_gpu2 = mod.get_function("distance2")
-	
+	dist_gpu3 = mod.get_function("distance3")
 
 	# Prepare input data
 	d1 = dataRef.astype(float64)
@@ -94,16 +113,6 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	##Alternative experiment
 	M_Mod=d3.shape[1]
 	P_Mod=d3.shape[2]
-
-	# Determine M*P*log(scale) and 1/(2*sigma^2) for reference and alternative experiment
-	##Reference experiment
-	#mplogscale_ref = M_Ref*P_Ref*log(scale_ref)
-	mplogscale_ref = log(scale_ref)
-	sigma_inv_ref = 1/(2*sigma_ref*sigma_ref)
-	##Alternative experiment
-	#mplogscale_mod = M_Mod*P_Mod*log(scale_mod)
-	mplogscale_mod = log(scale_mod)
-	sigma_inv_mod = 1/(2*sigma_mod*sigma_mod)
 
 
 ########################Calulation 1############################################
@@ -186,7 +195,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 				gj = ceil(Nj/block_j)
 
 			# Call GPU kernel functions
-			dist_gpu1(int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_inv_ref), float32(sigma_inv_mod), float64(mplogscale_ref), float64(mplogscale_mod), driver.In(data1), driver.In(data2), driver.In(data3), driver.In(data4), driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+			dist_gpu1(int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_ref), float32(sigma_mod), float64(scale_ref), float64(scale_mod), driver.In(data1), driver.In(data2), driver.In(data3), driver.In(data4), driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 
 			# Summing rows in GPU output for this run
 			for k in range(Ni):
@@ -271,7 +280,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 				gj = ceil(Nj/block_j)
 
 			# Call GPU kernel functions
-			dist_gpu2(int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), float32(sigma_inv_ref), float64(mplogscale_ref), driver.In(data1), driver.In(data6), driver.Out(res2), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+			dist_gpu2(int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_ref), float32(sigma_mod), float64(scale_ref), float64(scale_mod), driver.In(data1), driver.In(data6), driver.Out(res2), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 
 			# Summing rows in GPU output for this run
 			for k in range(Ni):
@@ -281,7 +290,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 ########################Calulation 3############################################
 
 	# Launch configuration: Block size and shape (as close to square as possible)
-	block = launch.optimal_blocksize(autoinit.device, dist_gpu2)
+	block = launch.optimal_blocksize(autoinit.device, dist_gpu3)
 	block_i = launch.factor_partial(block)
 	block_j = block / block_i
 	print "Optimal blocksize:", block, "threads"
@@ -356,7 +365,8 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 				gj = ceil(Nj/block_j)
 
 			# Call GPU kernel functions
-			dist_gpu2(int32(Ni), int32(Nj), int32(M_Mod), int32(P_Mod), float32(sigma_inv_mod), float64(mplogscale_mod), driver.In(data3), driver.In(data8), driver.Out(res3), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+			dist_gpu3(int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_ref), float32(sigma_mod), float64(scale_ref), float64(scale_mod), driver.In(data3), driver.In(data8), driver.Out(res3), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+
 			# Summing rows in GPU output for this run
 			for k in range(Ni):
 				result3[(i*int(grid_i)+k),j] = sum(res3[k,:]) ###Could be done on GPU?
@@ -381,11 +391,6 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 
 	#print result1
 
-	#Precalculate logs of N2, N3 and N4
-	logN2 = log(float(N2))
-	logN3 = log(float(N3))
-	logN4 = log(float(N4))
-
 	# Sum all content of new results matrix and add/subtract constants for each row if there are no NANs or infs
 	for i in range(N1):
 		if(isinf(log(sum(result1[i,:])))):
@@ -401,7 +406,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 		elif(isnan(log(sum(result3[i,:])))):
 			count3_na=count3_na+1
 		else:
-			sum1 += log(sum(result1[i,:])) - log(sum(result2[i,:])) - log(sum(result3[i,:])) - logN2 + logN3 + logN4
+			sum1 += log(sum(result1[i,:])) - log(sum(result2[i,:])) - log(sum(result3[i,:])) - log(float(N2)) + log(float(N3)) + log(float(N4))
 			# Optional calculations of intermediate results
 			#a1 += log(sum(result1[i,:])) - log(N2) - M_Ref*P_Ref*log(2.0*pi*sigma_ref*sigma_ref) - M_Mod*P_Mod*log(2.0*pi*sigma_mod*sigma_mod) - M_Ref*P_Ref*scale - M_Mod*P_Mod*scale
 			#a2 -= log(sum(result2[i,:])) + log(N3) + M_Ref*P_Ref*log(2.0*pi*sigma_ref*sigma_ref) + M_Ref*P_Ref*scale
