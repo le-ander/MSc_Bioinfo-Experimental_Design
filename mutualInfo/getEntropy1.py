@@ -3,7 +3,16 @@ from numpy import *
 from pycuda import compiler, driver
 from pycuda import autoinit
 
-import launch
+import launch, sys
+
+def odd_num(x):
+    temp = []
+    pos=0
+    while x > 1:
+        if x%2 ==1:
+            temp.append(x)
+        x = x >> 1
+    return asarray(temp).astype(int32)
 
 # A function to calculate the mutual information between all parameters of a system and an experiment
 ##(gets called by run_getEntropy1)
@@ -29,22 +38,44 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 	}
 
 
-	__global__ void distance1(int Ni, int Nj, int M, int P, float sigma, double scale, double *d1, double *d2, double *res1)
+	__global__ void distance1(int len_odd, int* odd_nums, int Ni, int Nj, int M, int P, float sigma, double scale, double *d1, double *d2, double *res1)
 	{
-	int i = threadIdx.x + blockDim.x * blockIdx.x;
-	int j = threadIdx.y + blockDim.y * blockIdx.y;
 
-	if((i>=Ni)||(j>=Nj)) return;
+		extern __shared__ double s[];
 
-	double x1;
-	x1 = 0.0;
-	for(int k=0; k<M; k++){
-		for(int l=0; l<P; l++){
-			x1 -= ( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)]);
+		unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
+		unsigned int j = threadIdx.y + blockDim.y * blockIdx.y;
+		unsigned int tid = threadIdx.y;
+
+		s[idx2d(threadIdx.x,tid,blockDim.y)] = 0.0;
+
+		if((i>=Ni)||(j>=Nj)) return;
+
+		for(int k=0; k<M; k++){
+			for(int l=0; l<P; l++){
+				s[idx2d(threadIdx.x,tid,blockDim.y)] -= ( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)]);
+			}
 		}
-	}
 
-	res1[idx2d(i,j,Nj)] = exp(scale + sigma*x1);
+		s[idx2d(threadIdx.x,tid,blockDim.y)] =  exp(scale + sigma*s[idx2d(threadIdx.x,tid,blockDim.y)]);
+		__syncthreads();
+
+        for(unsigned int k=blockDim.y/2; k>0; k>>=1){
+            if(tid < k){
+                s[idx2d(threadIdx.x,tid,blockDim.y)] += s[idx2d(threadIdx.x,tid+k,blockDim.y)];
+            }
+            __syncthreads();
+        }
+
+        if(len_odd != -1){
+	        for(unsigned int l=0; l<len_odd; l+=1){
+	            if (tid == 0) s[idx2d(threadIdx.x,0,blockDim.y)] += s[idx2d(threadIdx.x, odd_nums[l]-1 ,blockDim.y)];
+	            __syncthreads();
+	        }
+	    }
+
+		if (tid==0) res1[idx2d(i,blockIdx.y,gridDim.y)] = s[idx2d(threadIdx.x,0,blockDim.y)];	
+
 	}
 	""")
 
@@ -74,7 +105,7 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 		grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j))
 	print "Maximum gridsize:", grid, "threads"
 	print "Grid shape:", str(grid_i)+"x"+str(grid_j)
-
+	print "Registers:", dist_gpu1.num_regs
 	# Determine required number of runs for i and j
 	numRuns_i = int(ceil(N1/grid_i))
 	numRuns_j = int(ceil(N2/grid_j))
@@ -131,7 +162,7 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 			data2 = d2[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
 
 			# Prepare results array for this run
-			res1 = zeros([Ni,Nj]).astype(float64) ###Could move into if statements (only if ni or nj change)
+			#res1 = zeros([Ni,Nj]).astype(float64) ###Could move into if statements (only if ni or nj change)
 			#res1 = init_res1(Ni, Nj)
 
 			# Set j dimension of block and grid for this run
@@ -142,8 +173,21 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 				gj = ceil(Nj/block_j)
 				bj = block_j
 
-			# Call GPU kernel function
-			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigmasq_inv), float64(mplogscale), driver.In(data1), driver.In(data2), driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+			res1 = zeros([Ni,int(gj)]).astype(float64)
+			
+			iterations = odd_num(int(bj))
+			
+			if iterations.size == 0:
+				#print "here"
+				temp_1=-1
+				iterations = zeros([1]).astype(float64)
+			else:
+				#print "here2"
+				temp_1 = iterations.size
+
+			#print bi,bj
+			# Call GPU kernel functions
+			dist_gpu1(int32(temp_1), driver.In(iterations),int32(Ni),int32(Nj), int32(M), int32(P), float32(sigmasq_inv), float64(mplogscale), driver.In(data1), driver.In(data2), driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj),1), shared = 3000 )
 
 			# Summing rows in GPU output for this run
 			for k in range(Ni):

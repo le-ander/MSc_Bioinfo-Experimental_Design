@@ -4,7 +4,16 @@ from pycuda import compiler, driver
 from pycuda import autoinit
 
 
-import launch
+import launch, sys
+
+def odd_num(x):
+    temp = []
+    pos=0
+    while x > 1:
+        if x%2 ==1:
+            temp.append(x)
+        x = x >> 1
+    return asarray(temp).astype(int32)
 
 # A function to calculate the mutual information between a subset of parameters of a system and an experiment
 ##(gets called by run_getEntropy2)
@@ -30,39 +39,80 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	}
 
 
-	__global__ void distance1(int Ni, int Nj, int M, int P, float sigma, double scale, double *d1, double *d2, double *res1)
+	__global__ void distance1(int len_odd, int* odd_nums, int Ni, int Nj, int M, int P, float sigma, double scale, double *d1, double *d2, double *res1)
 	{
-	int i = threadIdx.x + blockDim.x * blockIdx.x;
-	int j = threadIdx.y + blockDim.y * blockIdx.y;
+		extern __shared__ double s[];
 
-	if((i>=Ni)||(j>=Nj)) return;
+		unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
+		unsigned int j = threadIdx.y + blockDim.y * blockIdx.y;
+		unsigned int tid = threadIdx.y;
 
-	double x1;
-	x1 = 0.0;
-	for(int k=0; k<M; k++){
-		for(int l=0; l<P; l++){
-			x1 -= ( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)]);
+		s[idx2d(threadIdx.x,tid,blockDim.y)] = 0.0;
+
+		if((i>=Ni)||(j>=Nj)) return;
+
+		for(int k=0; k<M; k++){
+			for(int l=0; l<P; l++){
+				s[idx2d(threadIdx.x,tid,blockDim.y)] -= ( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)]);
+			}
 		}
+
+		s[idx2d(threadIdx.x,tid,blockDim.y)] =  exp(scale + sigma*s[idx2d(threadIdx.x,tid,blockDim.y)]);
+		__syncthreads();
+
+        for(unsigned int k=blockDim.y/2; k>0; k>>=1){
+            if(tid < k){
+                s[idx2d(threadIdx.x,tid,blockDim.y)] += s[idx2d(threadIdx.x,tid+k,blockDim.y)];
+            }
+            __syncthreads();
+        }
+
+        if(len_odd != -1){
+	        for(unsigned int l=0; l<len_odd; l+=1){
+	            if (tid == 0) s[idx2d(threadIdx.x,0,blockDim.y)] += s[idx2d(threadIdx.x, odd_nums[l]-1 ,blockDim.y)];
+	            __syncthreads();
+	        }
+	    }
+
+		if (tid==0) res1[idx2d(i,blockIdx.y,gridDim.y)] = s[idx2d(threadIdx.x,0,blockDim.y)];
+
 	}
 
-	res1[idx2d(i,j,Nj)] = exp(scale+sigma*x1);
-	}
-
-	__global__ void distance2(int Nj, int M, int P, float sigma, double scale, double *d1, double *d3, double *res2)
+	__global__ void distance2(int len_odd, int* odd_nums, int Nj, int M, int P, float sigma, double scale, double *d1, double *d3, double *res2)
 	{
-	int j = threadIdx.x + blockDim.x * blockIdx.x;
+		extern __shared__ double s[];
+		int j = threadIdx.x + blockDim.x * blockIdx.x;
+		unsigned int tid = threadIdx.x;
 
-	if(j>=Nj) return;
+		s[tid] = 0.0;
 
-	double x1;
-	x1 = 0.0;
-	for(int k=0; k<M; k++){
-		for(int l=0; l<P; l++){
-			x1 -= (d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])*(d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)]);
+		if(j>=Nj) return;
+
+		for(int k=0; k<M; k++){
+			for(int l=0; l<P; l++){
+				s[tid] -= (d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])*(d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)]);
+			}
 		}
-	}
 
-	res2[j] = exp(scale+sigma*x1);
+		s[tid] =  exp(scale + sigma*s[tid]);
+		__syncthreads();
+
+		for(unsigned int k=blockDim.x/2; k>0; k>>=1){
+            if(tid < k){
+                s[tid] += s[tid+k];
+            }
+            __syncthreads();
+        }
+
+        if(len_odd != -1){
+	        for(unsigned int l=0; l<len_odd; l+=1){
+	            if (tid == 0) s[0] += s[odd_nums[l]-1];
+	            __syncthreads();
+	        }
+	    }
+
+	    if (tid==0) res2[blockIdx.x] = s[0];
+		
 	}
 
 	""")
@@ -155,7 +205,7 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 			data2 = d2[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
 
 			# Prepare results array for this run
-			res1 = zeros([Ni,Nj]).astype(float64) ###Could move into if statements (only if ni or nj change)
+			#res1 = zeros([Ni,Nj]).astype(float64) ###Could move into if statements (only if ni or nj change)
 
 			# Set j dimension of block and grid for this run
 			if(Nj<block_j):
@@ -165,8 +215,18 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 				gj = ceil(Nj/block_j)
 				bj = block_j
 
+			res1 = zeros([Ni,int(gj)]).astype(float64)
+			iterations = odd_num(int(bj))
+			if iterations.size == 0:
+				#print "here"
+				temp_1=-1
+				iterations = zeros([1]).astype(float64)
+			else:
+				#print "here2"
+				temp_1 = iterations.size
+
 			# Call GPU kernel function
-			dist_gpu1(int32(Ni),int32(Nj), int32(M), int32(P), float32(sigmasq_inv), float64(mplogscale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+			dist_gpu1(int32(temp_1), driver.In(iterations), int32(Ni),int32(Nj), int32(M), int32(P), float32(sigmasq_inv), float64(mplogscale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)), shared = 3000)
 
 			# Summing rows in GPU output for this run
 			for k in range(Ni):
@@ -229,7 +289,7 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 			data3 = d3[(i*N3[i]+j*int(grid)):(i*N3[i]+j*int(grid)+Nj),:,:]
 
 			# Prepare results array for this run
-			res2 = zeros([Nj]).astype(float64)
+			#res2 = zeros([Nj]).astype(float64)
 
 			# Set j dimension of block and grid for this run
 			if(Nj<block):
@@ -239,9 +299,19 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 				gj = ceil(Nj/block)
 				bj = block
 
-			# Call GPU kernel function
-			dist_gpu2(int32(Nj), int32(M), int32(P), float32(sigmasq_inv), float64(mplogscale), driver.In(data1), driver.In(data3),  driver.Out(res2), block=(int(bj),1,1), grid=(int(gj),1))
+			res2 = zeros([int(gj)]).astype(float64)
+			iterations = odd_num(int(bj))
+			if iterations.size == 0:
+				#print "here"
+				temp_1=-1
+				iterations = zeros([1]).astype(float64)
+			else:
+				#print "here2"
+				temp_1 = iterations.size
 
+			# Call GPU kernel function
+			dist_gpu2(int32(temp_1), driver.In(iterations), int32(Nj), int32(M), int32(P), float32(sigmasq_inv), float64(mplogscale), driver.In(data1), driver.In(data3),  driver.Out(res2), block=(int(bj),1,1), grid=(int(gj),1), shared=3000)
+			
 			# Sum all elements in results array for this run
 			result[i,j] = sum(res2[:])
 
@@ -254,8 +324,8 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	# Sum all content of new results matrix and add/subtract constants for each row if there are no NANs or infs
 
 
-	print "N3"
-	print N3
+	#print "N3"
+	#print N3
 
 	for i in range(N1):
 		if(isnan(sum(result[i,:]))): count2_na += 1
