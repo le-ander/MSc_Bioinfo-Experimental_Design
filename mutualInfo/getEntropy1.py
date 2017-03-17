@@ -24,7 +24,7 @@ def odd_num(x):
 ##N1,N2 - Number of particles
 ##sigma - stadard deviation
 ##scale - scaling constant to prevent nans and infs
-#@profile
+@profile
 def getEntropy1(data,theta,N1,N2,sigma,scale):
 	# Kernel declaration using pycuda SourceModule
 
