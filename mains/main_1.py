@@ -26,7 +26,9 @@ import time
 #Initiates the program
 ##Requires no arguments to run
 def main():
+	## Start timing for total runtime
 	time3=time.time()
+
 	# Reads in command line arguments
 	input_file_SBMLs, input_file_datas, analysis, fname, usesbml, iname = error_check.input_checker(sys.argv)
 	# Calls SBML_checker - checks all the SBML files that have been inputted - basic check
@@ -69,8 +71,11 @@ def main():
 				count += 1
 			else:
 				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, refmod = ref_model)
+	## Stop timing for total runtime
 	time4=time.time()
-	print "Total", time4-time3
+
+	## Print total runtime
+	print "Total Runtime", time4-time3
 
 
 # A function that works on one SBML or local code at a time
@@ -196,6 +201,11 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 			sbml_obj.scaling_ge3(len(refmod.times),len(refmod.fitSpecies[0]))
 
 	#Depending upon the approach different functions are run to calculate the mutual information
+	
+	## Start timing for mutual information calculation
+	time1=time.time()
+	#####
+
 	if sbml_obj.analysisType == 0:
 		MutInfo1=getEntropy1.run_getEntropy1(sbml_obj)
 		plotbar.plotbar(MutInfo1, sbml_obj.name ,sbml_obj.nmodels ,0)
@@ -206,6 +216,13 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 		return sbml_obj
 	elif sbml_obj.analysisType == 2 and refmod != "":
 		getEntropy3.run_getEntropy3(sbml_obj, refmod)
+
+	## End timing for mutual information calculation
+	time2=time.time()
+	#####
+
+	## print runtime of mutual information calculation
+	print "MutualInfo Runtime", time2-time1
 
 #Starts the program
 main()

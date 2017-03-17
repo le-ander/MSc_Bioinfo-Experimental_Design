@@ -4,7 +4,7 @@ import re, sys, numpy, copy, math
 from numpy.random import *
 from xml.dom import minidom
 
-# implemented priors
+# Regular expression for implemented priors or posterior placeholder
 re_prior_const=re.compile('constant')
 re_prior_uni=re.compile('uniform')
 re_prior_normal=re.compile('normal')
@@ -16,6 +16,12 @@ re_true=re.compile('True')
 re_none=re.compile('None')
 
 
+###################################################################################################
+
+
+
+
+###################################################################################################
 def getWeightedSample(weights):
 
 		totals = []
@@ -30,6 +36,14 @@ def getWeightedSample(weights):
 			if rnd < total:
 				return i
 
+
+
+###################################################################################################
+
+
+
+
+###################################################################################################
 def parse_required_single_value( node, tagname, message, cast ):
 	try:
 		data = node.getElementsByTagName(tagname)[0].firstChild.data
@@ -46,6 +60,12 @@ def parse_required_single_value( node, tagname, message, cast ):
 
 	return(ret)
 
+###################################################################################################
+
+
+
+
+###################################################################################################
 def parse_required_vector_value( node, tagname, message, cast ):
 	try:
 		data = node.getElementsByTagName(tagname)[0].firstChild.data
@@ -67,6 +87,13 @@ def parse_required_vector_value( node, tagname, message, cast ):
 
 	return(ret)
 
+
+###################################################################################################
+
+
+
+
+###################################################################################################
 def process_prior( tmp ):
 	prior_tmp = [0,0,0]
 
@@ -115,13 +142,25 @@ def process_prior( tmp ):
 	return prior_tmp
 
 
+###################################################################################################
 
+
+
+
+###################################################################################################
 def parseint(str):
     try:
         return int(str)
     except ValueError:
         return str
 
+
+###################################################################################################
+
+
+
+
+###################################################################################################
 def parseint_index(str):
     try:
     	out=int(str)-1
@@ -130,7 +169,12 @@ def parseint_index(str):
         return str
 
 
+###################################################################################################
 
+
+
+
+###################################################################################################
 def parse_fitting_information( mod_str, node, species_number ):
 	fitref = node.getElementsByTagName(mod_str)[0]
 	tmp = str( fitref.firstChild.data ).split()
@@ -157,6 +201,12 @@ def parse_fitting_information( mod_str, node, species_number ):
 
 	return( ret1 )
 
+###################################################################################################
+
+
+
+
+###################################################################################################
 def parse_fitting_information_parameters(mod_str, node, item, parameter_number):
 	fitref = node.getElementsByTagName(mod_str)[0]
 	tmp = str( fitref.firstChild.data ).split()
@@ -181,39 +231,47 @@ def parse_fitting_information_parameters(mod_str, node, item, parameter_number):
 
 class algorithm_info:
 	"""
-	A class to parse the user-provided input file and return all information required to run the abc-SMC algorithm.
+	A class to parse the user-provided input file, return all information required to run cuda-sim and hold associated data.
 
 	"""
 
 	def __init__(self, filename, mode, combination_list):
 		xmldoc = minidom.parse(filename)
-		self.mode = mode
 		### mode is 0  inference, 1 simulate, 2 design
-
+		self.mode = mode
+		
+		### initialises attributes of the object
 		self.modelnumber = 0
 		self.particles = 0
 		self.beta = 0
 		self.dt = 0
 		self.times = []
 		self.ntimes = 0
+		self.nspecies_all=0
+		self.nparameters_all = 0
+		self.sigma= 0
+
+		
+		self.sampleFromPost = False
 		self.post_sample_file = ""
 		self.post_weight_file = ""
+		
+
+		self.initialprior = False
+
+
 		self.comp_fit= []
 		self.init_fit= []
 		self.param_fit = []
-		self.sigma= 0
+
+
 		self.N1sample = 0
 		self.N2sample = 0
 		self.N3sample = 0
 		self.N4sample = 0
+
+
 		self.combination = combination_list
-
-
-
-		self.nspecies_all=0
-		self.nparameters_all = 0
-		self.sampleFromPost = False
-		self.initialprior = False
 
 
 		self.nmodels = 0
@@ -237,6 +295,7 @@ class algorithm_info:
 		### get number of models
 		self.modelnumber = parse_required_single_value( xmldoc, "modelnumber", "Please provide an integer value for <modelnumber>", int )
 
+
 		### get number of samples
 		self.particles = parse_required_single_value( xmldoc, "particles", "Please provide an integer value for <particles>", int )
 
@@ -249,19 +308,21 @@ class algorithm_info:
 		dataref = xmldoc.getElementsByTagName('data')[0]
 
 
-		# times
+		# get timepoints
 		self.times = parse_required_vector_value( dataref, "times", "Please provide a whitespace separated list of values for <data><times>" , float )
 		self.ntimes = len(self.times)
+
 
 		### get global number of parameters
 		self.nparameters_all = parse_required_single_value(dataref, "nparameters_all", "Please provide an integer value for <data><nparameters_all>", int)
 
-		### sigma
+
+		### get sigma
 		self.sigma = parse_required_single_value(dataref, "sigma", "Please provide an float value for <data><sigma>", float)
+
 
 		### get information about sample from posterior
 		if parse_required_single_value( dataref, "samplefrompost", "Please provide a boolean value for <samplefrompost>", str ).strip()=="True":
-
 			self.sampleFromPost = True
 			self.post_sample_file = parse_required_single_value( dataref, "samplefrompost_file", "Please provide a file name for <samplefrompost_file>", str ).strip()
 			self.post_weight_file = parse_required_single_value( dataref, "samplefrompost_weights", "Please provide a file name for <samplefrompost_weights>", str ).strip()
@@ -273,7 +334,8 @@ class algorithm_info:
 		else:
 			self.initialprior = False
 
-		####nsamples
+
+		#### get sizes of N1, N2, N3 and N4 samples
 		nsampleref = xmldoc.getElementsByTagName('nsamples')[0]
 
 		self.N1sample = parse_required_single_value( dataref, "N1", "Please provide an integer value for <nsamples><N1>", int )
@@ -286,10 +348,6 @@ class algorithm_info:
 			sys.exit()
 
 
-
-
-
-
 		### get model attributes
 		modelref = xmldoc.getElementsByTagName('models')[0]
 		for m in modelref.childNodes:
@@ -299,47 +357,38 @@ class algorithm_info:
 				self.x0prior.append([])
 				self.compprior.append([])
 
+				#####################################################
 				try:
 					self.name.append( str(m.getElementsByTagName('name')[0].firstChild.data).strip() )
 				except:
 					print "Please provide a string value for <name> for model ", self.nmodels
 					sys.exit()
+				
+				#####################################################
 				try:
 					self.source.append( str(m.getElementsByTagName('source')[0].firstChild.data).strip() )
 				except:
 					print "Please provide an string value for <source> for model ", self.nmodels
 					sys.exit()
+				
+				#####################################################
 				try:
 					self.cuda.append( str(m.getElementsByTagName('cuda')[0].firstChild.data).strip() )
 				except:
 					print "Please provide an string value for <cuda> for model ", self.nmodels
 					sys.exit()
+				
+				#####################################################
 				try:
 					self.type.append( str(m.getElementsByTagName('type')[0].firstChild.data).strip() )
 				except:
 					print "Please provide an string value for <type> for model ", self.nmodels
 					sys.exit()
 
-				#initref = m.getElementsByTagName('initialvalues')[0]
-				#tmp = str( initref.firstChild.data ).split()
-				#self.init.append( [ float(i) for i in tmp ] )
-				#self.nspecies.append( len( self.init[self.nmodels-1] ) )
-
-
-#				self.fit.append( parse_fitting_information( m )  )
-
-#				nfitSpecies = 0
-#				fitSpeciesref = m.getElementsByTagName('fit')[0]
-#				for s in fitSpeciesref.childNodes:
-#					if s.nodeType == s.ELEMENT_NODE:
-#						nfitSpecies += 1
-#						tmp = str(s.firstChild.data).split()
-#						self.fitSpecies[self.nmodels-1].append(tmp)
-
-
 				nparameter = 0
 				ncompparam = 0
 
+				#####################################################
 				try:
 					compref = m.getElementsByTagName('compartments')[0]
 					for p in compref.childNodes:
@@ -351,9 +400,8 @@ class algorithm_info:
 				except:
 					ncompparam = 0
 
-
+				#####################################################
 				paramref = m.getElementsByTagName('parameters')[0]
-
 				for p in paramref.childNodes:
 					if p.nodeType == p.ELEMENT_NODE:
 						nparameter += 1
@@ -361,6 +409,8 @@ class algorithm_info:
 						tmp = str( p.firstChild.data ).split()
 						self.prior[self.nmodels-1].append( process_prior( tmp ) )
 
+
+				#####################################################
 				ninit = 0
 				initref = m.getElementsByTagName('initial')[0]
 				for inn in initref.childNodes:
@@ -398,27 +448,27 @@ class algorithm_info:
 			print "\nNo models specified"
 			sys.exit()
 
-
+		### checks if all models have the same number of species
 		if len(set(self.nspecies))==1:
 			self.nspecies_all = list(set(self.nspecies))[0]
 		else:
 			print "Models don't have the same number of species"
 			sys.exit()
 
-
+		### checks if all models have the same number of compartments
 		if len(set(self.ncompparams))==1: #and list(set(self.ncompparams))[0]!=0:
 			self.ncompparams_all = list(set(self.ncompparams))[0]
 		elif len(set(self.ncompparams))!=1:
 			print "Models don't have the same number of compartments"
 			sys.exit()
 
-
+		### checks if all models have the same number of parameters
 		if (len(set(self.nparameters))!=1) or (self.nparameters_all != list(set(self.nparameters))[0]):
 			print "Models don't have the same number of parameters"
 			sys.exit()
 
 
-		### paramter fit
+		### get paramter fit
 		try:
 			self.param_fit =( parse_fitting_information_parameters('paramfit', dataref, 'parameter' ,self.nparameters_all )  )
 		except:
@@ -426,7 +476,7 @@ class algorithm_info:
 			sys.exit()
 		###
 
-		### initial fit
+		### get initial fit
 		try:
 			self.init_fit =( parse_fitting_information_parameters('initfit', dataref, 'initial' ,self.nspecies_all )  )
 		except:
@@ -434,22 +484,12 @@ class algorithm_info:
 			sys.exit()
 		###
 
-		### compartment fit
+		### get compartment fit
 		try:
 			self.comp_fit=( parse_fitting_information_parameters('compfit', dataref, 'compartment' ,self.ncompparams_all )  )
 		except:
 			print "Compartments to predict are not defined properly with <compfit> ... </compfit> for model"
 			sys.exit()
-		###
-
-
-
-#	def post_cudasim(self, array):
-#		self.maxDist =
-#		self.scalefactor =
-#		self.fTheta =
-#		self.m =
-#
 
 
 

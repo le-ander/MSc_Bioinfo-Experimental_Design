@@ -4,6 +4,7 @@ from pycuda import compiler, driver
 from pycuda import autoinit
 
 import launch, sys
+import copy
 
 def odd_num(x):
     temp = []
@@ -14,6 +15,7 @@ def odd_num(x):
         x = x >> 1
     return asarray(temp).astype(int32)
 
+
 # A function to calculate the mutual information between all parameters of a system and an experiment
 ##(gets called by run_getEntropy1)
 ##Arguments:
@@ -22,6 +24,7 @@ def odd_num(x):
 ##N1,N2 - Number of particles
 ##sigma - stadard deviation
 ##scale - scaling constant to prevent nans and infs
+#@profile
 def getEntropy1(data,theta,N1,N2,sigma,scale):
 	# Kernel declaration using pycuda SourceModule
 
@@ -91,6 +94,7 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 
 	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
 	grid = launch.optimise_gridsize(8.59)
+	#grid = 384
 	grid_prelim_i = launch.round_down(sqrt(grid),block_i)
 	grid_prelim_j = launch.round_down(grid/grid_prelim_i,block_j)
 	# If gridsize in one dimention too large, reshape grid to allow more threads in the second dimension
@@ -124,6 +128,12 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 	# Maximum number of particles per run in i direction
 	Ni = int(grid_i)
 
+	# Maximum number of particles per run in j direction
+	Nj = int(grid_j)
+
+	# Create template array for res1
+	temp_res1 = zeros([Ni,Nj]).astype(float64)
+
 	# Determine M*P*log(scale) for GPU calculation
 	mplogscale= M*P*log(scale)
 
@@ -137,7 +147,7 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 		# If last run with less that max remaining particles, set Ni to remaining number of particles
 		if((int(grid_i)*(i+1)) > N1):
 			Ni = int(N1 - grid_i*i)
-
+			
 		# Prepare data that depends on i for this run
 		data1 = d1[(i*int(grid_i)):(i*int(grid_i)+Ni),:,:] # d1 subunit for the next j runs
 
@@ -148,22 +158,23 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 		else:
 			gi = ceil(Ni/block_i)
 			bi = block_i
-
+		
 		# Maximum number of particles per run in j direction
 		Nj = int(grid_j)
+		
+		# Resets last to "False"
+		last = False
 
-
-		for j in range(numRuns_j):
+		for j in range(numRuns_j):			
 			# If last run with less that max remaining particles, set Nj to remaining number of particles
 			if((int(grid_j)*(j+1)) > N2):
 				Nj = int(N2 - grid_j*j)
+				last = True
 
+			
 			# Prepare data that depends on j for this run
 			data2 = d2[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
 
-			# Prepare results array for this run
-			#res1 = zeros([Ni,Nj]).astype(float64) ###Could move into if statements (only if ni or nj change)
-			#res1 = init_res1(Ni, Nj)
 
 			# Set j dimension of block and grid for this run
 			if(Nj<block_j):
@@ -173,7 +184,14 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 				gj = ceil(Nj/block_j)
 				bj = block_j
 
-			res1 = zeros([Ni,int(gj)]).astype(float64)
+
+			# Prepare results array for run
+			if last==True:
+				res1 = copy.deepcopy(temp_res1[:Ni,:int(gj)])
+			elif j==0:
+				res1 = copy.deepcopy(temp_res1[:Ni,:int(gj)])
+
+			#res1 = zeros([Ni,int(gj)]).astype(float64)
 			
 			iterations = odd_num(int(bj))
 			
@@ -190,27 +208,21 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 			dist_gpu1(int32(temp_1), driver.In(iterations),int32(Ni),int32(Nj), int32(M), int32(P), float32(sigmasq_inv), float64(mplogscale), driver.In(data1), driver.In(data2), driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj),1), shared = 3000 )
 
 			# Summing rows in GPU output for this run
-			for k in range(Ni):
-				result[(i*int(grid_i)+k),j] = sum(res1[k,:])
+			result[i*int(grid_i):i*int(grid_i)+Ni,j]=sum(res1, axis=1)
+
 
 	# Initialising required variables for next steps
-	sum1 = 0.0
-	count_na = 0
-	count_inf = 0
 	logN2 = log(float(N2))
 	mplogpisigma= M*P*log(2.0*pi*sigma*sigma)
 
 	# Sum all content of new results matrix and add/subtract constants for each row if there are no NANs or infs
-	for i in range(N1):
-		if(isnan(sum(result[i,:]))): count_na += 1
-		elif(isinf(log(sum(result[i,:])))): count_inf += 1
-		else:
-			sum1 -= log(sum(result[i,:])) - logN2 - mplogscale -  mplogpisigma
-	print "Proportion of NAs", int((count_na/float(N1))*100), "%" ###Can we really get NAs??
-	print "Proportion of infs", int((count_inf/float(N1))*100), "%"
-
-	# Final division to give mutual information
-	Info = (sum1 / float(N1 - count_na - count_inf)) - M*P/2.0*(log(2.0*pi*sigma*sigma)+1)
+	
+	sum_result=ma.log(sum(result,axis=1))
+	count_inf=ma.count_masked(sum_result)
+	sum1 = -ma.sum(sum_result)+logN2*(N1-count_inf)+mplogscale*(N1-count_inf)+mplogpisigma*(N1-count_inf)
+	
+	print "Proportion of infs and NAs", int((count_inf/float(N1))*100), "%"
+	Info = (sum1 / float(N1- count_inf) - M*P/2.0*(log(2.0*pi*sigma*sigma)+1))
 
 	return(Info)
 
