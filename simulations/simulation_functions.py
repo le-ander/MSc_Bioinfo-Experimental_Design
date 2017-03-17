@@ -60,6 +60,7 @@ def run_cudasim(m_object,inpath="", intType="ODE",usesbml=False):
 
 		modelInstance = EulerMaruyama.EulerMaruyama(m_object.times, list(set(m_object.cuda)), dt=m_object.dt, inpath=inpath, beta = 10) 
 		LNAInstance = Lsoda.Lsoda(m_object.times, list(set(m_object.cuda)), dt=m_object.dt, inpath=inpath_LNA)
+		
 		if m_object.ncompparams_all > 0:
 			parameters=concatenate((m_object.compsSample,m_object.parameterSample),axis=1)
 		else:
@@ -68,10 +69,32 @@ def run_cudasim(m_object,inpath="", intType="ODE",usesbml=False):
 		#Sets species
 		species = m_object.speciesSample
 
+		try:
+			nspecies = len(species[0][0,:])
+		except:
+			nspecies = len(species[0,:])
+
+		var_IC = [""]*(nspecies*(nspecies+1)/2)
+		pos = 0
+		for i in range(nspecies):
+			for j in range(i,nspecies):
+				if i==j:
+					var_IC[pos] = 1
+				else:
+					var_IC[pos] = 0
+				pos+=1
+		var_IC = array(var_IC)
+		var_IC = tile((var_IC,)*parameters.shape[0],1)
+		
+		try:
+			species_var = [concatenate((x,var_IC),axis=1) for x in species]
+		except:
+			species_var = concatenate((species,var_IC),axis=1)
+
 		result = modelInstance.run(parameters, species, constant_sets = not(m_object.initialprior), pairings=m_object.pairParamsICS)
 		
-		print [x.shape for x in result]
-
+		result_var = LNAInstance.run(parameters, species_var, constant_sets = not(m_object.initialprior), pairings=m_object.pairParamsICS)
+		
 		sys.exit()
 		
 

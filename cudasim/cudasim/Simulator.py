@@ -80,8 +80,6 @@ class Simulator:
         else:
             self._stepCode = stepCode
 
-        print "here"
-
     ############ private methods ############
 
     # method for generating seeds for random number generators
@@ -185,7 +183,7 @@ class Simulator:
                 initValues_ind = pairings[self._cudafiles[count]]
                 initValues = np.zeros((np.shape(parameters)[0]*len(initValues_ind),self._speciesNumber))
                 for i, ICs in enumerate(initValues_ind):
-                    index_IC = [sum(ICs==x) for x in initValues_check].index(self._speciesNumber)
+                    index_IC = [sum(ICs==x[:len(ICs)]) for x in initValues_check].index(len(ICs))
                     initValues[i*np.shape(parameters_orig)[0]:(i+1)*np.shape(parameters_orig)[0],:] = initValues_orig[index_IC]
                 parameters = np.concatenate((parameters_orig,)*len(initValues_ind),axis=0)
                 #print parameters
