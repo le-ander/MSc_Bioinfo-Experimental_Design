@@ -17,7 +17,9 @@ cd $GPUDIR/mains
 #python main_1.py -a 1 -of=results -i1 input_file_hess1.xml -lc 1 -if=Example_data
 
 ##gE3 (SBML input):
-python main_1.py -a 2 -i1 p53_model.xml p53_model_exp.xml -i2 data_p53 data_p53_exp -of=results -lc 00 -if=Example_data #&> ~/work/Testing/orig6_124e4_11_cuda10.txt
+python main_1.py -a 2 -i1 p53_model.xml p53_model_exp.xml -i2 data_p53 data_p53_exp -of=results -lc 00 -if=Example_data 
+
+#&> ~/work/Testing/orig6_124e4_11_cuda10.txt
 
 
 unset CUDA_DEVICE
