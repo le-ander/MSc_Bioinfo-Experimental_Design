@@ -189,9 +189,6 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 			data2 = d2[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
 			data4 = d4[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
 
-			# Prepare result arrays for this run
-			#res1 = zeros([Ni,Nj]).astype(float64)
-
 			# Set j dimension of block and grid for this run
 			if(Nj<block_j):
 				gj = 1
@@ -284,8 +281,6 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 			# Prepare data that depends on j for this run
 			data6 = d6[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
 
-			# Prepare result arrays for this run
-			#res2 = zeros([Ni,Nj]).astype(float64)
 
 			# Set j dimension of block and grid for this run
 			if(Nj<block_j):
@@ -379,9 +374,6 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 			# Prepare data that depends on j for this run
 			data8 = d8[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
 
-			# Prepare result arrays for this run
-			#res3 = zeros([Ni,Nj]).astype(float64)
-
 			# Set j dimension of block and grid for this run
 			if(Nj<block_j):
 				gj = 1
@@ -398,114 +390,39 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 
 ########################Final Computations######################################
 
-	# Initialising required variables for next steps
-	'''
-	sum1 = 0.0
-	sumres1 = 0.0
-	sumres2 = 0.0
-	sumres3 = 0.0
-	a1 = 0.0
-	a2 = 0.0
-	a3 = 0.0
-	count1_na = 0
-	count1_inf = 0
-	count2_na = 0
-	count2_inf = 0
-	count3_na = 0
-	count3_inf = 0
-	'''
-	#print result1
-
 	#Precalculate logs of N2, N3 and N4
 	logN2 = log(float(N2))
 	logN3 = log(float(N3))
 	logN4 = log(float(N4))
 
 	# Sum all content of new results matrix and add/subtract constants for each row if there are no NANs or infs
-	#print result1.shape
 	sum_result1=ma.log(sum(result1,axis=1))
-	#print sum_result1
 	count_inf1=ma.count_masked(sum_result1)
-	#print count_inf1
 
 	sum_result2=ma.log(sum(result2,axis=1))
-	#print sum_result2
 	count_inf2=ma.count_masked(sum_result2)
-	#print count_inf2
 
 	sum_result3=ma.log(sum(result3,axis=1))
-	#print sum_result3
 	count_inf3=ma.count_masked(sum_result3)
-	#print count_inf3
 	
 	master_mask = ma.mask_or(ma.mask_or(sum_result1.mask, sum_result2.mask), sum_result3.mask)
-	#print type(master_mask)
-
-
-	'''
-	print sum_result1
-	print sum_result2
-	print sum_result3
-
-	print sum_result1.mask
-	print sum_result2.mask
-	print sum_result3.mask
-	'''
-
-	count_all_inf = sum(master_mask)
-	#print count_all_inf
 	mask = ~master_mask
 
+	#Sum of all Infs
+	count_all_inf = sum(master_mask)
+
+	#Final summation
 	sum_2= sum(sum_result1[mask]) - sum(sum_result2[mask]) - sum(sum_result3[mask]) - logN2*(N1-count_all_inf) + logN3*(N1-count_all_inf) + logN4*(N1-count_all_inf )
 	Info2 = sum_2/float(N1-count_all_inf)
-	#print Info2
-	'''
 	
-
-	for i in range(N1):
-		if(isinf(log(sum(result1[i,:])))):
-			count1_inf=count1_inf+1
-		elif(isnan(log(sum(result1[i,:])))):
-			count1_na=count1_na+1
-		elif(isinf(log(sum(result2[i,:])))):
-			count2_inf=count2_inf+1
-		elif(isnan(log(sum(result2[i,:])))):
-			count_na=count2_na+1
-		elif(isinf(log(sum(result3[i,:])))):
-			count3_inf=count3_inf+1
-		elif(isnan(log(sum(result3[i,:])))):
-			count3_na=count3_na+1
-		else:
-			sum1 += log(sum(result1[i,:])) - log(sum(result2[i,:])) - log(sum(result3[i,:])) - logN2 + logN3 + logN4
-			# Optional calculations of intermediate results
-			#a1 += log(sum(result1[i,:])) - log(N2) - M_Ref*P_Ref*log(2.0*pi*sigma_ref*sigma_ref) - M_Mod*P_Mod*log(2.0*pi*sigma_mod*sigma_mod) - M_Ref*P_Ref*scale - M_Mod*P_Mod*scale
-			#a2 -= log(sum(result2[i,:])) + log(N3) + M_Ref*P_Ref*log(2.0*pi*sigma_ref*sigma_ref) + M_Ref*P_Ref*scale
-			#a3 -= log(sum(result3[i,:])) + log(N4) + M_Mod*P_Mod*log(2.0*pi*sigma_mod*sigma_mod) + M_Mod*P_Mod*scale
 	
-	# Sum number of all NAs and Infs
-	count_all = count1_inf + count1_na + count2_inf + count2_na + count3_inf + count3_na
-	
-	# Printing intermediate results
-	#print "a1: ", a1/float(N1-count1_na-count1_inf) , "a2: ", a2/float(N1-count2_na-count2_inf), "a3: ", a3/float(N1-count3_na-count3_inf)
-	#print "all: ", a1/float(N1-count1_na-count1_inf) + a2/float(N1-count2_na-count2_inf) + a3/float(N1-count3_na-count3_inf)
-	#print "sum1: ", sum1
-	print "", "Infs"#, "NAs"
-	print "1", count1_inf#, count1_na
-	print "2", count2_inf#, count2_na
-	print "3", count3_inf#, count3_na
-	'''
-	print "", "Infs"#, "NAs"
-	print "1", count_inf1#, count1_na
-	print "2", count_inf2#, count2_na
-	print "3", count_inf3#, count3_na
+	# Printing Infs  results
+	print "", "Infs"
+	print "1", count_inf1
+	print "2", count_inf2
+	print "3", count_inf3
+	print "total", count_all_inf
 
-	# Final division to give mutual information
-	#Info = sum1/float(N1-count_all)
-
-	###Testing block....REMOVE!
-	#print Info
-	#print "DONE"
-	#sys.exit()
 
 	return(Info2)
 
