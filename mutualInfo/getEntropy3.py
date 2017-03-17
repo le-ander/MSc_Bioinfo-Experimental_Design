@@ -28,7 +28,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 		return i*M + j;
 	}
 
-	__global__ void distance1(int Ni, int Nj, int M_Ref, int P_Ref, int M_Mod, int P_Mod, float sigma_inv_ref, float sigma_inv_mod, double mpscale_sum, double *d1, double *d2, double *d3, double *d4, double *res1)
+	__global__ void distance1(int Ni, int Nj, int M_Ref, int P_Ref, int M_Mod, int P_Mod, float sigma_ref, float sigma_mod, double mpscale_sum, double *d1, double *d2, double *d3, double *d4, double *res1)
 	{
 	int i = threadIdx.x + blockDim.x * blockIdx.x;
 	int j = threadIdx.y + blockDim.y * blockIdx.y;
@@ -52,10 +52,10 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 		}
 	}
 
-	res1[idx2d(i,j,Nj)] = exp(mpscale_sum + sigma_inv_ref*x1 + sigma_inv_mod*x3);
+	res1[idx2d(i,j,Nj)] = exp(mpscale_sum + sigma_ref*x1 + sigma_mod*x3);
 	}
 
-	__global__ void distance2(int Ni, int Nj, int M, int P, float sigma_inv, double mpscale, double *d5, double *d6, double *res2)
+	__global__ void distance2(int Ni, int Nj, int M, int P, float sigma, double mpscale, double *d5, double *d6, double *res2)
 	{
 	int i = threadIdx.x + blockDim.x * blockIdx.x;
 	int j = threadIdx.y + blockDim.y * blockIdx.y;
@@ -71,7 +71,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 		}
 	}
 
-	res2[idx2d(i,j,Nj)] = exp(mpscale + sigma_inv*x2);
+	res2[idx2d(i,j,Nj)] = exp(mpscale + sigma*x2);
 	}
 
 	""")
