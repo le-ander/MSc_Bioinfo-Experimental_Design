@@ -5,6 +5,15 @@ from pycuda import autoinit
 import sys
 import launch
 
+def odd_num(x):
+    temp = []
+    pos=0
+    while x > 1:
+        if x%2 ==1:
+            temp.append(x)
+        x = x >> 1
+    return asarray(temp).astype(int32)
+
 # A function to calculate the mutual information between the outcome of two experiments
 ##(gets called by run_getEntropy1)
 ##Arguments: (Ref = reference experiment, Mod = alternative experiment)
@@ -26,69 +35,127 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 		return i*M + j;
 	}
 
-	__global__ void distance1(int Ni, int Nj, int M_Ref, int P_Ref, int M_Mod, int P_Mod, float sigma_ref, float sigma_mod, double scale_ref, double scale_mod, double *d1, double *d2, double *d3, double *d4, double *res1)
+	__global__ void distance1(int len_odd, int* odd_nums, int Ni, int Nj, int M_Ref, int P_Ref, int M_Mod, int P_Mod, float sigma_ref, float sigma_mod, double scale_ref, double scale_mod, double *d1, double *d2, double *d3, double *d4, double *res1)
 	{
-	int i = threadIdx.x + blockDim.x * blockIdx.x;
-	int j = threadIdx.y + blockDim.y * blockIdx.y;
+		extern __shared__ double s[];
 
-	if((i>=Ni)||(j>=Nj)) return;
+		unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
+		unsigned int j = threadIdx.y + blockDim.y * blockIdx.y;
+		unsigned int tid = threadIdx.y;
 
-	double x1;
-	x1 = 0.0;
-	double x3;
-	x3 = 0.0;
+		s[idx2d(threadIdx.x,tid,blockDim.y)] = 0.0;
 
-	for(int k=0; k<M_Ref; k++){
-		for(int l=0; l<P_Ref; l++){
-			x1 = x1 + scale_ref - ( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])*( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])/(2.0*sigma_ref*sigma_ref);
+		if((i>=Ni)||(j>=Nj)) return;
+
+		for(int k=0; k<M_Ref; k++){
+			for(int l=0; l<P_Ref; l++){
+				s[idx2d(threadIdx.x,tid,blockDim.y)] = s[idx2d(threadIdx.x,tid,blockDim.y)] + scale_ref - ( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])*( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])/(2.0*sigma_ref*sigma_ref);
+			}
 		}
-	}
 
-	for(int k=0; k<M_Mod; k++){
-		for(int l=0; l<P_Mod; l++){
-			x3 = x3 + scale_mod - ( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])*( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])/(2.0*sigma_mod*sigma_mod);
+		for(int k=0; k<M_Mod; k++){
+			for(int l=0; l<P_Mod; l++){
+				s[idx2d(threadIdx.x,tid,blockDim.y)] = s[idx2d(threadIdx.x,tid,blockDim.y)] + scale_mod - ( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])*( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])/(2.0*sigma_mod*sigma_mod);
+			}
 		}
+
+		s[idx2d(threadIdx.x,tid,blockDim.y)] =  exp(s[idx2d(threadIdx.x,tid,blockDim.y)]);
+		__syncthreads();
+
+        for(unsigned int k=blockDim.y/2; k>0; k>>=1){
+            if(tid < k){
+                s[idx2d(threadIdx.x,tid,blockDim.y)] += s[idx2d(threadIdx.x,tid+k,blockDim.y)];
+            }
+            __syncthreads();
+        }
+
+        if(len_odd != -1){
+	        for(unsigned int l=0; l<len_odd; l+=1){
+	            if (tid == 0) s[idx2d(threadIdx.x,0,blockDim.y)] += s[idx2d(threadIdx.x, odd_nums[l]-1 ,blockDim.y)];
+	            __syncthreads();
+	        }
+	    }
+
+		if (tid==0) res1[idx2d(i,blockIdx.y,gridDim.y)] = s[idx2d(threadIdx.x,0,blockDim.y)];	
+
 	}
 
-	res1[idx2d(i,j,Nj)] = exp(x1+x3);
-	}
-
-	__global__ void distance2(int Ni, int Nj, int M_Ref, int P_Ref, int M_Mod, int P_Mod, float sigma_ref, float sigma_mod, double scale_ref, double scale_mod, double *d1, double *d6, double *res2)
+	__global__ void distance2(int len_odd, int* odd_nums, int Ni, int Nj, int M_Ref, int P_Ref, int M_Mod, int P_Mod, float sigma_ref, float sigma_mod, double scale_ref, double scale_mod, double *d1, double *d6, double *res2)
 	{
-	int i = threadIdx.x + blockDim.x * blockIdx.x;
-	int j = threadIdx.y + blockDim.y * blockIdx.y;
+		extern __shared__ double s[];
 
-	if((i>=Ni)||(j>=Nj)) return;
+		unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
+		unsigned int j = threadIdx.y + blockDim.y * blockIdx.y;
+		unsigned int tid = threadIdx.y;
 
-	double x2;
-	x2 = 0.0;
+		s[idx2d(threadIdx.x,tid,blockDim.y)] = 0.0;
 
-	for(int k=0; k<M_Ref; k++){
-		for(int l=0; l<P_Ref; l++){
-			x2 = x2 + scale_ref - ( d6[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])*( d6[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])/(2.0*sigma_ref*sigma_ref);
+		if((i>=Ni)||(j>=Nj)) return;
+
+		for(int k=0; k<M_Ref; k++){
+			for(int l=0; l<P_Ref; l++){
+				s[idx2d(threadIdx.x,tid,blockDim.y)] = s[idx2d(threadIdx.x,tid,blockDim.y)] + scale_ref - ( d6[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])*( d6[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])/(2.0*sigma_ref*sigma_ref);
+			}
 		}
+
+		s[idx2d(threadIdx.x,tid,blockDim.y)] =  exp(s[idx2d(threadIdx.x,tid,blockDim.y)]);
+		__syncthreads();
+
+		for(unsigned int k=blockDim.y/2; k>0; k>>=1){
+            if(tid < k){
+                s[idx2d(threadIdx.x,tid,blockDim.y)] += s[idx2d(threadIdx.x,tid+k,blockDim.y)];
+            }
+            __syncthreads();
+        }
+
+        if(len_odd != -1){
+	        for(unsigned int l=0; l<len_odd; l+=1){
+	            if (tid == 0) s[idx2d(threadIdx.x,0,blockDim.y)] += s[idx2d(threadIdx.x, odd_nums[l]-1 ,blockDim.y)];
+	            __syncthreads();
+	        }
+	    }
+
+		if (tid==0) res2[idx2d(i,blockIdx.y,gridDim.y)] = s[idx2d(threadIdx.x,0,blockDim.y)];	
+
 	}
 
-	res2[idx2d(i,j,Nj)] = exp(x2);
-	}
-
-	__global__ void distance3(int Ni, int Nj, int M_Ref, int P_Ref, int M_Mod, int P_Mod, float sigma_ref, float sigma_mod, double scale_ref, double scale_mod, double *d3, double *d8, double *res3)
+	__global__ void distance3(int len_odd, int* odd_nums, int Ni, int Nj, int M_Ref, int P_Ref, int M_Mod, int P_Mod, float sigma_ref, float sigma_mod, double scale_ref, double scale_mod, double *d3, double *d8, double *res3)
 	{
-	int i = threadIdx.x + blockDim.x * blockIdx.x;
-	int j = threadIdx.y + blockDim.y * blockIdx.y;
+		extern __shared__ double s[];
 
-	if((i>=Ni)||(j>=Nj)) return;
+		unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
+		unsigned int j = threadIdx.y + blockDim.y * blockIdx.y;
+		unsigned int tid = threadIdx.y;
 
-	double x3;
-	x3 = 0.0;
+		s[idx2d(threadIdx.x,tid,blockDim.y)] = 0.0;
 
-	for(int k=0; k<M_Mod; k++){
-		for(int l=0; l<P_Mod; l++){
-			x3 = x3 + scale_mod - ( d8[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])*( d8[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])/(2.0*sigma_mod*sigma_mod);
+		if((i>=Ni)||(j>=Nj)) return;
+
+		for(int k=0; k<M_Mod; k++){
+			for(int l=0; l<P_Mod; l++){
+				s[idx2d(threadIdx.x,tid,blockDim.y)] = s[idx2d(threadIdx.x,tid,blockDim.y)] + scale_mod - ( d8[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])*( d8[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])/(2.0*sigma_mod*sigma_mod);
+			}
 		}
-	}
 
-	res3[idx2d(i,j,Nj)] = exp(x3);
+		s[idx2d(threadIdx.x,tid,blockDim.y)] =  exp(s[idx2d(threadIdx.x,tid,blockDim.y)]);
+		__syncthreads();
+
+		for(unsigned int k=blockDim.y/2; k>0; k>>=1){
+            if(tid < k){
+                s[idx2d(threadIdx.x,tid,blockDim.y)] += s[idx2d(threadIdx.x,tid+k,blockDim.y)];
+            }
+            __syncthreads();
+        }
+
+        if(len_odd != -1){
+	        for(unsigned int l=0; l<len_odd; l+=1){
+	            if (tid == 0) s[idx2d(threadIdx.x,0,blockDim.y)] += s[idx2d(threadIdx.x, odd_nums[l]-1 ,blockDim.y)];
+	            __syncthreads();
+	        }
+	    }
+
+		if (tid==0) res3[idx2d(i,blockIdx.y,gridDim.y)] = s[idx2d(threadIdx.x,0,blockDim.y)];	
+
 	}
 
 	""")
@@ -184,7 +251,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 			data4 = d4[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
 
 			# Prepare result arrays for this run
-			res1 = zeros([Ni,Nj]).astype(float64)
+			#res1 = zeros([Ni,Nj]).astype(float64)
 
 			# Set j dimension of block and grid for this run
 			if(Nj<block_j):
@@ -194,8 +261,20 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 				bj = block_j
 				gj = ceil(Nj/block_j)
 
+			res1 = zeros([Ni,int(gj)]).astype(float64)
+			
+			iterations = odd_num(int(bj))
+			
+			if iterations.size == 0:
+				#print "here"
+				temp_1=-1
+				iterations = zeros([1]).astype(float64)
+			else:
+				#print "here2"
+				temp_1 = iterations.size
+
 			# Call GPU kernel functions
-			dist_gpu1(int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_ref), float32(sigma_mod), float64(scale_ref), float64(scale_mod), driver.In(data1), driver.In(data2), driver.In(data3), driver.In(data4), driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+			dist_gpu1(int32(temp_1), driver.In(iterations), int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_ref), float32(sigma_mod), float64(scale_ref), float64(scale_mod), driver.In(data1), driver.In(data2), driver.In(data3), driver.In(data4), driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)),shared=3000)
 
 			# Summing rows in GPU output for this run
 			for k in range(Ni):
@@ -269,7 +348,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 			data6 = d6[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
 
 			# Prepare result arrays for this run
-			res2 = zeros([Ni,Nj]).astype(float64)
+			#res2 = zeros([Ni,Nj]).astype(float64)
 
 			# Set j dimension of block and grid for this run
 			if(Nj<block_j):
@@ -279,8 +358,19 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 				bj = block_j
 				gj = ceil(Nj/block_j)
 
+			res2 = zeros([Ni,int(gj)]).astype(float64)
+			
+			iterations = odd_num(int(bj))
+			
+			if iterations.size == 0:
+				#print "here"
+				temp_1=-1
+				iterations = zeros([1]).astype(float64)
+			else:
+				#print "here2"
+				temp_1 = iterations.size
 			# Call GPU kernel functions
-			dist_gpu2(int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_ref), float32(sigma_mod), float64(scale_ref), float64(scale_mod), driver.In(data1), driver.In(data6), driver.Out(res2), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+			dist_gpu2(int32(temp_1), driver.In(iterations), int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_ref), float32(sigma_mod), float64(scale_ref), float64(scale_mod), driver.In(data1), driver.In(data6), driver.Out(res2), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)), shared=3000)
 
 			# Summing rows in GPU output for this run
 			for k in range(Ni):
@@ -354,7 +444,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 			data8 = d8[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
 
 			# Prepare result arrays for this run
-			res3 = zeros([Ni,Nj]).astype(float64)
+			#res3 = zeros([Ni,Nj]).astype(float64)
 
 			# Set j dimension of block and grid for this run
 			if(Nj<block_j):
@@ -364,8 +454,20 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 				bj = block_j
 				gj = ceil(Nj/block_j)
 
+			res3 = zeros([Ni,int(gj)]).astype(float64)
+			
+			iterations = odd_num(int(bj))
+			
+			if iterations.size == 0:
+				#print "here"
+				temp_1=-1
+				iterations = zeros([1]).astype(float64)
+			else:
+				#print "here2"
+				temp_1 = iterations.size
+
 			# Call GPU kernel functions
-			dist_gpu3(int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_ref), float32(sigma_mod), float64(scale_ref), float64(scale_mod), driver.In(data3), driver.In(data8), driver.Out(res3), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+			dist_gpu3(int32(temp_1), driver.In(iterations), int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_ref), float32(sigma_mod), float64(scale_ref), float64(scale_mod), driver.In(data3), driver.In(data8), driver.Out(res3), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)),shared=3000)
 
 			# Summing rows in GPU output for this run
 			for k in range(Ni):
