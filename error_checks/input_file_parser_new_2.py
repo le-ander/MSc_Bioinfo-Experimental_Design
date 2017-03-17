@@ -45,9 +45,6 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 	filename:  a string.
 			   The name of the template to be generated.
 
-	sumnname:  a string.
-			   The name of the summary to be generated.
-
 	dataname:  a string.
 			   The name of a datafile.
 
@@ -88,9 +85,8 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 	
 
 
-	####Open summary and input xml file###################################################
+	####Open input xml file###################################################
 	out_file=open(outpath+"/"+filename+".xml","w")
-	sum_file=open(outpath+"/"+sumname+".xml","w")
 	#################################################################################################
 
 	###regex to identify corresponding cuda file##########################################
@@ -350,7 +346,7 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 		out_file.write("<times> 0 1 2 3 4 5 6 7 8 9 10 </times>\n\n")
 	###################################################################################################################################
 
-	####Writes N######################################################################################################################
+	####Writes sample sizes for N1, N2, N3 and N4######################################################################################
 	out_file.write("# Sizes of N1, N2, N3 and N4 samples for enthropy calculation\n")
 	if (have_data==True and nsample):
 		out_file.write("<nsamples>\n");
@@ -364,7 +360,7 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 		out_file.write("<nsamples>\n<N1>9000</N1>\n<N2>1000</N2>\n<N3>0</N3>\n<N4>0</N4>\n</nsamples>\n\n")
 	###################################################################################################################################
 
-	###################################################################################################################################
+	####Writes sigma###################################################################################################################
 	out_file.write("# Sigma\n")
 	if (have_data==True and sigma):
 		out_file.write("<sigma> "+ repr(sigma) +" </sigma>\n\n")
@@ -372,21 +368,21 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 		out_file.write("<sigma> 5.0 </sigma>\n\n")
 	###################################################################################################################################
 
-	###################################################################################################################################
+	####Writes numbers of parameters found in all models###############################################################################
 	out_file.write("# Numbers of parameters defined in models below \n")
 	out_file.write("<nparameters_all> ")
 	out_file.write(repr(nparameters_all))
 	out_file.write(" </nparameters_all> \n\n")
 	###################################################################################################################################
 
-	#######################################################################
+	####Writes if initial conditions are defined by prior distributions################################################################
 	out_file.write("# Indicates if a initial conditions are provided as prior distributions \n")
 	out_file.write("<initialprior> ")
 	out_file.write(repr(init_prior))
 	out_file.write(" </initialprior>\n\n")
 	###################################################################################################################################
 
-	###################################################################################################################################
+	####Writes the fit for parameters, initial condtions and compartments##############################################################
 	out_file.write("# Single or subset of parameters to be considered for calculation of mututal inforamtion:\n")
 		
 	out_file.write("<paramfit> ")
@@ -394,7 +390,6 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 	out_file.write(" </paramfit>\n\n")
 
 	out_file.write("<initfit> ")
-
 	out_file.write(fit_init)
 	out_file.write(" </initfit>\n\n")
 
@@ -403,11 +398,12 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 	out_file.write(" </compfit>\n\n")
 	#######################################################################
 
-	####Posterior sample###################################################
+	####Writes if posterior sample is provided and where the samples and associated weights file are located ###########################
 	out_file.write("# Indicates if a sample from a posterior + associated weights are provided(1=True / 0=False) and the names of sample and weight file \n")
 	out_file.write("<samplefrompost> ")
 	out_file.write(repr(samplefrompost))
 	out_file.write(" </samplefrompost>\n")
+	
 	if samplefrompost == True:
 		out_file.write("<samplefrompost_file> " + samplefrompost_samplefile + " </samplefrompost_file>\n")
 		out_file.write("<samplefrompost_weights> " + samplefrompost_weights + " </samplefrompost_weights>\n\n")
@@ -417,7 +413,7 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 	#######################################################################
 
 	out_file.write("</data>\n\n")
-	######################################################################################
+	
 
 
 	####Models/Experiments################################################################
@@ -426,10 +422,8 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 
 
 	for j in range(len(comb)):
-
-		sum_file.write("Model "+repr(j+1)+"\n")
-		sum_file.write("name: model"+repr(j+1)+"\nsource: "+source[comb[j][1]]+"\n\n")
-		###################################################################################################################################
+		####Writes general information about model/experiment##############################################################################
+		#####SBML source file, associated cuda file and type of model#####################################################################
 		out_file.write("<model"+repr(j+1)+">\n")
 		out_file.write("<name> model"+repr(j+1)+" </name>\n<source> "+source[comb[j][1]]+" </source>\n")
 		out_file.write("<cuda> " + cudaid.match(source[comb[j][1]]).group() + ".cu </cuda>\n\n")
@@ -437,7 +431,7 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 		out_file.write("<type> ODE </type>\n\n")  ################# Needs to be adapted
 		###################################################################################################################################
 
-		###################################################################################################################################
+		####Writes which species will be fitted############################################################################################
 		out_file.write("# Fitting information. If fit is ALL, all species in the model are fitted to the data in the order they are listed in the model.\n")
 		out_file.write("# Otherwise, give a whitespace delimited list of fitting instrictions the same length as the dimensions of your data.\n")
 		out_file.write("# Use speciesN to denote the Nth species in your model. Simple arithmetic operations can be performed on the species from your model.\n")
@@ -446,14 +440,13 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 			out_file.write("<fit> " + fit_species[comb[j][2]] + " </fit>\n\n");
 		else:
 			out_file.write("<fit> All </fit>\n\n")
-		###################################################################################################################################
+		
+		####Open source file and obtain basic information about the model##################################################################
 		document=reader.readSBML(inpath+"/"+source[comb[j][1]])
 		model=document.getModel()
 
 		numSpecies=model.getNumSpecies()
 		numGlobalParameters=model.getNumParameters()
-
-
 
 		parameter=[]
 		parameterId=[]
@@ -503,27 +496,10 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 		numParameters=numLocalParameters+numGlobalParameters
 
 		species = model.getListOfSpecies()
-		##for k in range(0, len(species)):
-			##if (species[k].getConstant() == True):
-				##numParameters=numParameters+1
-				##parameter.append(getSpeciesValue(species[k]))
-				##parameterId.append(species[k].getId())
-				##parameterId2.append('species'+repr(k+1))
-				##numSpecies=numSpecies-1
-
-		sum_file.write("number of compartments: "+repr(NumCompartments)+"\n")
-		sum_file.write("number of reactions: "+repr(NumReactions)+"\n")
-		sum_file.write("number of rules: "+repr(model.getNumRules())+"\n")
-		if model.getNumRules()>0:
-			sum_file.write("\t Algebraic rules: "+repr(r1)+"\n")
-			sum_file.write("\t Assignment rules: "+repr(r2)+"\n")
-			sum_file.write("\t Rate rules: "+repr(r3)+"\n\n")
-		sum_file.write("number of functions: "+repr(model.getNumFunctionDefinitions())+"\n")
-		sum_file.write("number of events: "+repr(model.getNumEvents())+"\n\n")
 
 
 		paramAsSpecies=0
-		sum_file.write("Species with initial values: "+repr(numSpecies)+"\n")
+		
 
 
 		###################################################################################################################################
@@ -534,7 +510,7 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 		out_file.write("#       uniform, lower, upper \n")
 		out_file.write("#       lognormal, mean, variance \n\n")
 		out_file.write("#       posterior \n\n")
-		###################################################################################################################################
+		####Writes values/prior for initial conditions#####################################################################################
 		out_file.write("<initial>\n")
 
 		counter=0
@@ -548,7 +524,6 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 						x=x+1
 						#out_file.write(repr(getSpeciesValue(species[k]))+", ")
 						out_file.write(" <ic"+repr(x)+"> constant "+repr(getSpeciesValue(species[k]))+" </ic"+repr(x)+">\n")
-						sum_file.write("S"+repr(x)+":\t"+species[k].getId()+"\tspecies"+repr(k+1)+"\t("+repr(getSpeciesValue(species[k]))+")\n")
 
 
 				else:
@@ -574,45 +549,16 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 			out_file.write(" </ic1>\n")
 
 
-
-
-
-
-		# x=0
-		# for k in range(0,len(species)):
-		# 	##if (species[k].getConstant() == False):
-		# 	x=x+1
-		# 	#out_file.write(repr(getSpeciesValue(species[k]))+", ")
-		# 	out_file.write(" <ic"+repr(x)+"> constant "+repr(getSpeciesValue(species[k]))+" </ic"+repr(x)+">\n")
-		# 	sum_file.write("S"+repr(x)+":\t"+species[k].getId()+"\tspecies"+repr(k+1)+"\t("+repr(getSpeciesValue(species[k]))+")\n")
-
-
-
-		# for k in range(0,len(listOfParameter)):
-		# 	if listOfParameter[k].getConstant()==False:
-		# 		for j in range(0, len(listOfRules)):
-		# 			if listOfRules[j].isRate():
-		# 				if parameterId[k]==listOfRules[j].getVariable():
-		# 					x=x+1
-		# 					paramAsSpecies=paramAsSpecies+1
-		# 					#out_file.write(repr(listOfParameter[k].getValue())+", ")
-		# 					out_file.write(" <ic"+repr(x)+"> constant "+repr(listOfParameter[k].getValue())+" </ic"+repr(x)+">\n")
-		# 					sum_file.write("S"+repr(x)+":\t"+listOfParameter[k].getId()+"\tparameter"+repr(k+1-comp)+"\t("+repr(listOfParameter[k].getValue())+") (parameter included in a rate rule and therefore treated as species)\n")
-
 		out_file.write("</initial>\n\n")
-		sum_file.write("\n")
-		#######################################################################
+		###################################################################################################################################
 
-		####Compartments#######################################################
+
+		####Writes compartment defined for model/experiment and their associated sizes expressed as constants or priors####################
 		out_file.write("<compartments>\n")
 		counter=0
 		if have_data==True:
 			for k in range(len(comps)):
 				counter=counter+1
-#					sum_file.write("P"+repr(counter)+":\t"+parameterId[k]+"\t"+parameterId2[k]+"\t("+repr(parameter[k])+")\n")
-#					out_file.write("<compartment"+repr(counter)+"> ")
-#					out_file.write(comps[k][0] + " ")
-#					out_file.write(repr(comps[k][1]) + " " + repr(comps[k][2]) + " </compartment" + repr(counter)+">\n")
 				out_file.write("<compartment"+repr(counter)+"> ")
 				out_file.write(comps[k])
 				out_file.write(" </compartment" + repr(counter)+">\n")
@@ -624,85 +570,52 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 			out_file.write(" </compartment1>\n")
 
 		out_file.write("</compartments>\n\n")
-		#######################################################################
+		###################################################################################################################################
 
 
 
-		####Parameters#########################################################
-		if(numGlobalParameters==0): string=" (all of them are local parameters)\n"
-		elif(numGlobalParameters==1): string=" (the first parameter is a global parameter)\n"
-		elif(numLocalParameters==0): string=" (all of them are global parameters)\n"
-		else: string=" (the first "+repr(numGlobalParameters)+" are global parameter)\n"
-
-		sum_file.write("Parameter: "+repr(numParameters)+string)
-		sum_file.write("("+repr(paramAsSpecies)+" parameter is treated as species)\n")
-
+		####Writes parameters of model/experiment defined for model/experiment and their associated sizes expressed as priors##############
 		out_file.write("<parameters>\n")
-#				print numParameters
-#				print paramAsSpecies
-
 		counter=0
 
 		if have_data==True:
 			if samplefrompost==False:
 				for k in range(models_nparameters[comb[j][1]]):
 					counter=counter+1
-					sum_file.write("P"+repr(counter)+":\t"+parameterId[k]+"\t"+parameterId2[k]+"\t("+repr(parameter[k])+")\n")
 					out_file.write("<parameter"+repr(counter)+"> ")
 					out_file.write(prior[k])
 					out_file.write(" </parameter" + repr(counter)+">\n")
-#					out_file.write(prior[k][0] + " ")
-#					out_file.write(repr(prior[k][1]) + " " + repr(prior[k][2]) + " </parameter" + repr(counter)+">\n")
-
-	#            Print = True
-	#            if k<len(listOfParameter):
-	#                if listOfParameter[k].getConstant()==False:
-	#                    for j in range(0, len(listOfRules)):
-	#                        if listOfRules[j].isRate():
-	#                            if parameterId[k]==listOfRules[j].getVariable(): Print = False
-	#            else: Print == True
-
+#					
 			elif samplefrompost==True:
 				for k in range(models_nparameters[comb[j][1]]):
 					counter=counter+1
-					sum_file.write("P"+repr(counter)+":\t"+parameterId[k]+"\t"+parameterId2[k]+"\t("+repr(parameter[k])+")\n")
 					out_file.write("<parameter"+repr(counter)+"> ")
 					out_file.write("posterior")
 					out_file.write(" </parameter" + repr(counter)+">\n")
 
 
 
-
-
-
-
-
 		else:
 			for k in range(numParameters-paramAsSpecies):
 				counter=counter+1
-				sum_file.write("P"+repr(counter)+":\t"+parameterId[k]+"\t"+parameterId2[k]+"\t("+repr(parameter[k])+")\n")
 				out_file.write("<parameter"+repr(counter)+">")
 				out_file.write(" constant ")
 				out_file.write(repr(parameter[k])+" </parameter"+repr(counter)+">\n")
 
-		sum_file.write("\n############################################################\n\n")
 
 		out_file.write("</parameters>\n")
-		#######################################################################
+		###################################################################################################################################
 
 		out_file.write("</model"+repr(j+1)+">\n\n") 
-		######################################################################################
+		
 
 	out_file.write("</models>\n\n")
 	out_file.write("</input>\n\n")
-	######################################################################################
+	
 
-	######################################################################################
+	#####Closes summary and inpput xml file################################################################################################
 	out_file.close()
-	sum_file.close()
 	######################################################################################
 
+	#####Return list of the combination of the experimental condition used to define aboves experiment#####################################
 	return comb
-
-
-
