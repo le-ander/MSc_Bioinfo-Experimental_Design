@@ -184,6 +184,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 	print "-----Running CUDA-Sim-----"
 
 	#Calls function to run cudasim and sort output
+	
 	cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath,intType=intType,usesbml=usesbml)
 
 	#Calculates the scaling factor
