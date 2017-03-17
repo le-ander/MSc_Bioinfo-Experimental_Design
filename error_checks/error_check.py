@@ -40,6 +40,7 @@ def input_checker(sys_arg):
 	iname = "" #string for where the input files are
 	analysis = 3 #sets the type of approach
 	input_file_data=[] #list containing associated input files for SBML files
+	intType="ODE"
 
 	#For loop cycles over the command line arguments
 	for i in range(1,len(sys_arg)):
@@ -97,6 +98,8 @@ def input_checker(sys_arg):
 			elif option[0:9] == "infolder=":
 				iname = option[9:]
 				print "Input file destination: " + iname + "\n"
+			elif option == 'intType' :
+				intType = sys_arg[i+1]
 			#If flag not recognised calls printOptions()
 			elif not(sys_arg[i-1][2:] == 'infile_SBML'):
 				print "\nunknown option "+sys_arg[i]
@@ -157,6 +160,8 @@ def input_checker(sys_arg):
 			elif option[0:3] == "if=":
 				iname = option[3:]
 				print "Input file destination: " + iname + "\n"
+			elif option == 'iT' :
+				intType = sys_arg[i+1]
 			#If an unrecognised flag is called and calls printOptions
 			elif not(sys_arg[i-1][2:] == 'i1'):
 				print "\nunknown option "+sys_arg[i]
@@ -182,4 +187,4 @@ def input_checker(sys_arg):
 	if not(os.path.isdir("./"+fname)):
 		os.mkdir(fname)
 
-	return input_file_SBML, input_file_data, analysis, fname, usesbml, iname
+	return input_file_SBML, input_file_data, analysis, fname, usesbml, iname, intType

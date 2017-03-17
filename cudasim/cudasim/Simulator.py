@@ -1,6 +1,6 @@
 import numpy as np
 import time, math,os
-import copy
+import copy, sys
 
 import pycuda.tools as tools
 import pycuda.driver as driver
@@ -79,6 +79,8 @@ class Simulator:
             self._completeCode, self._compiledRunMethod = self._compile(stepCode)
         else:
             self._stepCode = stepCode
+
+        print "here"
 
     ############ private methods ############
 

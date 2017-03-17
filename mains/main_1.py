@@ -7,7 +7,7 @@ sys.path.insert(1, '../simulations')
 sys.path.insert(1, '../mutualInfo')
 sys.path.insert(1, '../abc-sysbio')
 sys.path.insert(1, '../cudasim')
-
+sys.path.insert(1, '../SDE_parsing')
 
 import simulation_functions
 import organiser
@@ -20,6 +20,7 @@ import getEntropy2
 import getEntropy3
 import cudacodecreater
 import plotbar
+import SDE_parse
 from numpy import *
 import time
 
@@ -28,7 +29,7 @@ import time
 def main():
 	time3=time.time()
 	# Reads in command line arguments
-	input_file_SBMLs, input_file_datas, analysis, fname, usesbml, iname = error_check.input_checker(sys.argv)
+	input_file_SBMLs, input_file_datas, analysis, fname, usesbml, iname, intType = error_check.input_checker(sys.argv)
 	# Calls SBML_checker - checks all the SBML files that have been inputted - basic check
 	SBML_check.SBML_checker([iname+"/"+input_file_SBMLs[i] for i, value in enumerate(usesbml) if value=="0"])
 
@@ -44,10 +45,10 @@ def main():
 			random.seed(123)
 			#If statment between whether SBML or local code used as requires two different workflows
 			if usesbml[i]==True:
-				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, input_file_data = input_file_datas[count])
+				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, input_file_data = input_file_datas[count], intType=intType)
 				count += 1
 			else:
-				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname)
+				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, intType=intType)
 	else:
 		#In the case of the last approach the first file is always the reference model so is treated differently
 		count = 0
@@ -55,20 +56,20 @@ def main():
 		#Reference model
 		if usesbml[0] == True:
 			random.seed(123) #NEED TO REMOVE SEED
-			ref_model = sorting_files(input_file_SBMLs[0],analysis,fname,usesbml[0], iname, input_file_data = input_file_datas[count])
+			ref_model = sorting_files(input_file_SBMLs[0],analysis,fname,usesbml[0], iname, input_file_data = input_file_datas[count], intType=intType)
 			count += 1
 		else:
-			ref_model = sorting_files(input_file_SBMLs[0],analysis,fname,usesbml[0], iname)
+			ref_model = sorting_files(input_file_SBMLs[0],analysis,fname,usesbml[0], iname, intType=intType)
 
 		#Not reference models
 		for i in range(1,len(input_file_SBMLs)):
 			random.seed(123) #NEED TO REMOVE SEED
 			#If statment between whether SBML or local code used as requires two different workflows
 			if usesbml[i] == True:
-				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, refmod = ref_model,input_file_data = input_file_datas[count])
+				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, refmod = ref_model,input_file_data = input_file_datas[count], intType=intType)
 				count += 1
 			else:
-				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, refmod = ref_model)
+				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, refmod = ref_model, intType=intType)
 	time4=time.time()
 	print "Total", time4-time3
 
@@ -82,7 +83,7 @@ def main():
 ##usesbml - indicates whether an SBML file is used or local code
 ##refmod - used for approach 2 when the first SBML/local code is the reference model
 ##input_file_data - this holds the additional data alongside an SBML file that is required such as total number of particles etc
-def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", input_file_data = ""):
+def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", input_file_data = "", intType="ODE"):
 	#Used to remove the .xml at the end of the file if present to name directories
 	input_file_SBML_name = input_file_SBML
 	if input_file_SBML_name[-4:]==".xml":
@@ -99,7 +100,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 			os.mkdir(fname+"/cudacodes/cudacodes_"+input_file_SBML_name)
 		#outPath is a string to where the cudacode is stored
 		outPath=fname+"/cudacodes/cudacodes_"+input_file_SBML_name
-
+		
 		#Depending on the way changes have been made to the SBML files only require certain versions
 		input_files_SBML=[]
 
@@ -125,8 +126,11 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 			input_files_SBML.append("Exp_" + repr(i+1) + ".xml")
 
 		#Creates cudacode and saves to the directory made
-		cudacodecreater.cudacodecreater(input_files_SBML,inPath=inPath+"/",outPath=outPath)
+		cudacodecreater.cudacodecreater(input_files_SBML,inPath=inPath+"/",outPath=outPath, typeInt=intType)
 		
+		if intType == "SDE":
+			SDE_parse.LNA_CUDAWriter(input_files_SBML,inpath=inPath+"/",outpath=outPath)
+
 		#Creates directory to store the input.xml file along with a summary file
 		if not(os.path.isdir("./"+fname+"/input_xml")):
 			os.mkdir(fname+"/input_xml")
@@ -180,7 +184,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 	print "-----Running CUDA-Sim-----"
 
 	#Calls function to run cudasim and sort output
-	cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath)
+	cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath,intType=intType,usesbml=usesbml)
 
 	#Calculates the scaling factor
 	print "-----Calculating scaling factor-----"

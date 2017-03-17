@@ -6,6 +6,7 @@ import math
 import re
 
 import cudasim.Lsoda as Lsoda
+import cudasim.EulerMaruyama as EulerMaruyama
 
 try:
 	import cPickle as pickle
@@ -23,32 +24,56 @@ import parse_infoEnt_new_2
 ##(method gets called by sorting_files)
 ##Arguments:
 ##inpath - input path for cuda code files
-def run_cudasim(m_object,inpath=""):
+def run_cudasim(m_object,inpath="", intType="ODE",usesbml=False):
 
-	#Makes instance of Lsoda object
-	modelInstance = Lsoda.Lsoda(m_object.times, list(set(m_object.cuda)), dt=m_object.dt, inpath=inpath)
+	if intType=="ODE":
+		#Makes instance of Lsoda object
+		modelInstance = Lsoda.Lsoda(m_object.times, list(set(m_object.cuda)), dt=m_object.dt, inpath=inpath)
 
-	#Detects if compartments are used as they are treated as parameters
-	if m_object.ncompparams_all > 0:
-		parameters=concatenate((m_object.compsSample,m_object.parameterSample),axis=1)
-	else:
-		parameters = m_object.parameterSample
+		#Detects if compartments are used as they are treated as parameters
+		if m_object.ncompparams_all > 0:
+			parameters=concatenate((m_object.compsSample,m_object.parameterSample),axis=1)
+		else:
+			parameters = m_object.parameterSample
 
-	#Sets species
-	species = m_object.speciesSample
+		#Sets species
+		species = m_object.speciesSample
 
-	#Runs cuda-sim
-	result = modelInstance.run(parameters, species, constant_sets = not(m_object.initialprior), pairings=m_object.pairParamsICS)
+		#Runs cuda-sim
+		result = modelInstance.run(parameters, species, constant_sets = not(m_object.initialprior), pairings=m_object.pairParamsICS)
 
-	#Converts output of cuda-sim to a list
-	if type(result)==list:
-		result = [x[:,0] for x in result]
-	else:
-		result = [result[:,0]]
+		#Converts output of cuda-sim to a list
+		if type(result)==list:
+			result = [x[:,0] for x in result]
+		else:
+			result = [result[:,0]]
 
-	#Sorts the output from cuda-sim
-	print "-----Sorting NaNs from CUDA-Sim output-----"
-	m_object.sortCUDASimoutput(list(set(m_object.cuda)),result)
+		#Sorts the output from cuda-sim
+		print "-----Sorting NaNs from CUDA-Sim output-----"
+		m_object.sortCUDASimoutput(list(set(m_object.cuda)),result)
+	elif intType=="SDE":
+
+		if usesbml == True:
+			inpath_LNA = inpath+"/LNA"
+		else:
+			inpath_LNA = inpath
+
+		modelInstance = EulerMaruyama.EulerMaruyama(m_object.times, list(set(m_object.cuda)), dt=m_object.dt, inpath=inpath, beta = 10) 
+		LNAInstance = Lsoda.Lsoda(m_object.times, list(set(m_object.cuda)), dt=m_object.dt, inpath=inpath_LNA)
+		if m_object.ncompparams_all > 0:
+			parameters=concatenate((m_object.compsSample,m_object.parameterSample),axis=1)
+		else:
+			parameters = m_object.parameterSample
+
+		#Sets species
+		species = m_object.speciesSample
+
+		result = modelInstance.run(parameters, species, constant_sets = not(m_object.initialprior), pairings=m_object.pairParamsICS)
+		
+		print [x.shape for x in result]
+
+		sys.exit()
+		
 
 # A function to pickle object
 ##(method gets called when required)
