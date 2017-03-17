@@ -4,6 +4,7 @@ from pycuda import compiler, driver
 from pycuda import autoinit
 import sys
 import launch
+import copy
 
 # A function to calculate the mutual information between the outcome of two experiments
 ##(gets called by run_getEntropy1)
@@ -13,6 +14,7 @@ import launch
 ##N1,N2 - Number of particles
 ##sigma - standard deviation
 ##scale - scaling constant to prevent nans and infs
+#@profile
 def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,scale_ref,scale_mod):
 	# Kernel declaration using pycuda SourceModule
 	mod = compiler.SourceModule("""
@@ -26,7 +28,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 		return i*M + j;
 	}
 
-	__global__ void distance1(int Ni, int Nj, int M_Ref, int P_Ref, int M_Mod, int P_Mod, float sigma_inv_ref, float sigma_inv_mod, double mplogscale_ref, double mplogscale_mod, double *d1, double *d2, double *d3, double *d4, double *res1)
+	__global__ void distance1(int Ni, int Nj, int M_Ref, int P_Ref, int M_Mod, int P_Mod, float sigma_inv_ref, float sigma_inv_mod, double mpscale_sum, double *d1, double *d2, double *d3, double *d4, double *res1)
 	{
 	int i = threadIdx.x + blockDim.x * blockIdx.x;
 	int j = threadIdx.y + blockDim.y * blockIdx.y;
@@ -40,20 +42,20 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 
 	for(int k=0; k<M_Ref; k++){
 		for(int l=0; l<P_Ref; l++){
-			x1 -= mplogscale_ref + ( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])*( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)]);
+			x1 -=  ( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])*( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)]);
 		}
 	}
 
 	for(int k=0; k<M_Mod; k++){
 		for(int l=0; l<P_Mod; l++){
-			x3 -= mplogscale_mod + ( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])*( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)]);
+			x3 -= ( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])*( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)]);
 		}
 	}
 
-	res1[idx2d(i,j,Nj)] = exp(sigma_inv_ref*x1+sigma_inv_mod*x3);
+	res1[idx2d(i,j,Nj)] = exp(mpscale_sum + sigma_inv_ref*x1 + sigma_inv_mod*x3);
 	}
 
-	__global__ void distance2(int Ni, int Nj, int M, int P, float sigma_inv, double mplogscale, double *d5, double *d6, double *res2)
+	__global__ void distance2(int Ni, int Nj, int M, int P, float sigma_inv, double mpscale, double *d5, double *d6, double *res2)
 	{
 	int i = threadIdx.x + blockDim.x * blockIdx.x;
 	int j = threadIdx.y + blockDim.y * blockIdx.y;
@@ -69,7 +71,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 		}
 	}
 
-	res2[idx2d(i,j,Nj)] = exp(mplogscale + sigma_inv*x2);
+	res2[idx2d(i,j,Nj)] = exp(mpscale + sigma_inv*x2);
 	}
 
 	""")
@@ -95,15 +97,17 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	M_Mod=d3.shape[1]
 	P_Mod=d3.shape[2]
 
-	# Determine M*P*log(scale) and 1/(2*sigma^2) for reference and alternative experiment
+	# Determine M*P*scale and 1/(2*sigma^2) for reference and alternative experiment
 	##Reference experiment
-	#mplogscale_ref = M_Ref*P_Ref*log(scale_ref)
-	mplogscale_ref = log(scale_ref)
-	sigma_inv_ref = 1/(2*sigma_ref*sigma_ref)
+	mpscale_ref = M_Ref*P_Ref*scale_ref
+	sigma_inv_ref = 1.0/(2.0*sigma_ref*sigma_ref)
+
 	##Alternative experiment
-	#mplogscale_mod = M_Mod*P_Mod*log(scale_mod)
-	mplogscale_mod = log(scale_mod)
-	sigma_inv_mod = 1/(2*sigma_mod*sigma_mod)
+	mpscale_mod = M_Mod*P_Mod*scale_mod
+	sigma_inv_mod = 1/(2.0*sigma_mod*sigma_mod)
+
+	##Sum of scaling factors
+	mpscale_sum = mpscale_ref+mpscale_mod 
 
 
 ########################Calulation 1############################################
@@ -142,6 +146,12 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	# Maximum number of particles per run in i direction
 	Ni = int(grid_i)
 
+	# Maximum number of particles per run in j direction
+	Nj = int(grid_j)
+
+	# Create template array for res1
+	temp_res1 = zeros([Ni,Nj]).astype(float64)
+
 	# Main nested for-loop for mutual information calculations
 	for i in range(numRuns_i):
 		print "Runs left:", numRuns_i - i
@@ -169,13 +179,18 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 			# If last run with less that max remaining particles, set Nj to remaining number of particles
 			if((int(grid_j)*(j+1)) > N2):
 				Nj = int(N2 - grid_j*j)
+				# Prepare results array for this run
+				res1 = copy.deepcopy(temp_res1[:Ni,:Nj])
+			elif j==0:
+				# Prepare results array for this run
+				res1 = copy.deepcopy(temp_res1[:Ni,:Nj])
 
 			# Prepare data that depends on j for this run
 			data2 = d2[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
 			data4 = d4[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
 
 			# Prepare result arrays for this run
-			res1 = zeros([Ni,Nj]).astype(float64)
+			#res1 = zeros([Ni,Nj]).astype(float64)
 
 			# Set j dimension of block and grid for this run
 			if(Nj<block_j):
@@ -186,11 +201,10 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 				gj = ceil(Nj/block_j)
 
 			# Call GPU kernel functions
-			dist_gpu1(int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_inv_ref), float32(sigma_inv_mod), float64(mplogscale_ref), float64(mplogscale_mod), driver.In(data1), driver.In(data2), driver.In(data3), driver.In(data4), driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+			dist_gpu1(int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_inv_ref), float32(sigma_inv_mod), float64(mpscale_sum), driver.In(data1), driver.In(data2), driver.In(data3), driver.In(data4), driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 
 			# Summing rows in GPU output for this run
-			for k in range(Ni):
-				result1[(i*int(grid_i)+k),j] = sum(res1[k,:]) ###Could be done on GPU?
+			result1[i*int(grid_i):i*int(grid_i)+Ni,j] = sum(res1,axis=1) ###Could be done on GPU?
 
 
 ########################Calulation 2############################################
@@ -229,6 +243,12 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	# Maximum number of particles per run in i direction
 	Ni = int(grid_i)
 
+	# Maximum number of particles per run in j direction
+	Nj = int(grid_j)
+
+	# Create template array for res1
+	temp_res2 = zeros([Ni,Nj]).astype(float64)
+
 	# Main nested for-loop for mutual information calculations
 	for i in range(numRuns_i):
 		print "Runs left:", numRuns_i - i
@@ -255,12 +275,17 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 			# If last run with less that max remaining particles, set Nj to remaining number of particles
 			if((int(grid_j)*(j+1)) > N3):
 				Nj = int(N3 - grid_j*j)
+				# Prepare results array for this run
+				res2 = copy.deepcopy(temp_res2[:Ni,:Nj])
+			elif j==0:
+				# Prepare results array for this run
+				res2 = copy.deepcopy(temp_res2[:Ni,:Nj])
 
 			# Prepare data that depends on j for this run
 			data6 = d6[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
 
 			# Prepare result arrays for this run
-			res2 = zeros([Ni,Nj]).astype(float64)
+			#res2 = zeros([Ni,Nj]).astype(float64)
 
 			# Set j dimension of block and grid for this run
 			if(Nj<block_j):
@@ -271,11 +296,10 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 				gj = ceil(Nj/block_j)
 
 			# Call GPU kernel functions
-			dist_gpu2(int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), float32(sigma_inv_ref), float64(mplogscale_ref), driver.In(data1), driver.In(data6), driver.Out(res2), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+			dist_gpu2(int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), float32(sigma_inv_ref), float64(mpscale_ref), driver.In(data1), driver.In(data6), driver.Out(res2), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 
 			# Summing rows in GPU output for this run
-			for k in range(Ni):
-				result2[(i*int(grid_i)+k),j] = sum(res2[k,:]) ###Could be done on GPU?
+			result2[i*int(grid_i):i*int(grid_i)+Ni,j] = sum(res2, axis=1) ###Could be done on GPU?
 
 
 ########################Calulation 3############################################
@@ -314,6 +338,12 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	# Maximum number of particles per run in i direction
 	Ni = int(grid_i)
 
+	# Maximum number of particles per run in j direction
+	Nj = int(grid_j)
+
+	# Create template array for res1
+	temp_res3 = zeros([Ni,Nj]).astype(float64)
+
 	# Main nested for-loop for mutual information calculations
 	for i in range(numRuns_i):
 		print "Runs left:", numRuns_i - i
@@ -340,12 +370,17 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 			# If last run with less that max remaining particles, set Nj to remaining number of particles
 			if((int(grid_j)*(j+1)) > N4):
 				Nj = int(N4 - grid_j*j)
+				# Prepare results array for this run
+				res3 = copy.deepcopy(temp_res3[:Ni,:Nj])
+			elif j==0:
+				# Prepare results array for this run
+				res3 = copy.deepcopy(temp_res3[:Ni,:Nj])
 
 			# Prepare data that depends on j for this run
 			data8 = d8[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
 
 			# Prepare result arrays for this run
-			res3 = zeros([Ni,Nj]).astype(float64)
+			#res3 = zeros([Ni,Nj]).astype(float64)
 
 			# Set j dimension of block and grid for this run
 			if(Nj<block_j):
@@ -356,15 +391,15 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 				gj = ceil(Nj/block_j)
 
 			# Call GPU kernel functions
-			dist_gpu2(int32(Ni), int32(Nj), int32(M_Mod), int32(P_Mod), float32(sigma_inv_mod), float64(mplogscale_mod), driver.In(data3), driver.In(data8), driver.Out(res3), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
+			dist_gpu2(int32(Ni), int32(Nj), int32(M_Mod), int32(P_Mod), float32(sigma_inv_mod), float64(mpscale_mod), driver.In(data3), driver.In(data8), driver.Out(res3), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)))
 			# Summing rows in GPU output for this run
-			for k in range(Ni):
-				result3[(i*int(grid_i)+k),j] = sum(res3[k,:]) ###Could be done on GPU?
+			result3[i*int(grid_i):i*int(grid_i)+Ni,j] = sum(res3, axis=1) ###Could be done on GPU?
 
 
 ########################Final Computations######################################
 
 	# Initialising required variables for next steps
+	'''
 	sum1 = 0.0
 	sumres1 = 0.0
 	sumres2 = 0.0
@@ -378,7 +413,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	count2_inf = 0
 	count3_na = 0
 	count3_inf = 0
-
+	'''
 	#print result1
 
 	#Precalculate logs of N2, N3 and N4
@@ -387,6 +422,46 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	logN4 = log(float(N4))
 
 	# Sum all content of new results matrix and add/subtract constants for each row if there are no NANs or infs
+	#print result1.shape
+	sum_result1=ma.log(sum(result1,axis=1))
+	#print sum_result1
+	count_inf1=ma.count_masked(sum_result1)
+	#print count_inf1
+
+	sum_result2=ma.log(sum(result2,axis=1))
+	#print sum_result2
+	count_inf2=ma.count_masked(sum_result2)
+	#print count_inf2
+
+	sum_result3=ma.log(sum(result3,axis=1))
+	#print sum_result3
+	count_inf3=ma.count_masked(sum_result3)
+	#print count_inf3
+	
+	master_mask = ma.mask_or(ma.mask_or(sum_result1.mask, sum_result2.mask), sum_result3.mask)
+	#print type(master_mask)
+
+
+	'''
+	print sum_result1
+	print sum_result2
+	print sum_result3
+
+	print sum_result1.mask
+	print sum_result2.mask
+	print sum_result3.mask
+	'''
+
+	count_all_inf = sum(master_mask)
+	#print count_all_inf
+	mask = ~master_mask
+
+	sum_2= sum(sum_result1[mask]) - sum(sum_result2[mask]) - sum(sum_result3[mask]) - logN2*(N1-count_all_inf) + logN3*(N1-count_all_inf) + logN4*(N1-count_all_inf )
+	Info2 = sum_2/float(N1-count_all_inf)
+	#print Info2
+	'''
+	
+
 	for i in range(N1):
 		if(isinf(log(sum(result1[i,:])))):
 			count1_inf=count1_inf+1
@@ -406,28 +481,33 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 			#a1 += log(sum(result1[i,:])) - log(N2) - M_Ref*P_Ref*log(2.0*pi*sigma_ref*sigma_ref) - M_Mod*P_Mod*log(2.0*pi*sigma_mod*sigma_mod) - M_Ref*P_Ref*scale - M_Mod*P_Mod*scale
 			#a2 -= log(sum(result2[i,:])) + log(N3) + M_Ref*P_Ref*log(2.0*pi*sigma_ref*sigma_ref) + M_Ref*P_Ref*scale
 			#a3 -= log(sum(result3[i,:])) + log(N4) + M_Mod*P_Mod*log(2.0*pi*sigma_mod*sigma_mod) + M_Mod*P_Mod*scale
-
+	
 	# Sum number of all NAs and Infs
 	count_all = count1_inf + count1_na + count2_inf + count2_na + count3_inf + count3_na
-
+	
 	# Printing intermediate results
 	#print "a1: ", a1/float(N1-count1_na-count1_inf) , "a2: ", a2/float(N1-count2_na-count2_inf), "a3: ", a3/float(N1-count3_na-count3_inf)
 	#print "all: ", a1/float(N1-count1_na-count1_inf) + a2/float(N1-count2_na-count2_inf) + a3/float(N1-count3_na-count3_inf)
 	#print "sum1: ", sum1
-	print "", "Infs", "NAs"
-	print "1", count1_inf, count1_na
-	print "2", count2_inf, count2_na
-	print "3", count3_inf, count3_na
+	print "", "Infs"#, "NAs"
+	print "1", count1_inf#, count1_na
+	print "2", count2_inf#, count2_na
+	print "3", count3_inf#, count3_na
+	'''
+	print "", "Infs"#, "NAs"
+	print "1", count_inf1#, count1_na
+	print "2", count_inf2#, count2_na
+	print "3", count_inf3#, count3_na
 
 	# Final division to give mutual information
-	Info = sum1/float(N1-count_all)
+	#Info = sum1/float(N1-count_all)
 
 	###Testing block....REMOVE!
-	print Info
-	print "DONE"
-	sys.exit()
+	#print Info
+	#print "DONE"
+	#sys.exit()
 
-	return(Info)
+	return(Info2)
 
 # A function calling getEntropy3 for all provided experiments and outputs the mutual information
 ##Arguments:

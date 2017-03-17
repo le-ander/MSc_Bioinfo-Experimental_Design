@@ -165,7 +165,7 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 	
 	sum_result=ma.log(sum(result,axis=1))
 	count_inf=ma.count_masked(sum_result)
-	sum1 = -sum(sum_result)+logN2*(N1-count_inf)+mplogscale*(N1-count_inf)+mplogpisigma*(N1-count_inf)
+	sum1 = -ma.sum(sum_result)+logN2*(N1-count_inf)+mplogscale*(N1-count_inf)+mplogpisigma*(N1-count_inf)
 	
 	print "Proportion of infs and NAs", int((count_inf/float(N1))*100), "%"
 	Info = (sum1 / float(N1- count_inf) - M*P/2.0*(log(2.0*pi*sigma*sigma)+1))
