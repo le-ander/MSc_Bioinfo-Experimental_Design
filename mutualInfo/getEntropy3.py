@@ -44,6 +44,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 		unsigned int tid = threadIdx.y;
 
 		s[idx2d(threadIdx.x,tid,blockDim.y)] = 0.0;
+		s[idx2d(blockDim.x+threadIdx.x,tid,blockDim.y)] = 0.0;
 
 		if((i>=Ni)||(j>=Nj)) return;
 
@@ -55,11 +56,11 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 
 		for(int k=0; k<M_Mod; k++){
 			for(int l=0; l<P_Mod; l++){
-				s[idx2d(threadIdx.x,tid,blockDim.y)] = s[idx2d(threadIdx.x,tid,blockDim.y)] + scale_mod - ( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])*( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])/(2.0*sigma_mod*sigma_mod);
+				s[idx2d(blockDim.x+threadIdx.x,tid,blockDim.y)] = s[idx2d(blockDim.x+threadIdx.x,tid,blockDim.y)] + scale_mod - ( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])*( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])/(2.0*sigma_mod*sigma_mod);
 			}
 		}
 
-		s[idx2d(threadIdx.x,tid,blockDim.y)] =  exp(s[idx2d(threadIdx.x,tid,blockDim.y)]);
+		s[idx2d(threadIdx.x,tid,blockDim.y)] =  exp(s[idx2d(threadIdx.x,tid,blockDim.y)]+s[idx2d(blockDim.x+threadIdx.x,tid,blockDim.y)]);
 		__syncthreads();
 
         for(unsigned int k=blockDim.y/2; k>0; k>>=1){
