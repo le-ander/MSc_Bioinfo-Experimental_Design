@@ -36,7 +36,7 @@ __global__ void testf(float pi, float invdet, double *x, double *mu, float *invc
 
 }
 """
-seed(1234)
+#seed(1234)
 P = 10
 
 kernel_code = kernel_code_template % {
@@ -50,10 +50,10 @@ test = mod.get_function("testf")
 input = rand(1,P).astype(float64)
 
 
-x = 2*input
-mu = 3*input
+x = 6*input
+mu = 4*input
 
-cov_pre = rand(P,P).astype(float32)
+cov_pre = 4*rand(P,P).astype(float32)
 cov = (cov_pre + cov_pre.T)/2
 invcov = linalg.inv(cov)
 
@@ -76,3 +76,4 @@ print numpy
 print ""
 print "GPU OUT"
 print o1
+print "error", (o1-numpy)/((o1+numpy)/2)

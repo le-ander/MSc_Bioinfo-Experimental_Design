@@ -29,7 +29,11 @@ __global__ void matrixmult(float pi, float *invdet, double *x, double *mu, float
 	o1[0] = 0.0;
 
 	for(int m=0; m<%(M)s; m++){
+
 		for(int p_i=0; p_i<%(P)s; p_i++){
+
+			vector1[idx2d(m,p_i,%(P)s)] = 0.0;
+
 			for(int p_j=0; p_j<%(P)s; p_j++){
 
 				vector1[idx2d(m,p_i,%(P)s)] += (x[idx2d(m,p_j,%(P)s)] - mu[idx2d(m,p_j,%(P)s)]) * invcov[idx3d(m,p_j,p_i,%(P)s,%(P)s)];
@@ -45,7 +49,7 @@ __global__ void matrixmult(float pi, float *invdet, double *x, double *mu, float
 
 }
 """
-seed(1234)
+#seed(1234)
 M = 2
 P = 10
 
@@ -58,18 +62,21 @@ test = mod.get_function("matrixmult")
 input = rand(1,P).astype(float64)
 
 
-x1 = 2*input
-x2 = 4*input
+x1 = 3*input
+x2 = 6*input
 
 x = concatenate([x1,x2],axis=0)
 
-mu1 = 3*input
-mu2 = 5*input
+mu1 = 7*input
+mu2 = 4*input
 
 mu = concatenate([mu1,mu2],axis=0)
 
-cov_pre1 = rand(P,P).astype(float32)
-cov_pre2 = rand(P,P).astype(float32)
+cov_pre = rand(P,P).astype(float32)
+
+cov_pre1 = 3*cov_pre
+cov_pre2 = 4*cov_pre
+
 cov1 = (cov_pre1 + cov_pre1.T)/2
 cov2 = (cov_pre2 + cov_pre2.T)/2
 invcov1 = linalg.inv(cov1)
@@ -99,3 +106,6 @@ print numpy, [numpy1,numpy2]
 print ""
 print "GPU OUT"
 print o1[0][0]
+print ""
+print "Error:", (o1[0][0]-numpy)/((o1[0][0]+numpy)/2)
+print "Registers:", test.num_regs
