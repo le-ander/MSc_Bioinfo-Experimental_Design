@@ -9,8 +9,6 @@ def round_down(num, divisor):
 
 # A function to find the next highest number from num that is a multiple of divisor
 def round_up(num, divisor):
-	if num == divisor:
-		return 1
 	if num%divisor == 0:
 		return num
 	else:
