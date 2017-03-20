@@ -3,49 +3,37 @@
 # Next steps
 
 - Error-checking
-  - Catch user input errors
-  - Only load packages when required (libsbml and means)
-  - Catch div by 0 in gE due to all inf/na
+  - Try breaking code (Jonas)
+  - Catch div by 0 in gE due to all inf/na (Leander)
 
-- Comment code
+- Finish commenting (incl. kernel, incl referencing) (Scott, Jonas, Leander)
 
-- Optimise getEntropy function for speed
-  - Optimise general code structure
-  - Reduction kernel on GPU (reducing data to be move back onto host)
-
-- Stochastic implementation
-  - Reuse code from MEANS package
-  - Adapt CUDAsim SDE solver to handle multiple models
+- Rename (models, functions, folder struct, (vars)) (?)
 
 - Presentation of results
-  - Terminal output
-  - Log file
-  - Graphs
+  - Finalise Print statements (Scott, Jonas, Leander)
+  - CSV summary file (append not overwrite) (?)
+  - Bar graphs (Jonas)
 
-- Write group report
+- Usability
+  - Pickling (reuse cudasim)  (Scott)
+  - Only load packages when required (libsbml and means) (?)
 
-- Write individual reports
-
-- Remove Seeds
+- Final run through code (rm print statements, rm seeds) (Scott, Jonas, Leander)
 
 # On Hold
 
-- Sort out scaling (check why we get such large numbers in res1 and result)
+- Increase gridsize as less global mem is used now (Leander)
 
-- Tackle memory issues of gE3 (split up computations)
+- Dynamically assign shared memory base on block size (Leander, Scott)
 
-- Update abcsysbio parser to take local parameters
+- SDE implementation (Scott, Leander)
 
-- getEntropy optimisations
-  - Convert part B of getEntropy2 to 2 dimensions
+- HDF5 to avoid memory issues (Jonas)
+
+- Use analytical model to validate project (see Julianes thesis) (?)
 
 # Further work ideas
-
-- Dynamically plotting trajectories on a graph
-
-- GPU optimisations
-  - Reduce bottleneck of shuttling files between device and host by reducing grid size and copying data for n runs onto GPU
-  - Add third dimension to blocks/grid to improve performance, use smem?
 
 - Improve CUDA-sim implementation
   - Scott's for-loop to be pushed to new update
@@ -54,5 +42,3 @@
 - Convert to Python 3.5
   - Modernize package
   - Use Six package for compatibility
-
-- Julia wrapper
