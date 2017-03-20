@@ -3,7 +3,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from numpy import *
 
-def plotbar(MutInfo, modelname, n_groups, approach):
+def plotbar(MutInfo, modelname, n_groups, approach, out_path):
 	index = arange(n_groups)
 	bar_width = 0.25
 
@@ -38,4 +38,4 @@ def plotbar(MutInfo, modelname, n_groups, approach):
 	plt.yticks(arange(0, ylim, ystep))
 
 
-	plt.savefig("./results/out.pdf")
+	plt.savefig("./"+out_path+"/results.pdf")
