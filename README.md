@@ -25,7 +25,7 @@
 
 - Dynamically assign shared memory based on block size (Scott)
 
-- Include dynamic shared memory in launch config (Leander)
+- Include dynamic shared memory in launch config (consider max smem per SM) (Leander)
 
 - SDE implementation (Scott, Leander)
 
