@@ -11,6 +11,8 @@ def round_down(num, divisor):
 def round_up(num, divisor):
 	if num == divisor:
 		return 1
+	if num%divisor == 0:
+		return num
 	else:
 		return num - (num%divisor) + divisor
 
