@@ -169,6 +169,9 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 	#Calls a function to make an attribute which is a dictionary that relates cudacode files to the initial conditions it needs
 	sbml_obj.getpairingCudaICs()
 
+	#Print model features
+	print sbml_obj.print_info()
+
 	#Startes sampling from prior
 	print "-----Sampling from prior-----"
 	#Assigns attribute with which approach is being conducted 1, 2, or 3
