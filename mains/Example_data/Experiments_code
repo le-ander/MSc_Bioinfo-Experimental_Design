@@ -1,0 +1,27 @@
+
+
+Her code
+
+WT
+
+Model set2
+alpha0 0.1 1
+alpha0 0.1 3
+alpha0 0.1 5
+
+
+
+Model set3
+alpha0 10 1
+
+Model set4
+alpha0 0.1 1
+alpha0 0.1 3
+alpha0 0.1 5
+alpha 0.2 3
+
+Model set5
+alpha0 0.1 1
+alpha0 0.1 3
+alpha0 0.1 5
+beta 0.1 4
