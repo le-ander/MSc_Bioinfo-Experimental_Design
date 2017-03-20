@@ -235,7 +235,6 @@ class Simulator:
                 maxIndex = minIndex + threads*runblocks
                 runParameters = parameters[minIndex/self._beta:maxIndex/self._beta]
                 runInitValues = initValues[minIndex:maxIndex]
-
                 #first run store return Value
                 if(i==0):
                     returnValue = self._runSimulation(runParameters, runInitValues, runblocks, threads)

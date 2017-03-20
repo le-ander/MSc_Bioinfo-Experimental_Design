@@ -23,7 +23,7 @@
 </nsamples>
 
 # Sigma
-<sigma> 0.5 </sigma>
+<sigma> 0.1 </sigma>
 
 # Numbers of parameters defined in models below 
 <nparameters_all> 4 </nparameters_all> 
