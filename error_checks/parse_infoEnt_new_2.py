@@ -4,24 +4,31 @@ import re, sys, numpy, copy, math
 from numpy.random import *
 from xml.dom import minidom
 
-# Regular expression for implemented priors or posterior placeholder
+
+
+#### Regular expression for implemented priors or posterior placeholder#############################
 re_prior_const=re.compile('constant')
 re_prior_uni=re.compile('uniform')
 re_prior_normal=re.compile('normal')
 re_prior_logn=re.compile('lognormal')
 re_prior_posterior=re.compile('posterior')
 
-# True/False
+
+#### Regular expression for implemented models (ODE/SDE)#############################
+re_ODE=re.compile('ODE')
+re_SDE=re.compile('SDE')
+
+
+#### Regular Expression for True/None ##############################################################
 re_true=re.compile('True')
 re_none=re.compile('None')
 
 
-###################################################################################################
 
 
 
 
-###################################################################################################
+#### Function to obtain weighted sample from posterior sample (taken from ABC Sys Bio package)######
 def getWeightedSample(weights):
 
 		totals = []
@@ -38,12 +45,8 @@ def getWeightedSample(weights):
 
 
 
-###################################################################################################
 
-
-
-
-###################################################################################################
+#### Function to obtain a single value from given node and tag in input xml file####################
 def parse_required_single_value( node, tagname, message, cast ):
 	try:
 		data = node.getElementsByTagName(tagname)[0].firstChild.data
@@ -60,12 +63,10 @@ def parse_required_single_value( node, tagname, message, cast ):
 
 	return(ret)
 
-###################################################################################################
 
 
 
-
-###################################################################################################
+#### Function to obtain a vector of value from given node and tag in input xml file################
 def parse_required_vector_value( node, tagname, message, cast ):
 	try:
 		data = node.getElementsByTagName(tagname)[0].firstChild.data
@@ -88,12 +89,19 @@ def parse_required_vector_value( node, tagname, message, cast ):
 	return(ret)
 
 
-###################################################################################################
+def type_parser (type):
+    
+    if re_ODE.match(type):
+        return 0
+    elif re_SDE.match(type):
+        return 1
+    else:
+        print "\nType of the model ", self.name[self.nmodels-1], " has the wrong format."
+        sys.exit()
 
 
-
-
-###################################################################################################
+#### Function to identify prior the user given prior and obtain its values#########################
+#####
 def process_prior( tmp ):
 	prior_tmp = [0,0,0]
 
@@ -142,12 +150,9 @@ def process_prior( tmp ):
 	return prior_tmp
 
 
-###################################################################################################
 
 
-
-
-###################################################################################################
+#### Function to parse a string into an integer#####################################################
 def parseint(str):
     try:
         return int(str)
@@ -155,12 +160,9 @@ def parseint(str):
         return str
 
 
-###################################################################################################
 
 
-
-
-###################################################################################################
+#### Function to parse a string into an integer and offset it by -1 to obtain the right index########
 def parseint_index(str):
     try:
     	out=int(str)-1
@@ -169,12 +171,10 @@ def parseint_index(str):
         return str
 
 
-###################################################################################################
 
 
-
-
-###################################################################################################
+#### Function to parse fitting information about species###########################################
+#####
 def parse_fitting_information( mod_str, node, species_number ):
 	fitref = node.getElementsByTagName(mod_str)[0]
 	tmp = str( fitref.firstChild.data ).split()
@@ -201,12 +201,11 @@ def parse_fitting_information( mod_str, node, species_number ):
 
 	return( ret1 )
 
-###################################################################################################
 
 
 
-
-###################################################################################################
+#### Function to parse fitting information about other model parameter###############################
+#####
 def parse_fitting_information_parameters(mod_str, node, item, parameter_number):
 	fitref = node.getElementsByTagName(mod_str)[0]
 	tmp = str( fitref.firstChild.data ).split()
@@ -235,13 +234,15 @@ class algorithm_info:
 
 	"""
 
-	def __init__(self, filename, mode, combination_list):
+	def __init__(self, filename, combination_list):
 		xmldoc = minidom.parse(filename)
 		### mode is 0  inference, 1 simulate, 2 design
-		self.mode = mode
+		#self.mode = mode
 		
 		### initialises attributes of the object
-		self.modelnumber = 0
+		
+        #### Global model/experiment attributes
+        self.modelnumber = 0
 		self.particles = 0
 		self.beta = 0
 		self.dt = 0
@@ -250,30 +251,35 @@ class algorithm_info:
 		self.nspecies_all=0
 		self.nparameters_all = 0
 		self.sigma= 0
+        self.ncompparams = []
 
-		
+        #### SDE specific attributes
+        #self.beta = 
+        #self.cuda_SDE =
+    	
+        #### Posterior sample attributes
 		self.sampleFromPost = False
 		self.post_sample_file = ""
 		self.post_weight_file = ""
 		
-
+        #### Attribute indicating if initial conditions are defined by priors
 		self.initialprior = False
 
-
+        #### Fit attributes
 		self.comp_fit= []
 		self.init_fit= []
 		self.param_fit = []
 
-
+        #### Sample attributes
 		self.N1sample = 0
 		self.N2sample = 0
 		self.N3sample = 0
 		self.N4sample = 0
 
-
+        #### Attribute holding combination of initial condtion, paramter changes which define models/experiments
 		self.combination = combination_list
 
-
+        #### Model/Experiment specific attributes
 		self.nmodels = 0
 		self.nparameters = []
 		self.nspecies = []
@@ -285,8 +291,6 @@ class algorithm_info:
 		self.x0prior = []
 		self.compprior = []
 		self.fitSpecies = []
-
-		self.ncompparams = []
 
 
 		##################################################
@@ -304,14 +308,14 @@ class algorithm_info:
 		self.dt = parse_required_single_value( xmldoc, "dt", "Please provide an float value for <dt>", float )
 
 
-		### get data attributes
+		### indetifies data node in input xml file
 		dataref = xmldoc.getElementsByTagName('data')[0]
 
 
-		# get timepoints
+		### get timepoints
 		self.times = parse_required_vector_value( dataref, "times", "Please provide a whitespace separated list of values for <data><times>" , float )
 		self.ntimes = len(self.times)
-
+        #### check if times are in ascending order
 
 		### get global number of parameters
 		self.nparameters_all = parse_required_single_value(dataref, "nparameters_all", "Please provide an integer value for <data><nparameters_all>", int)
@@ -357,30 +361,30 @@ class algorithm_info:
 				self.x0prior.append([])
 				self.compprior.append([])
 
-				#####################################################
+				#### gets name of model/experiment##################
 				try:
 					self.name.append( str(m.getElementsByTagName('name')[0].firstChild.data).strip() )
 				except:
 					print "Please provide a string value for <name> for model ", self.nmodels
 					sys.exit()
 				
-				#####################################################
+				#### gets name of associated SBML file###############
 				try:
 					self.source.append( str(m.getElementsByTagName('source')[0].firstChild.data).strip() )
 				except:
 					print "Please provide an string value for <source> for model ", self.nmodels
 					sys.exit()
 				
-				#####################################################
+				#### gets name of associated CUDA file#############
 				try:
 					self.cuda.append( str(m.getElementsByTagName('cuda')[0].firstChild.data).strip() )
 				except:
 					print "Please provide an string value for <cuda> for model ", self.nmodels
 					sys.exit()
 				
-				#####################################################
+				#### gets type of model (ODE/SDE)#####################
 				try:
-					self.type.append( str(m.getElementsByTagName('type')[0].firstChild.data).strip() )
+					self.type.append( type_parser (str(m.getElementsByTagName('type')[0].firstChild.data).strip() )) ### convert type into integer and check for correct definition test
 				except:
 					print "Please provide an string value for <type> for model ", self.nmodels
 					sys.exit()
@@ -388,7 +392,7 @@ class algorithm_info:
 				nparameter = 0
 				ncompparam = 0
 
-				#####################################################
+				#### gets priors of compartment if defined ##########
 				try:
 					compref = m.getElementsByTagName('compartments')[0]
 					for p in compref.childNodes:
@@ -400,7 +404,7 @@ class algorithm_info:
 				except:
 					ncompparam = 0
 
-				#####################################################
+				#### get priors of model parameters##################
 				paramref = m.getElementsByTagName('parameters')[0]
 				for p in paramref.childNodes:
 					if p.nodeType == p.ELEMENT_NODE:
@@ -410,7 +414,7 @@ class algorithm_info:
 						self.prior[self.nmodels-1].append( process_prior( tmp ) )
 
 
-				#####################################################
+				#### get priors/constants for initial conditions###
 				ninit = 0
 				initref = m.getElementsByTagName('initial')[0]
 				for inn in initref.childNodes:
@@ -420,23 +424,23 @@ class algorithm_info:
 						tmp = str( inn.firstChild.data ).split()
 						self.x0prior[self.nmodels-1].append( process_prior( tmp ) )
 
-#				if nfitSpecies == 0:
-#					print "\nNo measurable species specified in model ", self.name[self.nmodels-1]
-#					sys.exit()
-#				if nfitParams == 0:
-#					print "\nNo parameters to fit specified in model ", self.name[self.nmodels-1]
-#					sys.exit()
-				if nparameter == 0:
-					print "\nNo parameters specified in model ", self.name[self.nmodels-1]
-					sys.exit()
-				if ninit == 0:
-					print "\nNo initial conditions specified in model ", self.name[self.nmodels-1]
-					sys.exit()
 
+                #### get measurable species of model###############
 				try:
 					self.fitSpecies.append( parse_fitting_information('fit', m, ninit )  )
 				except:
 					print "Measurable species are not defined properly with <fit> ... </fit> for model", self.nmodels
+					sys.exit()
+
+                #### Error checking for parameter prior, initial condtion prior and measurable species
+				if nparameter == 0:
+					print "\nNo parameters specified in model ", self.nmodels
+					sys.exit()
+				if ninit == 0:
+					print "\nNo initial conditions specified in model ", self.nmodels
+					sys.exit()
+                if len(self.fitSpecies[self.nmodels-1])==0:
+					print "\nNo measurable species specified in model ", self.nmodels
 					sys.exit()
 
 				self.nparameters.append( nparameter )
@@ -492,7 +496,11 @@ class algorithm_info:
 			sys.exit()
 
 
+#				if nfitParams == 0:
+#					print "\nNo parameters to fit specified in model ", self.name[self.nmodels-1]
+#					sys.exit()
 
+    # A method which prints out details about the models/experiments defined in the object
 	def print_info(self):
 		print "\nALGORITHM INFO"
 		print "modelnumber:", self.modelnumber

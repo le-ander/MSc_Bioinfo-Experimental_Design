@@ -114,7 +114,7 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 
 	samplefrompost_regex = re.compile(r'>samplefromposterior\s*\n(True|False)\s*\n((\w+\.\w+)\n(\w+\.\w+)\n)?<samplefromposterior')
  
-	init_prior_bool = re.compile(r'>initprior\s*\n(True|False)\s*\n<initprior', re.DOTALL)
+	init_prior_bool = re.compile(r'>initprior\s*\n(True|False)\s*\n<initprior')
 
 	comb_regex = re.compile(r'>combination\s*\n(.*)\n<combination', re.DOTALL)
 
@@ -125,10 +125,13 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 	nsample_regex = re.compile(r'>nsample\s*\n(.+)\n<nsample')
 
 	sigma_regex = re.compile(r'>sigma\n(.+)\n<sigma', re.DOTALL)
+    
+    type_regex = re.compile(r'>type\s*\n(ODE|SDE)\s*\n<type')
+    
 	#################################################################################################
 
 
-	###Initialise variables to captureinformation from data file####################################
+	###Initialise variables to capture information from data file####################################
 	have_data = False
 	times = []
 	fit_species = []
@@ -152,32 +155,72 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 
 		####obtain dt value####
 		dt = dt_regex.search(info).group(1)
-		dt = float(dt)
+		try:
+            dt = float(dt)
+        except:
+            print "Please provide an integer/float value for dt >dt ... <dt"
+            sys.exit()
 		#######################
 
 
 		####obtain number of particles####
 		particles = particles_regex.search(info).group(1)
-		particles = int(particles)
+		try:
+            particles = int(particles)
+        except:
+            print "Please provide an integer value as number of particles: >particles ... <particles"
+            sys.exit()
 		##################################
-
+        
+        ####obtain type of model (ODE/SDE)#####
+        try:
+            model_type=type_ODE_regex.search(info).group(1)
+        except:
+            print "The model type is not defined: >type ... <type"
+            sys.exit()
+        #### obtain SDE model cuda file names####
+        #if model_type="SDE":
+            ##cuda file location
 
 		####obtain timepoint for cudasim####
 		times = times_regex.search(info).group(1).rstrip().split(" ")
-		times = [float(i) for i in times]
+		try:
+            times = [float(i) for i in times]
+        except:
+            print "Please provide a whitespace seperated list of float value as timepoints: >timepoints ... <timepoints"
+            sys.exit()
+       
+        ### error check if a timepoint was defined more than once
+        if len(set(times)) != len times:
+            print "One or more timepoints are defined twice or more: >timepoints ... <timepoints"
+            sys.exit()
+        
+        ### error check if timepoint are in ascending order ####
+        if sorted(times) == times:
+            print "Please provide a whitespace seperated list of float value in ascending order as timepoints: >timepoints ... <timepoints"
+            sys.exit()
+        
 		####################################
 
 		#####obtain the numbers of N1, N2, N3 and N4####
 		nsample = nsample_regex.search(info).group(1).rstrip().split(" ")
-		nsample = [int(i) for i in nsample]
+		try:
+            nsample = [int(i) for i in nsample]
+        except:
+            print "Please provide a whitespace seperated list of integer value as samples sizes: >nsample ... <nsample"
+            sys.exit()
 		################################################
 
 		####obtain sigma####
 		sigma = sigma_regex.search(info).group(1)
-		sigma = float(sigma)
+		try:
+            sigma = float(sigma)
+        except:
+            print "Please provide an float value for sigma: >sigma ... <sigma"
+            sys.exit()
 		####################
 
-		####Sample form posterior#######################################
+		####Sample from posterior#######################################
 		'''
 		Reads if sample from posterior is provided and obtains the 
 		location of the files provided by the user containing the 
@@ -185,6 +228,9 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 
 		'''
 		samplefrompost_match = samplefrompost_regex.search(info)
+        if samplefrompost_match==None:
+            print "Sample from posterior in in the wrong format: >samplefromposterior ... <samplefromposterior"
+            sys.exit()
 		if samplefrompost_match.group(1) == "True":
 			samplefrompost = True
 			samplefrompost_samplefile=samplefrompost_match.group(3)
@@ -199,16 +245,19 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 			fit_init = fit_init_list  ## should solve NONE issue
 			###########################################
 
-		else:
+		elif samplefrompost_match.group(1) == "False":
 			samplefrompost = False
 		#################################################################
 
 
 		####Determine if initial condition are treated as priors####
 		init_prior_bool = init_prior_bool.search(info).group(1)
+        if init_prior_bool==None:
+            print "Input if initial conditions are defined by prior distributions is not the right format (True or False): >initprior ... <initprior"
+            sys.exit()
 		if (init_prior_bool == "True") or (samplefrompost==True):
 			init_prior = True
-		else:
+		elif init_prior_bool == "False":
 			init_prior = False
 		############################################################
 
@@ -219,51 +268,76 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 
 			####obtain prior distribution of model parameter	
 			prior = prior_regex.search(info).group(1).split("\n")
-
+            if prior== None:
+                print "Prior distributions of model parameter are not the right format (True or False): >initials ... <initials"
+                sys.exit()
 			####obtain constants of initial condition
 			if init_prior == False:
 				init_list = init_regex.findall(info)
+                if init_list == None:
+                    print "Constant values for initial conditions are not in the right format: >Initial Conditions ... <Initial Conditions"
+                    sys.exit()
 				init_con = [k.split("\n") for k in init_list]
 				fit_init = "None"
 
 			####obtain prior distributions of initial condition
 			elif init_prior == True:
-				
-				init_con.append(init_prior_regex.search(info).group(1).split("\n"))
-				
+				try:
+                    init_con.append(init_prior_regex.search(info).group(1).split("\n"))
+				except:
+                    print "Prior distributions of initial conditions are not in the right format: >initials ... <initials"
+                    sys.exit()
 				####obtain fit information for initials
 				fit_init_list = init_fit_regex.search(info).group(1)
-				fit_init = fit_init_list  ## should solve NONE issue
+                if fit_init_list== None:
+                    print "No fitting information for initial condition is provided: >initialfit ... <initialfit"
+                    sys.exit()                    
+				fit_init = fit_init_list
 				####
 		#######################################################################################
 		
 
 		####obtain fit information for species####
 		fit_list = fit_regex.search(info).group(1).split("\n")
+        if fit_list==None:
+            print "No measurable species are defined: >fit .... <fit
+            sys.exit()
 		fit_species = fit_list
 		##########################################
 
 
 		####obtain fit information for parameters####
 		fitparam_list = fitparam_regex.search(info).group(1)
+        if fitparam_list==None:
+            print "Fitting information for model parameter are not in the right format: >paramfit .... <paramfit
+            sys.exit()
 		fit_param = fitparam_list
 		#############################################
 
 
 		####obtain fit information for compartments####
 		fit_comp_list = comp_fit_regex.search(info).group(1)
+        if fit_comp_list==None:
+             print "Fitting information for compartments are not in the right format: >compfit .... <compfit
+            sys.exit()           
 		fit_comp = fit_comp_list
 		###############################################
 
 
 		####obtain prior distributions for compartment parameters####
 		comps_list = comp_regex.search(info).group(1).split("\n")
+        if comps_list==None:
+            print "Prior distributions/constant of compartments are not in the right format: >compartment .... <compartment
+            sys.exit()            
 		comps = comps_list
 		#############################################################
 
 
 		####obtain the user defined combinations of initial conditions, parameter changes and species which define an experiment/model####
 		comb_list = comb_regex.search(info).group(1).split("\n")
+        if comb_list==None:
+            print "Combinations of initial conditions, parameter changes and species fit defining an experiment are not in the right format: >combination .... <combination
+            sys.exit()
 		if comb_list[0]=="All":
 			all_combination = True
 			comb=[]
@@ -272,36 +346,16 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 					for i in range(0,len(source)):
 						comb.append([h,i,j])	
 		else:
-			comb = [[int(j)-1 for j in re.search(r'initset(\d+) paramexp(\d+) fit(\d+)', i).group(1,2,3)] for i in comb_list]
+			try:
+                comb = [[int(j)-1 for j in re.search(r'initset(\d+) paramexp(\d+) fit(\d+)', i).group(1,2,3)] for i in comb_list]
+            except:
+                print "Combinations of initial conditions, parameter changes and species fit defining an experiment are not in the right format: >combination .... <combination
+                sys.exit()                
 			all_combination = False
 		###################################################################################################################################
 
 	#################################################################################################
 
-
-####ERROR CHECKING########################################
-	#first = True
-	#second = True
-	#	nvar = 0    ###used for error checking
-#### error checking if times are greater than previous###
-#            if first==True:
-#                for j in range(1,len(vals)):
-#                    vars.append([])
-#                first=False
-#                nvar = len(vals)-1
-
-#           if first==True:
-#                for j in range(0,len(vals)):
-#                    times.append([])
-#                first=False
-#                nvar = len(vals)-1
-
-#            times.append(vals[0])
-
-#            for j in range(1,len(vals)):
-#                vars[j-1].append(vals[j])
-#
-####################################################################
 
 	#####Writing input.xml file and summary file####################################################################
 	out_file.write("<input>\n\n")
@@ -428,7 +482,7 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 		out_file.write("<name> model"+repr(j+1)+" </name>\n<source> "+source[comb[j][1]]+" </source>\n")
 		out_file.write("<cuda> " + cudaid.match(source[comb[j][1]]).group() + ".cu </cuda>\n\n")
 		out_file.write("# type: the method used to simulate your model. ODE, SDE or Gillespie.\n")
-		out_file.write("<type> ODE </type>\n\n")  ################# Needs to be adapted
+		out_file.write("<type> "+model_type+" </type>\n\n")
 		###################################################################################################################################
 
 		####Writes which species will be fitted############################################################################################
@@ -613,7 +667,7 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 	out_file.write("</input>\n\n")
 	
 
-	#####Closes summary and inpput xml file################################################################################################
+	#####Closes input xml file################################################################################################
 	out_file.close()
 	######################################################################################
 
