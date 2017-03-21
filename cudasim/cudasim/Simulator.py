@@ -37,7 +37,7 @@ class Simulator:
 
     _dump = False
 
-    def __init__(self, timepoints, stepCode, beta=1, dt=0.01, inpath=""):
+    def __init__(self, timepoints, stepCode, beta=1, dt=0.01, inpath="."):
         # only beta which are factors of _MAXBLOCKSPERDEVICE are accepted,
         # else _MAXBLOCKSPERDEVICE is reduced to the next smallest acceptable value
         if(self._MAXBLOCKSPERDEVICE%int(beta) != 0):
