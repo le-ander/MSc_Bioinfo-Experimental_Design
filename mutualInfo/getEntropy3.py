@@ -7,13 +7,13 @@ import launch
 import copy
 
 def odd_num(x):
-    temp = []
-    pos=0
-    while x > 1:
-        if x%2 ==1:
-            temp.append(x)
-        x = x >> 1
-    return asarray(temp).astype(int32)
+	temp = []
+	pos=0
+	while x > 1:
+		if x%2 ==1:
+			temp.append(x)
+		x = x >> 1
+	return asarray(temp).astype(int32)
 
 # A function to calculate the mutual information between the outcome of two experiments
 ##(gets called by run_getEntropy1)
@@ -65,19 +65,19 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 		s[idx2d(threadIdx.x,tid,blockDim.y)] =  exp(mpscale_sum+ sigma_ref*s[idx2d(threadIdx.x,tid,blockDim.y)]+sigma_mod*s[idx2d(blockDim.x+threadIdx.x,tid,blockDim.y)]);
 		__syncthreads();
 
-        for(unsigned int k=blockDim.y/2; k>0; k>>=1){
-            if(tid < k){
-                s[idx2d(threadIdx.x,tid,blockDim.y)] += s[idx2d(threadIdx.x,tid+k,blockDim.y)];
-            }
-            __syncthreads();
-        }
+		for(unsigned int k=blockDim.y/2; k>0; k>>=1){
+			if(tid < k){
+				s[idx2d(threadIdx.x,tid,blockDim.y)] += s[idx2d(threadIdx.x,tid+k,blockDim.y)];
+			}
+			__syncthreads();
+		}
 
-        if(len_odd != -1){
-	        for(unsigned int l=0; l<len_odd; l+=1){
-	            if (tid == 0) s[idx2d(threadIdx.x,0,blockDim.y)] += s[idx2d(threadIdx.x, odd_nums[l]-1 ,blockDim.y)];
-	            __syncthreads();
-	        }
-	    }
+		if(len_odd != -1){
+			for(unsigned int l=0; l<len_odd; l+=1){
+				if (tid == 0) s[idx2d(threadIdx.x,0,blockDim.y)] += s[idx2d(threadIdx.x, odd_nums[l]-1 ,blockDim.y)];
+				__syncthreads();
+			}
+		}
 
 		if (tid==0) res1[idx2d(i,blockIdx.y,gridDim.y)] = s[idx2d(threadIdx.x,0,blockDim.y)];	
 
@@ -108,18 +108,18 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 		__syncthreads();
 
 		for(unsigned int k=blockDim.y/2; k>0; k>>=1){
-            if(tid < k){
-                s[idx2d(threadIdx.x,tid,blockDim.y)] += s[idx2d(threadIdx.x,tid+k,blockDim.y)];
-            }
-            __syncthreads();
-        }
+			if(tid < k){
+				s[idx2d(threadIdx.x,tid,blockDim.y)] += s[idx2d(threadIdx.x,tid+k,blockDim.y)];
+			}
+			__syncthreads();
+		}
 
-        if(len_odd != -1){
-	        for(unsigned int l=0; l<len_odd; l+=1){
-	            if (tid == 0) s[idx2d(threadIdx.x,0,blockDim.y)] += s[idx2d(threadIdx.x, odd_nums[l]-1 ,blockDim.y)];
-	            __syncthreads();
-	        }
-	    }
+		if(len_odd != -1){
+			for(unsigned int l=0; l<len_odd; l+=1){
+				if (tid == 0) s[idx2d(threadIdx.x,0,blockDim.y)] += s[idx2d(threadIdx.x, odd_nums[l]-1 ,blockDim.y)];
+				__syncthreads();
+			}
+		}
 
 		if (tid==0) res2[idx2d(i,blockIdx.y,gridDim.y)] = s[idx2d(threadIdx.x,0,blockDim.y)];	
 
