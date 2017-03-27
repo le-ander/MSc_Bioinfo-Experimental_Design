@@ -112,7 +112,7 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 		}
 
 		if (tid==0) res2[blockIdx.x] = s[0];
-		
+
 	}
 
 	""")
@@ -162,12 +162,10 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	#Initialize array for results
 	result = zeros([N1,numRuns_j])
 
-	# Maximum number of particles per run in i direction
+	# Maximum number of particles per run in i and j direction
 	Ni = int(grid_i)
-
-	# Maximum number of particles per run in j direction
 	Nj = int(grid_j)
-	
+
 	# Determine M*P*log(scale) for GPU calculations
 	mplogscale= M*P*log(scale)
 
@@ -176,9 +174,7 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 
 	# Create template array for res1
 	temp_res1 = zeros([Ni,Nj]).astype(float64)
-	
 
-	##################################################
 	# Main nested for-loop for mutual information calculations
 	for i in range(numRuns_i):
 		#print "Runs left:", numRuns_i - i
@@ -210,10 +206,8 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 				Nj = int(N2 - grid_j*j)
 				last = True
 
-
 			# Prepare data that depends on j for this run
 			data2 = d2[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
-
 
 			# Set j dimension of block and grid for this run
 			if(Nj<block_j):
@@ -223,21 +217,17 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 				gj = ceil(Nj/block_j)
 				bj = block_j
 
-
 			# Prepare results array for this run
 			if last == True:
 				res1 = copy.deepcopy(temp_res1[:Ni,:int(gj)])
 			elif j==0:
 				res1 = copy.deepcopy(temp_res1[:Ni,:int(gj)])
 
-
 			iterations = odd_num(int(bj))
 			if iterations.size == 0:
-				#print "here"
 				temp_1=-1
 				iterations = zeros([1]).astype(float64)
 			else:
-				#print "here2"
 				temp_1 = iterations.size
 
 			# Call GPU kernel function
@@ -245,7 +235,6 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 
 			# Summing rows in GPU output for this run
 			result[i*int(grid_i):i*int(grid_i)+Ni,j]=sum(res1, axis=1)
-
 
 	# Sum all content of new results matrix and add/subtract constants for each row if there are no NANs or infs
 	sum_result1=ma.log(sum(result,axis=1))
@@ -276,10 +265,7 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	# Create template array for res1
 	temp_res2 = zeros([Nj]).astype(float64)
 
-
-
 	for i in range(N1):
-
 		# Prepare data that depends on i for this run
 		data1 = d1[i,:,:]
 
@@ -293,17 +279,13 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 		last = False
 
 		for j in range(numRuns_j2):
-			#print "runs left:", numRuns_j2 - j
-
 			# If last run with less that max remaining particles, set Nj to remaining number of particles
 			if((int(grid)*(j+1)) > N3[i]):
 				Nj = int(N3[i] - grid*j)
 				last = True
 
-
 			# Prepare data that depends on j for this run
 			data3 = d3[(i*N3[i]+j*int(grid)):(i*N3[i]+j*int(grid)+Nj),:,:]
-
 
 			# Set j dimension of block and grid for this run
 			if(Nj<block):
@@ -319,7 +301,6 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 			elif j==0:
 				res2 = copy.deepcopy(temp_res2[:int(gj)])
 
-
 			iterations = odd_num(int(bj))
 			if iterations.size == 0:
 				temp_1=-1
@@ -329,48 +310,47 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 
 			# Call GPU kernel function
 			dist_gpu2(int32(temp_1), driver.In(iterations), int32(Nj), int32(M), int32(P), float32(sigmasq_inv), float64(mplogscale), driver.In(data1), driver.In(data3),  driver.Out(res2), block=(int(bj),1,1), grid=(int(gj),1), shared=3000)
-			
+
 			# Sum all elements in results array for this run
 			result[i,j] = sum(res2)
 
-
 	# Sum all content of new results matrix and add/subtract constants for each row if there are no NANs or infs
 	sum_result2=ma.log(sum(result, axis=1))
-	
+
 
 
 ########################Final Computations######################################
-	
-	# Precalculating required variables for next steps
-	mplogscale= M*P*log(scale)
-	mplogpisigma= M*P*log(2.0*pi*sigma*sigma)
-	logN2 = log(float(N2))
-	
-	# Final division to give mutual information
-	
-	## Determine infinites
+
+	# Determine infinites
 	count_inf1=ma.count_masked(sum_result1)
 	count_inf2=ma.count_masked(sum_result2)
 
-	## Creating a joint masked
+	# Creating a joint masked
 	master_mask = ma.mask_or(ma.getmaskarray(sum_result1), ma.getmaskarray(sum_result2), shrink=False)
 	count_all_inf = sum(master_mask)
 
-	## Inverting boolean array for indexing purposes in the next step
+	# Inverting boolean array for indexing purposes in the next step
 	mask = ~master_mask
-	
-	## Calculating proportions of Infs
+
+	# Calculating proportions of Infs
 	print "Proportion of infs in 1st summation", int(((count_inf1)/float(N1))*100), "%"
-	print "Proportion of infs in 2nd summation", int(((count_inf2)/float(N1))*100), "%"	
+	print "Proportion of infs in 2nd summation", int(((count_inf2)/float(N1))*100), "%"
 	print "Proportion of infs in total", int(((count_all_inf)/float(N1))*100), "%"
 
-	## Final summations
-	sum1 = sum(sum_result1[mask])-logN2*(N1-count_all_inf)-mplogscale*(N1-count_all_inf)-mplogpisigma*(N1-count_all_inf)
-	sum2 = sum(sum_result2[mask]) - sum(log(N3)[mask]) - mplogscale*(N1-count_all_inf) - mplogpisigma*(N1-count_all_inf)
-	
+	# Raise error if calculation below cannot be carried out due to div by 0
+	if count_all_inf == N1:
+		print "ERROR: Too many nan/inf values in output, could not calculate mutual information. Consider increasing particle size pr ada[ting prior distributions."
+		sys.exit()
+
+	# Final summations
+	sum1 = sum(sum_result1[mask])-log(float(N2))*(N1-count_all_inf)-mplogscale*(N1-count_all_inf)- M*P*log(2.0*pi*sigma*sigma)*(N1-count_all_inf)
+	sum2 = sum(sum_result2[mask]) - sum(log(N3)[mask]) - mplogscale*(N1-count_all_inf) - M*P*log(2.0*pi*sigma*sigma)*(N1-count_all_inf)
+
+	# Final division to give mutual information
 	Info = (sum2 - sum1)/float(N1 - count_all_inf) ###Should be 2*N1 here?
 
 	return(Info)
+
 
 # A function calling getEntropy2 for all provided experiments and outputs the mutual information
 ##Argument: model_obj - an object containing all experiments and all their associated information

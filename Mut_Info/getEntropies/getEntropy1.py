@@ -77,7 +77,7 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 			}
 		}
 
-		if (tid==0) res1[idx2d(i,blockIdx.y,gridDim.y)] = s[idx2d(threadIdx.x,0,blockDim.y)];	
+		if (tid==0) res1[idx2d(i,blockIdx.y,gridDim.y)] = s[idx2d(threadIdx.x,0,blockDim.y)];
 
 	}
 	""")
@@ -94,7 +94,6 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 
 	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
 	grid = launch.optimise_gridsize(8.59)
-	#grid = 384
 	grid_prelim_i = launch.round_down(sqrt(grid),block_i)
 	grid_prelim_j = launch.round_down(grid/grid_prelim_i,block_j)
 	# If gridsize in one dimention too large, reshape grid to allow more threads in the second dimension
@@ -110,6 +109,7 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 	print "Maximum gridsize:", grid, "threads"
 	print "Grid shape:", str(grid_i)+"x"+str(grid_j)
 	print "Registers:", dist_gpu1.num_regs
+
 	# Determine required number of runs for i and j
 	numRuns_i = int(ceil(N1/grid_i))
 	numRuns_j = int(ceil(N2/grid_j))
@@ -125,10 +125,8 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 	#Initialize array for results
 	result = zeros([N1,numRuns_j])
 
-	# Maximum number of particles per run in i direction
+	# Maximum number of particles per run in i and j direction
 	Ni = int(grid_i)
-
-	# Maximum number of particles per run in j direction
 	Nj = int(grid_j)
 
 	# Create template array for res1
@@ -147,7 +145,7 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 		# If last run with less that max remaining particles, set Ni to remaining number of particles
 		if((int(grid_i)*(i+1)) > N1):
 			Ni = int(N1 - grid_i*i)
-			
+
 		# Prepare data that depends on i for this run
 		data1 = d1[(i*int(grid_i)):(i*int(grid_i)+Ni),:,:] # d1 subunit for the next j runs
 
@@ -158,23 +156,21 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 		else:
 			gi = ceil(Ni/block_i)
 			bi = block_i
-		
+
 		# Maximum number of particles per run in j direction
 		Nj = int(grid_j)
-		
+
 		# Resets last to "False"
 		last = False
 
-		for j in range(numRuns_j):			
+		for j in range(numRuns_j):
 			# If last run with less that max remaining particles, set Nj to remaining number of particles
 			if((int(grid_j)*(j+1)) > N2):
 				Nj = int(N2 - grid_j*j)
 				last = True
 
-			
 			# Prepare data that depends on j for this run
 			data2 = d2[(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]
-
 
 			# Set j dimension of block and grid for this run
 			if(Nj<block_j):
@@ -184,17 +180,14 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 				gj = ceil(Nj/block_j)
 				bj = block_j
 
-
 			# Prepare results array for run
 			if last==True:
 				res1 = copy.deepcopy(temp_res1[:Ni,:int(gj)])
 			elif j==0:
 				res1 = copy.deepcopy(temp_res1[:Ni,:int(gj)])
 
-			#res1 = zeros([Ni,int(gj)]).astype(float64)
-			
 			iterations = odd_num(int(bj))
-			
+
 			if iterations.size == 0:
 				#print "here"
 				temp_1=-1
@@ -203,26 +196,26 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 				#print "here2"
 				temp_1 = iterations.size
 
-			#print bi,bj
 			# Call GPU kernel functions
 			dist_gpu1(int32(temp_1), driver.In(iterations),int32(Ni),int32(Nj), int32(M), int32(P), float32(sigmasq_inv), float64(mplogscale), driver.In(data1), driver.In(data2), driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj),1), shared = 3000 )
 
 			# Summing rows in GPU output for this run
 			result[i*int(grid_i):i*int(grid_i)+Ni,j]=sum(res1, axis=1)
 
-
-	# Initialising required variables for next steps
-	logN2 = log(float(N2))
-	mplogpisigma= M*P*log(2.0*pi*sigma*sigma)
-
 	# Sum all content of new results matrix and add/subtract constants for each row if there are no NANs or infs
-	
 	sum_result=ma.log(sum(result,axis=1))
 	count_inf=ma.count_masked(sum_result)
-	sum1 = -ma.sum(sum_result)+logN2*(N1-count_inf)+mplogscale*(N1-count_inf)+mplogpisigma*(N1-count_inf)
-	
-	print "Proportion of infs and NAs", int((count_inf/float(N1))*100), "%"
+	sum1 = -ma.sum(sum_result)+log(float(N2))*(N1-count_inf)+mplogscale*(N1-count_inf)+M*P*log(2.0*pi*sigma*sigma)*(N1-count_inf)
+
+	# Raise error if calculation below cannot be carried out due to div by 0
+	if count_inf == N1:
+		print "ERROR: Too many nan/inf values in output, could not calculate mutual information. Consider increasing particle size pr ada[ting prior distributions."
+		sys.exit()
+
+	# Final division to give mutual information
 	Info = (sum1 / float(N1- count_inf) - M*P/2.0*(log(2.0*pi*sigma*sigma)+1))
+
+	print "Proportion of infs and NAs", int((count_inf/float(N1))*100), "%"
 
 	return(Info)
 
