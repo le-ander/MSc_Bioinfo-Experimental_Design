@@ -128,6 +128,14 @@ def generateTemplate(source, analysis_type, filename="input_file", sumname="summ
 
 	type_regex = re.compile(r'>type\s*\n(ODE|SDE)\s*\n<type')
 	#################################################################################################
+    
+    
+    ##### regex error check
+    init_error_check=re.compile(r'(constant \d+\.\d+|\d+)|(uniform \d+\.\d+|\d+ \d+\.\d+|\d+)|(normal \d+\.\d+|\d+ \d+\.\d+|\d+)|(lognormal \d+\.\d+|\d+ \d+\.\d+|\d+)')
+#    re.compile(r'uniform \d+\.\d+|\d+ \d+\.\d+|\d+')
+#    re.compile(r'normal \d+\.\d+|\d+ \d+\.\d+|\d+')
+#    re.compile(r'lognormal \d+\.\d+|\d+ \d+\.\d+|\d+')
+    
 
 
 	###Initialise variables to capture information from data file####################################
@@ -275,7 +283,7 @@ def generateTemplate(source, analysis_type, filename="input_file", sumname="summ
 
 			####obtain fit information for initials####
 			fit_init_list = init_fit_regex.search(info).group(1)
-			fit_init = fit_init_list  ## should solve NONE issue
+			fit_init = fit_init_list
 			###########################################
 
 		elif samplefrompost_match.group(1) == "False":
@@ -315,6 +323,14 @@ def generateTemplate(source, analysis_type, filename="input_file", sumname="summ
 				except:
 					print "Constant values for initial conditions are not in the right format: >Initial Conditions ... <Initial Conditions in input data file " + dataname +"!"
 					sys.exit()
+            for i in init_con:
+                for j in i:
+                    if init_error_check.match(j):
+                        print j
+                    elif j=="Unchanged" and len(i)==1:
+                        print j
+                    else:
+                        print "failed"
 
 
 			####obtain prior distributions of initial condition
