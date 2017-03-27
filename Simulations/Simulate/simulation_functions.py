@@ -5,7 +5,7 @@ from numpy.random import *
 import math
 import re
 
-import cudasim.Lsoda as Lsoda
+import Lsoda
 
 try:
 	import cPickle as pickle
@@ -14,9 +14,7 @@ except:
 
 import time
 import sys
-sys.path.insert(1, '../error_checks')
-sys.path.insert(1, ".")
-import parse_infoEnt_new_2
+
 
 
 # A function to run cudasim
