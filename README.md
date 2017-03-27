@@ -1,14 +1,17 @@
 # Experimental-Design ToDo
 
+## Ask Juliane
+
+- How to present repressilator results?
+- Should libsbml be a dependency or not?
+
 ## Next steps
 
-- Error-checking
-  - Try breaking code (Jonas)
-  - Catch div by 0 in gE due to all inf/na (Leander)
+- Error-checking (try breaking code) (Jonas)
 
 - Finish commenting (incl. kernel, incl referencing) (Scott, Jonas, Leander)
 
-- Rename (models, functions, folder struct, (vars)) (?)
+- Rename (models, functions, vars) (?)
 
 - Presentation of results
   - Finalise Print statements (Scott, Jonas, Leander)
@@ -18,6 +21,20 @@
 - Only load packages when required (libsbml and means) (?)
 
 - At very end: Final run through code (rm print statements, rm seeds) (Scott, Jonas, Leander)
+
+- Peitho installation (Jonas)
+
+- Run timing runs
+
+- Group report
+  - Include figure for block/grid details?
+  - Figure out how to present repressilator results
+  - Add results for examples
+  - Write Troubleshooting
+  - Write Future Work
+  - Complete author contributions (Chapter 1 and appendix A)
+
+- Read through group report
 
 ## On Hold
 
