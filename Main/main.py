@@ -2,15 +2,17 @@ import sys
 import os
 from shutil import copyfile
 import re
-sys.path.insert(1, '../error_checks')
-sys.path.insert(1, '../simulations')
-sys.path.insert(1, '../mutualInfo')
-sys.path.insert(1, '../abc-sysbio')
-sys.path.insert(1, '../cudasim')
+sys.path.insert(1, '../Errors_and_Parsers/Error_Checks')
+sys.path.insert(1, '../Errors_and_Parsers/ODE_Parsers')
+sys.path.insert(1, '../Errors_and_Parsers/SDE_Parsers')
+sys.path.insert(1, '../Errors_and_Parsers/abc-sysbio')
+sys.path.insert(1, '../Simulations/cudasim')
+sys.path.insert(1, '../Simulations/Simulate')
+sys.path.insert(1, '../Mut_Info/getEntropies')
+sys.path.insert(1, '../Mut_Info/Outputs')
 
 
 import simulation_functions
-import organiser
 import error_check
 import SBML_check
 import input_file_parser_new_2
@@ -20,6 +22,7 @@ import getEntropy2
 import getEntropy3
 import cudacodecreater
 import plotbar
+import SBML_reactions
 from numpy import *
 import time
 
@@ -120,7 +123,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 		inPath = fname + "/exp_xml/exp_xml_" + input_file_SBML_name
 
 		#Carries out the changes to the original SBML file and then creates a new SBML file in the directory made
-		no_exp = SBML_check.SBML_reactionchanges(input_file_SBML, iname, inPath,input_file_data)
+		no_exp = SBML_reactions.SBML_reactionchanges(input_file_SBML, iname, inPath,input_file_data)
 
 		#Start of creating cudacode from SBML files just made
 		print "-----Creating CUDA code-----"
