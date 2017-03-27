@@ -90,14 +90,14 @@ def parse_required_vector_value( node, tagname, message, cast ):
 
 
 def type_parser (type):
-    
-    if re_ODE.match(type):
-        return 0
-    elif re_SDE.match(type):
-        return 1
-    else:
-        print "\nType of the model ", self.name[self.nmodels-1], " has the wrong format."
-        sys.exit()
+	
+	if re_ODE.match(type):
+		return 0
+	elif re_SDE.match(type):
+		return 1
+	else:
+		print "\nType of the model ", self.name[self.nmodels-1], " has the wrong format."
+		sys.exit()
 
 
 #### Function to identify prior the user given prior and obtain its values#########################
@@ -154,21 +154,21 @@ def process_prior( tmp ):
 
 #### Function to parse a string into an integer#####################################################
 def parseint(str):
-    try:
-        return int(str)
-    except ValueError:
-        return str
+	try:
+		return int(str)
+	except ValueError:
+		return str
 
 
 
 
 #### Function to parse a string into an integer and offset it by -1 to obtain the right index########
 def parseint_index(str):
-    try:
-    	out=int(str)-1
-        return out
-    except ValueError:
-        return str
+	try:
+		out=int(str)-1
+		return out
+	except ValueError:
+		return str
 
 
 
@@ -241,8 +241,8 @@ class algorithm_info:
 		
 		### initialises attributes of the object
 		
-        #### Global model/experiment attributes
-        self.modelnumber = 0
+		#### Global model/experiment attributes
+		self.modelnumber = 0
 		self.particles = 0
 		self.beta = 0
 		self.dt = 0
@@ -251,42 +251,42 @@ class algorithm_info:
 		self.nspecies_all=0
 		self.nparameters_all = 0
 		self.sigma= 0
-        self.ncompparams = []
+		self.ncompparams = []
 
-        #### SDE specific attributes
-        #self.beta = 
-        #self.cuda_SDE =
-    	
-        #### Posterior sample attributes
+		#### SDE specific attributes
+		#self.beta = 
+		#self.cuda_SDE =
+
+		#### Posterior sample attributes
 		self.sampleFromPost = False
 		self.post_sample_file = ""
 		self.post_weight_file = ""
 		
-        #### Attribute indicating if initial conditions are defined by priors
+		#### Attribute indicating if initial conditions are defined by priors
 		self.initialprior = False
 
-        #### Fit attributes
+		#### Fit attributes
 		self.comp_fit= []
 		self.init_fit= []
 		self.param_fit = []
 
-        #### Sample attributes
+		#### Sample attributes
 		self.N1sample = 0
 		self.N2sample = 0
 		self.N3sample = 0
 		self.N4sample = 0
 
-        #### Attribute holding combination of initial condtion, paramter changes which define models/experiments
+		#### Attribute holding combination of initial condtion, paramter changes which define models/experiments
 		self.combination = combination_list
 
-        #### Model/Experiment specific attributes
+		#### Model/Experiment specific attributes
 		self.nmodels = 0
 		self.nparameters = []
 		self.nspecies = []
 		self.name = []
 		self.cuda = []
 		self.source = []
-		self.type = []
+		self.type = ""
 		self.prior = []
 		self.x0prior = []
 		self.compprior = []
@@ -298,6 +298,9 @@ class algorithm_info:
 
 		### get number of models
 		self.modelnumber = parse_required_single_value( xmldoc, "modelnumber", "Please provide an integer value for <modelnumber>", int )
+
+		#### gets type of model (ODE/SDE)#####################
+		self.type=( type_parser (parse_required_single_value( xmldoc, "type", "Please provide a string value for <type>", str ).strip())) ### convert type into integer and check for correct definition test
 
 
 		### get number of samples
@@ -315,7 +318,7 @@ class algorithm_info:
 		### get timepoints
 		self.times = parse_required_vector_value( dataref, "times", "Please provide a whitespace separated list of values for <data><times>" , float )
 		self.ntimes = len(self.times)
-        #### check if times are in ascending order
+		#### check if times are in ascending order
 
 		### get global number of parameters
 		self.nparameters_all = parse_required_single_value(dataref, "nparameters_all", "Please provide an integer value for <data><nparameters_all>", int)
@@ -382,12 +385,6 @@ class algorithm_info:
 					print "Please provide an string value for <cuda> for model ", self.nmodels
 					sys.exit()
 				
-				#### gets type of model (ODE/SDE)#####################
-				try:
-					self.type.append( type_parser (str(m.getElementsByTagName('type')[0].firstChild.data).strip() )) ### convert type into integer and check for correct definition test
-				except:
-					print "Please provide an string value for <type> for model ", self.nmodels
-					sys.exit()
 
 				nparameter = 0
 				ncompparam = 0
@@ -425,21 +422,21 @@ class algorithm_info:
 						self.x0prior[self.nmodels-1].append( process_prior( tmp ) )
 
 
-                #### get measurable species of model###############
+				#### get measurable species of model###############
 				try:
-					self.fitSpecies.append( parse_fitting_information('fit', m, ninit )  )
+					self.fitSpecies.append( parse_fitting_information('measuredspecies', m, ninit )  )
 				except:
-					print "Measurable species are not defined properly with <fit> ... </fit> for model", self.nmodels
+					print "Measurable species are not defined properly with <measuredspecies> ... </measuredspecies> for model", self.nmodels
 					sys.exit()
 
-                #### Error checking for parameter prior, initial condtion prior and measurable species
+				#### Error checking for parameter prior, initial condtion prior and measurable species
 				if nparameter == 0:
 					print "\nNo parameters specified in model ", self.nmodels
 					sys.exit()
 				if ninit == 0:
 					print "\nNo initial conditions specified in model ", self.nmodels
 					sys.exit()
-                if len(self.fitSpecies[self.nmodels-1])==0:
+				if len(self.fitSpecies[self.nmodels-1])==0:
 					print "\nNo measurable species specified in model ", self.nmodels
 					sys.exit()
 
@@ -476,7 +473,7 @@ class algorithm_info:
 		try:
 			self.param_fit =( parse_fitting_information_parameters('paramfit', dataref, 'parameter' ,self.nparameters_all )  )
 		except:
-			print "Parameters to predict are not defined properly with <paramfit> ... </paramfit> for model"
+			print "Parameters to be fitted are not defined properly in <paramfit> ... </paramfit>"
 			sys.exit()
 		###
 
@@ -484,7 +481,7 @@ class algorithm_info:
 		try:
 			self.init_fit =( parse_fitting_information_parameters('initfit', dataref, 'initial' ,self.nspecies_all )  )
 		except:
-			print "Initial conditions to predict are not defined properly with <initfit> ... </initfit> for model"
+			print "Initial conditions to be fitted are not defined properly in <initfit> ... </initfit>"
 			sys.exit()
 		###
 
@@ -492,7 +489,7 @@ class algorithm_info:
 		try:
 			self.comp_fit=( parse_fitting_information_parameters('compfit', dataref, 'compartment' ,self.ncompparams_all )  )
 		except:
-			print "Compartments to predict are not defined properly with <compfit> ... </compfit> for model"
+			print "Compartments to be fitted are not defined properly in <compfit> ... </compfit>"
 			sys.exit()
 
 
@@ -500,12 +497,13 @@ class algorithm_info:
 #					print "\nNo parameters to fit specified in model ", self.name[self.nmodels-1]
 #					sys.exit()
 
-    # A method which prints out details about the models/experiments defined in the object
+	# A method which prints out details about the models/experiments defined in the object
 	def print_info(self):
 		print "\nALGORITHM INFO"
 		print "modelnumber:", self.modelnumber
 		print "samples:", self.particles
 		print "dt:", self.dt
+		print "type:", self.type
 		print "parameters:", self.nparameters_all
 		print "nspecies:", self.nspecies_all
 		print "ncompparams:", self.ncompparams_all
@@ -535,8 +533,7 @@ class algorithm_info:
 			print "\t", "ncompparams:", self.ncompparams[i]
 			print "\t", "name:", self.name[i]
 			print "\t", "source:", self.source[i]
-			print "\t", "type:", self.type[i]
-			print "\t", "fitSpecies:", self.fitSpecies[i]
+			print "\t", "measured species:", self.fitSpecies[i]
 
 			print "\t", "init:", self.x0prior[i]
 			print "\t", "prior:", self.prior[i]
@@ -996,7 +993,7 @@ class algorithm_info:
 		self.fitSort()
 
 		#Adds noise to the N1 trajectories if ODEs used
-		if self.type[0] == "ODE":
+		if self.type == 0:
 			print "-----Adding noise to CUDA-Sim outputs-----"
 			self.addNoise(cudaorder)
 

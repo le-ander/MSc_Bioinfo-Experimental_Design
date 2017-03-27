@@ -7,11 +7,11 @@ ODE
 <dt
 
 >particles
-4600000
+1000
 <particles
 
 >nsample
-100000 4500000 0 0
+100 900 0 0
 <nsample
 
 >sigma
@@ -45,13 +45,13 @@ constant 1
 constant 0
 constant 0
 constant 0
-constant 0
+uniform 1 10
 <initials
 
 
->fit
+>measuredspecies
 All
-<fit
+<measuredspecies
 
 >paramfit
 All
