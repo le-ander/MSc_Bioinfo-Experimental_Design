@@ -59,7 +59,7 @@ def main():
 		#If statment between whether SBML or local code used as requires two different workflows
 		#Reference model
 		if usesbml[0] == True:
-			#random.seed(123) #NEED TO REMOVE SEED
+			random.seed(123) #NEED TO REMOVE SEED
 			ref_model = sorting_files(input_file_SBMLs[0],analysis,fname,usesbml[0], iname, input_file_data = input_file_datas[count])
 			count += 1
 		else:
