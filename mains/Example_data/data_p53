@@ -3,11 +3,11 @@
 <dt
 
 >particles
-4800
+14500
 <particles
 
 >nsample
-400 1200 1600 1600
+1000 4500 4500 4500
 <nsample
 
 >sigma
