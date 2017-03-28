@@ -490,7 +490,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 
 	# Raise error if calculation below cannot be carried out due to div by 0
 	if count_all_inf == N1:
-		print "ERROR: Too many nan/inf values in output, could not calculate mutual information. Consider increasing particle size pr ada[ting prior distributions."
+		print "ERROR: Too many nan/inf values in output, could not calculate mutual information. Consider increasing particle size or adapting prior distributions."
 		sys.exit()
 
 	# Final summation

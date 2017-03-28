@@ -4,10 +4,9 @@
 
 - How to present repressilator results?
 - Should libsbml be a dependency or not?
+- Should we have a table with author contributions at the end of the report?
 
 ## Next steps
-
-- Error-checking (try breaking code) (Jonas)
 
 - Finish commenting (incl. kernel, incl referencing) (Scott, Jonas, Leander)
 
@@ -18,7 +17,7 @@
   - CSV summary file (append not overwrite) (?)
   - Bar graphs (Jonas)
 
-- Only load packages when required (libsbml and means) (?)
+  - Only load packages when required (libsbml and means)
 
 - At very end: Final run through code (rm print statements, rm seeds) (Scott, Jonas, Leander)
 
@@ -40,9 +39,9 @@
 
 - Increase gridsize as less global mem is used now (Leander)
 
-- Dynamically assign shared memory based on block size (Scott)
-
 - Include dynamic shared memory in launch config (consider max smem per SM) (Leander)
+
+- Dynamically assign shared memory based on block size (Scott)
 
 - SDE implementation (Scott, Leander)
 
@@ -50,7 +49,7 @@
 
 - Pickling (reuse cudasim)  (Jonas)
 
-- Use analytical model to validate project (see Julianes thesis) (?)
+- Only load packages when required (libsbml and means) (wati for Julianes opinion)
 
 ## Further work ideas
 
