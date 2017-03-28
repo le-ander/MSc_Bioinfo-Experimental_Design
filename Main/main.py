@@ -59,7 +59,7 @@ def main():
 		#If statment between whether SBML or local code used as requires two different workflows
 		#Reference model
 		if usesbml[0] == True:
-			#random.seed(123) #NEED TO REMOVE SEED
+			random.seed(123) #NEED TO REMOVE SEED
 			ref_model = sorting_files(input_file_SBMLs[0],analysis,fname,usesbml[0], iname, input_file_data = input_file_datas[count])
 			count += 1
 		else:
@@ -170,7 +170,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 
 		#Start of creating the input.xml file
 		print "-----Input XML file-----"
-		comb_list = input_file_parser_new_2.generateTemplate(exp_xml_files, "input_xml", "summmary", input_file_data, inpath = inPath, outpath= xml_out, iname=iname)
+		comb_list = input_file_parser_new_2.generateTemplate(exp_xml_files, analysis, "input_xml", "summmary", input_file_data, inpath = inPath, outpath= xml_out, iname=iname)
 
 		#input_xml holds the file name of the input.xml file
 		input_xml="/input_xml"
@@ -189,7 +189,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 	print "-----Creating object from input XML file-----"
 
 	#Calls function to make the object
-	sbml_obj = parse_infoEnt_new_2.algorithm_info(xml_out+input_xml+".xml", 0, comb_list)
+	sbml_obj = parse_infoEnt_new_2.algorithm_info(xml_out+input_xml+".xml", comb_list)
 
 	#Calls a function to make an attribute which is a dictionary that relates cudacode files to the initial conditions it needs
 	sbml_obj.getpairingCudaICs()
@@ -206,6 +206,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 		#For approach 3 copies over the samples from the reference model
 		sbml_obj.copyTHETAS(refmod)
 
+	sbml_obj.print_info()
 	#Starts CUDA sim
 	print "-----Running CUDA-Sim-----"
 
