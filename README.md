@@ -22,9 +22,8 @@
 - Run timing runs
 
 - Group report
-  - Include figure for block/grid details?
   - Figure out how to present repressilator results (incl. results)
-  - Complete Troubleshooting
+  - Complete Troubleshooting (Jonas)
   - Write Future Work
 
 - Read through group report
