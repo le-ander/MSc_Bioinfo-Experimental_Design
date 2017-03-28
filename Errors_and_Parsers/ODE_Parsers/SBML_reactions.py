@@ -81,7 +81,7 @@ def SBML_reactionchanges(input_file, inpath="", fname="", param_changes=""):
 		print "Also if you plan to run an unchanged version of SBML file this must be Experiment 1 as:"
 		print ">Parameter - Experiment 1"
 		print "Unchanged"
-		print "<Parameter - Experiment 1"
+		print "<Parameter - Experiment 1\n"
 		sys.exit()
 
 	start_point = 0

@@ -123,7 +123,29 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 		inPath = fname + "/exp_xml/exp_xml_" + input_file_SBML_name
 
 		#Carries out the changes to the original SBML file and then creates a new SBML file in the directory made
-		no_exp = SBML_reactions.SBML_reactionchanges(input_file_SBML, iname, inPath,input_file_data)
+		try:
+			no_exp = SBML_reactions.SBML_reactionchanges(input_file_SBML, iname, inPath,input_file_data)
+		except:
+			print ""
+			print "Parameters not defined properly in input file"
+			print "Need to be defined sequentially e.g."
+			print ">Parameter - Experiment 1"
+			print "..."
+			print "<Parameter - Experiment 1"
+			print ""
+			print ">Parameter - Experiment 2"
+			print "..."  
+			print "<Parameter - Experiment 2"
+			print ""
+			print ">Parameter - Experiment 3"
+			print "..."
+			print "<Parameter - Experiment 3"
+			print ""
+			print "Also if you plan to run an unchanged version of SBML file this must be Experiment 1 as:"
+			print ">Parameter - Experiment 1"
+			print "Unchanged"
+			print "<Parameter - Experiment 1\n"
+			sys.exit()
 
 		#Start of creating cudacode from SBML files just made
 		print "-----Creating CUDA code-----"
