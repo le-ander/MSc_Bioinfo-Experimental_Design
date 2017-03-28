@@ -41,7 +41,7 @@ uniform 0 10
 
 >initials
 constant 0
-constant 1
+constaaant 1
 constant 0
 constant 0
 constant 0
@@ -72,12 +72,7 @@ constant 1
 
 
 >Initial Conditions 1
-constant 0
-constant 1
-constant 0
-constant 0
-constant 0
-constant 0
+Unchanged
 <Initial Conditions 1
 
 >Initial Conditions 2

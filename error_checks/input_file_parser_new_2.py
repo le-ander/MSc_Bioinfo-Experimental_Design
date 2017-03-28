@@ -95,47 +95,32 @@ def generateTemplate(source, analysis_type, filename="input_file", sumname="summ
 
 	###regex to read input file###########################################################
 	prior_regex = re.compile(r'>prior\s*\n(.+)\n<prior', re.DOTALL)
-
 	fit_regex = re.compile(r'>measuredspecies\s*\n(.+)\n<measuredspecies', re.DOTALL)
-
 	comp_regex = re.compile(r'>compartment\s*\n(.+)\n<compartment', re.DOTALL)
-
 	fitparam_regex = re.compile(r'>paramfit\s*\n(.+)\n<paramfit')
-
 	times_regex = re.compile(r'>timepoint\n(.+)\n<timepoint', re.DOTALL)
-
 	particles_regex = re.compile(r'>particles\n(.+)\n<particles', re.DOTALL)
-
 	dt_regex = re.compile(r'>dt\n(.+)\n<dt', re.DOTALL)
-
 	init_regex = re.compile(r'>Initial\sConditions\s\d+\s*\n(.+?)\n<Initial\sConditions\s\d', re.DOTALL)
-
 	init_prior_regex = re.compile(r'>initials\s*\n(.+)\n<initials', re.DOTALL)
-
 	samplefrompost_regex = re.compile(r'>samplefromposterior\s*\n(True|False)\s*\n((\w+\.\w+)\n(\w+\.\w+)\n)?<samplefromposterior')
- 
 	init_prior_bool = re.compile(r'>initprior\s*\n(True|False)\s*\n<initprior')
-
 	comb_regex = re.compile(r'>combination\s*\n(.*)\n<combination', re.DOTALL)
-
 	init_fit_regex = re.compile(r'>initialfit\s*\n(.+)\n<initialfit')
-
 	comp_fit_regex = re.compile(r'>compfit\s*\n(.+)\n<compfit')
-
 	nsample_regex = re.compile(r'>nsample\s*\n(.+)\n<nsample')
-
 	sigma_regex = re.compile(r'>sigma\n(.+)\n<sigma', re.DOTALL)
-
 	type_regex = re.compile(r'>type\s*\n(ODE|SDE)\s*\n<type')
 	#################################################################################################
-    
-    
-    ##### regex error check
-    init_error_check=re.compile(r'(constant \d+\.\d+|\d+)|(uniform \d+\.\d+|\d+ \d+\.\d+|\d+)|(normal \d+\.\d+|\d+ \d+\.\d+|\d+)|(lognormal \d+\.\d+|\d+ \d+\.\d+|\d+)')
-#    re.compile(r'uniform \d+\.\d+|\d+ \d+\.\d+|\d+')
-#    re.compile(r'normal \d+\.\d+|\d+ \d+\.\d+|\d+')
-#    re.compile(r'lognormal \d+\.\d+|\d+ \d+\.\d+|\d+')
-    
+	
+	
+	##### regex for prior distribution error checks##################################################
+	prior_check_constant=re.compile(r'constant ((\d+\.\d+)|(\d+))')
+	prior_check_uniform=re.compile(r'uniform ((\d+\.\d+)|(\d+)) ((\d+\.\d+)|(\d+))')
+	prior_check_normal=re.compile(r'normal ((\d+\.\d+)|(\d+)) ((\d+\.\d+)|(\d+))')
+	prior_check_lognormal=re.compile(r'lognormal ((\d+\.\d+)|(\d+)) ((\d+\.\d+)|(\d+))')
+	#################################################################################################
+
 
 
 	###Initialise variables to capture information from data file####################################
@@ -187,7 +172,7 @@ def generateTemplate(source, analysis_type, filename="input_file", sumname="summ
 			sys.exit()
 		#### SDE model message#################	
 		if model_type == "SDE":
-			print "SDE models will be supported in future version!"
+			print "SDE models will be supported in next version!"
 			sys.exit()
 		########################################
 
@@ -311,9 +296,15 @@ def generateTemplate(source, analysis_type, filename="input_file", sumname="summ
 			####obtain prior distribution of model parameter	
 			try:
 				prior = prior_regex.search(info).group(1).split("\n")
+				print prior
 			except:
-				print "Prior distributions of model parameter are not the right format (True or False): >initials ... <initials in input data file " + dataname +"!"
+				print "Prior distributions of model parameter are not the right format: >prior ... <prior in input data file " + dataname +"!"
 				sys.exit()
+			### error check for prior distribution format ###
+			for i in prior:
+					if prior_check_constant.match(i) == None and prior_check_uniform.match(i)==None and prior_check_normal.match(i)==None and prior_check_lognormal.match(i)==None:
+						print "Prior distributions of model parameter are not in the right format: >prior ... <prior in input data file " + dataname +"!"
+						sys.exit()
 			####obtain constants of initial condition
 			if init_prior == False:
 				try:
@@ -323,14 +314,12 @@ def generateTemplate(source, analysis_type, filename="input_file", sumname="summ
 				except:
 					print "Constant values for initial conditions are not in the right format: >Initial Conditions ... <Initial Conditions in input data file " + dataname +"!"
 					sys.exit()
-            for i in init_con:
-                for j in i:
-                    if init_error_check.match(j):
-                        print j
-                    elif j=="Unchanged" and len(i)==1:
-                        print j
-                    else:
-                        print "failed"
+				### error check for initial condition format ###
+				for i in init_con:
+					for j in i:
+						if prior_check_constant.match(j) == None and (j!="Unchanged" and len(i)!=1):
+							print "Initial conditions can only be defined as constants: >Initial Conditions ... <Initial Conditions in input data file " + dataname +"!"
+							sys.exit()
 
 
 			####obtain prior distributions of initial condition
@@ -340,6 +329,13 @@ def generateTemplate(source, analysis_type, filename="input_file", sumname="summ
 				except:
 					print "Prior distributions of initial conditions are not in the right format: >initials ... <initials in input data file " + dataname +"!"
 					sys.exit()
+				### error check for prior distribution format ###
+				for i in init_con:
+					for j in i:
+						if prior_check_constant.match(i) == None and prior_check_uniform.match(i)==None and prior_check_normal.match(i)==None and prior_check_lognormal.match(i)==None:
+							print "Prior distributions of initial conditions are not in the right format: >initials ... <initials in input data file " + dataname +"!"
+							sys.exit()
+
 				####obtain fit information for initials
 				if analysis_type==1:
 					try:
