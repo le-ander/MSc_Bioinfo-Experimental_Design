@@ -1,3 +1,7 @@
+>type
+ODE
+<type
+
 >dt
 1
 <dt
@@ -37,17 +41,17 @@ uniform 0 10
 
 >initials
 constant 0
-constant 1
+constaaant 1
 constant 0
 constant 0
 constant 0
-constant 0
+uniform 1 10
 <initials
 
 
->fit
+>measuredspecies
 All
-<fit
+<measuredspecies
 
 >paramfit
 All
@@ -68,12 +72,7 @@ constant 1
 
 
 >Initial Conditions 1
-constant 0
-constant 1
-constant 0
-constant 0
-constant 0
-constant 0
+Unchanged
 <Initial Conditions 1
 
 >Initial Conditions 2
