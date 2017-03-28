@@ -10,16 +10,12 @@
 
 - Finish commenting (incl. kernel, incl referencing) (Scott, Jonas, Leander)
 
-- Rename (models, functions, vars) (?)
+- Rename (models, functions, vars, files ) (?)
 
 - Presentation of results
   - Finalise Print statements (Scott, Jonas, Leander)
   - CSV summary file (append not overwrite) (?)
   - Bar graphs (Jonas)
-
-  - Only load packages when required (libsbml and means)
-
-- At very end: Final run through code (rm print statements, rm seeds) (Scott, Jonas, Leander)
 
 - Peitho installation (Jonas)
 
@@ -27,13 +23,13 @@
 
 - Group report
   - Include figure for block/grid details?
-  - Figure out how to present repressilator results
-  - Add results for examples
-  - Write Troubleshooting
+  - Figure out how to present repressilator results (incl. results)
+  - Complete Troubleshooting
   - Write Future Work
-  - Complete author contributions (Chapter 1 and appendix A)
 
 - Read through group report
+
+- At very end: Final run through code (rm print statements, rm seeds) (Scott, Jonas, Leander)
 
 ## On Hold
 
