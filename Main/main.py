@@ -8,18 +8,18 @@ sys.path.insert(1, '../Errors_and_Parsers/SDE_Parsers')
 sys.path.insert(1, '../Errors_and_Parsers/abc-sysbio')
 sys.path.insert(1, '../Simulations/cudasim')
 sys.path.insert(1, '../Simulations/Simulate')
-sys.path.insert(1, '../Mut_Info/getEntropies')
+sys.path.insert(1, '../Mut_Info/mutInfos')
 sys.path.insert(1, '../Mut_Info/Outputs')
 
 
 import simulation_functions
 import error_check
 import SBML_check
-import input_file_parser_new_2
-import parse_infoEnt_new_2
-import getEntropy1
-import getEntropy2
-import getEntropy3
+import input_data_file_parser
+import parse_object_info
+import mutInfo1
+import mutInfo2
+import mutInfo3
 import cudacodecreater
 import plotbar
 import SBML_reactions
@@ -170,7 +170,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 
 		#Start of creating the input.xml file
 		print "-----Input XML file-----"
-		comb_list = input_file_parser_new_2.generateTemplate(exp_xml_files, analysis, "input_xml", "summmary", input_file_data, inpath = inPath, outpath= xml_out, iname=iname)
+		comb_list = input_data_file_parser.generateTemplate(exp_xml_files, analysis, "input_xml", "summmary", input_file_data, inpath = inPath, outpath= xml_out, iname=iname)
 
 		#input_xml holds the file name of the input.xml file
 		input_xml="/input_xml"
@@ -189,7 +189,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 	print "-----Creating object from input XML file-----"
 
 	#Calls function to make the object
-	sbml_obj = parse_infoEnt_new_2.algorithm_info(xml_out+input_xml+".xml", comb_list)
+	sbml_obj = parse_object_info.algorithm_info(xml_out+input_xml+".xml", comb_list)
 
 	#Calls a function to make an attribute which is a dictionary that relates cudacode files to the initial conditions it needs
 	sbml_obj.getpairingCudaICs()
@@ -232,15 +232,15 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 	#####
 
 	if sbml_obj.analysisType == 0:
-		MutInfo1=getEntropy1.run_getEntropy1(sbml_obj)
+		MutInfo1=mutInfo1.run_mutInfo1(sbml_obj)
 		plotbar.plotbar(MutInfo1, sbml_obj.name ,sbml_obj.nmodels ,0)
 	elif sbml_obj.analysisType == 1:
-		MutInfo2=getEntropy2.run_getEntropy2(sbml_obj)
+		MutInfo2=mutInfo2.run_mutInfo2(sbml_obj)
 		plotbar.plotbar(MutInfo2, sbml_obj.name ,sbml_obj.nmodels ,1)
 	elif sbml_obj.analysisType == 2 and refmod == "":
 		return sbml_obj
 	elif sbml_obj.analysisType == 2 and refmod != "":
-		getEntropy3.run_getEntropy3(sbml_obj, refmod)
+		mutInfo3.run_mutInfo3(sbml_obj, refmod)
 
 	## End timing for mutual information calculation
 	time2=time.time()

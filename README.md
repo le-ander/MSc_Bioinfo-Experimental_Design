@@ -8,9 +8,12 @@
 
 ## Next steps
 
-- Rename (models, functions, vars, files ) (?)
-
 - Finalise Print statements (Scott, Jonas, Leander)
+
+- Presentation of results
+  - Finalise Print statements (Scott, Jonas, Leander)
+  - CSV summary file (append not overwrite) (?)
+  - Bar graphs (Jonas)
 
 - Peitho installation (Jonas)
 

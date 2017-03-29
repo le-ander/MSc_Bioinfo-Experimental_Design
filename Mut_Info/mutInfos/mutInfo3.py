@@ -16,7 +16,7 @@ def odd_num(x):
 	return asarray(temp).astype(int32)
 
 # A function to calculate the mutual information between the outcome of two experiments
-##(gets called by run_getEntropy1)
+##(gets called by run_mutInfo1)
 ##Arguments: (Ref = reference experiment, Mod = alternative experiment)
 ##data - array of tracjectories with noise added
 ##theta - array of trajectories without noise
@@ -24,7 +24,7 @@ def odd_num(x):
 ##sigma - standard deviation
 ##scale - scaling constant to prevent nans and infs
 #@profile
-def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,scale_ref,scale_mod):
+def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,scale_ref,scale_mod):
 	# Kernel declaration using pycuda SourceModule
 	mod = compiler.SourceModule("""
 
@@ -545,11 +545,11 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	return(Info2)
 
 
-# A function calling getEntropy3 for all provided experiments and outputs the mutual information
+# A function calling mutInfo3 for all provided experiments and outputs the mutual information
 ##Arguments:
 ##model_obj - an object containing all alternative experiments and all their associated information
 ##ref_obj - an object containing the reference experiment and all associated information
-def run_getEntropy3(model_obj, ref_obj):
+def run_mutInfo3(model_obj, ref_obj):
 	#Initiates list for mutual information
 	MutInfo3 = []
 
@@ -584,7 +584,7 @@ def run_getEntropy3(model_obj, ref_obj):
 
 		#Calculates mutual information
 		print "-----Calculating Mutual Information for Experiment", experiment+1,"-----"
-		MutInfo3.append(getEntropy3(ref_obj.trajectories[0],ref_obj.cudaout[0],model_obj.trajectories[experiment], model_obj.cudaout[experiment],N1,N2,N3,N4,ref_obj.sigma,model_obj.sigma,ref_obj.scale[0],model_obj.scale[experiment]))
+		MutInfo3.append(mutInfo3(ref_obj.trajectories[0],ref_obj.cudaout[0],model_obj.trajectories[experiment], model_obj.cudaout[experiment],N1,N2,N3,N4,ref_obj.sigma,model_obj.sigma,ref_obj.scale[0],model_obj.scale[experiment]))
 		print "Mutual Information for Experiment", str(experiment+1)+":", MutInfo3[experiment]
 
 	#Returns mutual information
