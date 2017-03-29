@@ -96,6 +96,9 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 		print "-----PRE-PROCESSING FOR REFERENCE MODEL-----\n"
 	elif analysis == 2 and refmod != "":
 		print "-----PRE-PROCESSING FOR EXPERIMENTS MODEL-----\n"
+	else:
+		print "-----PRE-PROCESSING-----\n"
+		
 	input_file_SBML_name = input_file_SBML
 	if input_file_SBML_name[-4:]==".xml":
 		input_file_SBML_name = input_file_SBML_name[:-4]

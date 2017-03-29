@@ -8,12 +8,7 @@
 
 ## Next steps
 
-- Finalise Print statements (Scott, Jonas, Leander)
-
-- Presentation of results
-  - Finalise Print statements (Scott, Jonas, Leander)
-  - CSV summary file (append not overwrite) (?)
-  - Bar graphs (Jonas)
+- Finalise Print statements (Leander)
 
 - Peitho installation (Jonas)
 
@@ -26,7 +21,7 @@
 
 - Read through group report
 
-- At very end: Final run through code (rm print statements, rm seeds) (Scott, Jonas, Leander)
+- At very end: Final run through code (rm print statements, rm seeds) (Scott, Jonas, Leander) - remove Example data rubbish
 
 ## On Hold
 
