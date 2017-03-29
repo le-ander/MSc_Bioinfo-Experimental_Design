@@ -157,7 +157,7 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	print "Block shape:", str(block_i)+"x"+str(block_j)
 
 	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
-	grid = launch.optimise_gridsize(8.59)
+	grid = launch.optimise_gridsize(0.65)
 	grid_prelim_i = launch.round_down(sqrt(grid),block_i)
 	grid_prelim_j = launch.round_down(grid/grid_prelim_i,block_j)
 	# If gridsize in one dimention too large, reshape grid to allow more threads in the second dimension
@@ -280,7 +280,7 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	print "Block shape:", str(block)+"x1.0"
 
 	# Launch configuration: 1D Grid size (limited by GPU global memory and max grid size of GPU)
-	grid = float(min(autoinit.device.max_grid_dim_x, launch.optimise_gridsize(7.76)))
+	grid = float(min(autoinit.device.max_grid_dim_x, launch.optimise_gridsize(75)))
 	print "Grid shape:", str(grid_i)+"x1.0"
 
 	# Prepare input data
