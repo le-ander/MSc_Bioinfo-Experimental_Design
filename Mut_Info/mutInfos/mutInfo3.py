@@ -329,7 +329,7 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 
 	# Create template array for res1
 	try:
-		temp_res1 = zeros([Ni,int(ceil(Nj/block_j))]).astype(float64)
+		temp_res2 = zeros([Ni,int(ceil(Nj/block_j))]).astype(float64)
 	except:
 		print "ERROR: Not enought memory (RAM) available to create array for GPU results. Reduce GPU grid size."
 		sys.exit()
@@ -434,7 +434,7 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 
 	# Create template array for res1
 	try:
-		temp_res1 = zeros([Ni,int(ceil(Nj/block_j))]).astype(float64)
+		temp_res3 = zeros([Ni,int(ceil(Nj/block_j))]).astype(float64)
 	except:
 		print "ERROR: Not enought memory (RAM) available to create array for GPU results. Reduce GPU grid size."
 		sys.exit()

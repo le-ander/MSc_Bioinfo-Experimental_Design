@@ -8,8 +8,8 @@ then
 	export CUDA_DEVICE=0
 fi
 
-cd $GPUDIR/Main
-#cd ~/work/Experimental-Design/Main
+#cd $GPUDIR/Main
+cd ~/work/Experimental-Design/Main
 
 ##gE1 (SBML input):
 #python main.py -a 0 -of=results -i1 rep_test.xml -i2 new_file2 -lc 0 -if=Example_data
