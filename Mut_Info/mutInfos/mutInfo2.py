@@ -16,7 +16,7 @@ def odd_num(x):
 	return asarray(temp).astype(int32)
 
 # A function to calculate the mutual information between a subset of parameters of a system and an experiment
-##(gets called by run_getEntropy2)
+##(gets called by run_mutInfo2)
 ##Arguments:
 ##data - array of tracjectories with noise added
 ##theta - array of trajectories without noise
@@ -24,7 +24,7 @@ def odd_num(x):
 ##sigma - stadard deviation
 ##scale - scaling constant to prevent nans and infs
 #@profile
-def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
+def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 	# Kernel declaration using pycuda SourceModule
 
 	mod = compiler.SourceModule("""
@@ -378,9 +378,9 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	return(Info)
 
 
-# A function calling getEntropy2 for all provided experiments and outputs the mutual information
+# A function calling mutInfo2 for all provided experiments and outputs the mutual information
 ##Argument: model_obj - an object containing all experiments and all their associated information
-def run_getEntropy2(model_obj):
+def run_mutInfo2(model_obj):
 	#Initiates list for mutual information
 	MutInfo2 = []
 	#Cycles through experiments
@@ -399,7 +399,7 @@ def run_getEntropy2(model_obj):
 
 		#Calculates mutual information
 		print "-----Calculating Mutual Information for Experiment", experiment+1,"-----"
-		MutInfo2.append(getEntropy2(model_obj.trajectories[experiment],model_obj.cudaout[experiment],N1,N2,N3,model_obj.sigma,model_obj.scale[experiment]))
+		MutInfo2.append(mutInfo2(model_obj.trajectories[experiment],model_obj.cudaout[experiment],N1,N2,N3,model_obj.sigma,model_obj.scale[experiment]))
 		print "Mutual Information for Experiment", str(experiment+1)+":", MutInfo2[experiment]
 
 	#Returns mutual information

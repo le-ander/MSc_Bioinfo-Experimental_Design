@@ -8,8 +8,6 @@
 
 ## Next steps
 
-- Rename (models, functions, vars, files ) (?)
-
 - Presentation of results
   - Finalise Print statements (Scott, Jonas, Leander)
   - CSV summary file (append not overwrite) (?)
