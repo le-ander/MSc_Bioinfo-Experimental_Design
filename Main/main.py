@@ -127,7 +127,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 			no_exp = SBML_reactions.SBML_reactionchanges(input_file_SBML, iname, inPath,input_file_data)
 		except:
 			print ""
-			print "Parameters not defined properly in input file"
+			print "ERROR: Parameters not defined properly in input file"
 			print "Need to be defined sequentially e.g."
 			print ">Parameter - Experiment 1"
 			print "..."

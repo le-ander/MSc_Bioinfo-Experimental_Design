@@ -99,7 +99,7 @@ def input_checker(sys_arg):
 				print "Input file destination: " + iname + "\n"
 			#If flag not recognised calls printOptions()
 			elif not(sys_arg[i-1][2:] == 'infile_SBML'):
-				print "\nunknown option "+sys_arg[i]
+				print "\nERROR: unknown option "+sys_arg[i]
 				printOptions()
 				sys.exit()
 
@@ -159,7 +159,7 @@ def input_checker(sys_arg):
 				print "Input file destination: " + iname + "\n"
 			#If an unrecognised flag is called and calls printOptions
 			elif not(sys_arg[i-1][2:] == 'i1'):
-				print "\nunknown option "+sys_arg[i]
+				print "\nERROR: unknown option "+sys_arg[i]
 				printOptions()
 				sys.exit()
 

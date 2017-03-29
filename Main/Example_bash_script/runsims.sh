@@ -8,7 +8,7 @@ then
 	export CUDA_DEVICE=0
 fi
 
-cd ~/work/git_group_rename/Main
+cd $GPUDIR/Main
 #cd ~/work/Experimental-Design/Main
 
 ##gE1 (SBML input):

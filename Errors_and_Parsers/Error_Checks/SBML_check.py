@@ -18,6 +18,7 @@ def SBML_checker(input_files):
 		no_errors = document.getNumErrors()
 		#Prints any associated errors
 		if no_errors != 0:
+			print "ERROR: SBML file - " + i + " - has the following errors\n"
 			document.printErrors()
 		tot_errors += no_errors
 	#If any errors will exit the program
