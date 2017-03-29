@@ -28,29 +28,39 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	# Kernel declaration using pycuda SourceModule
 
 	mod = compiler.SourceModule("""
+
+	//Function to index 3-dimensional flattened arrays
 	__device__ unsigned int idx3d(int i, int k, int l, int M, int P)
 	{
 		return k*P + i*M*P + l;
 	}
 
+	//Function to index 2-dimensional flattened arrays
 	__device__ unsigned int idx2d(int i, int j, int M)
 	{
 		return i*M + j;
 	}
 
-
+	//Function to calculate intemediary probabilities for mutual information calculation
 	__global__ void distance1(int len_odd, int* odd_nums, int Ni, int Nj, int M, int P, float sigma, double scale, double *d1, double *d2, double *res1)
 	{
+		//Define shared memory dynamically
 		extern __shared__ double s[];
 
+		//Assign thread indicies
 		unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
 		unsigned int j = threadIdx.y + blockDim.y * blockIdx.y;
+
+		//Assign thread index for shared memory
 		unsigned int tid = threadIdx.y;
 
+		//Initialise shared memory values
 		s[idx2d(threadIdx.x,tid,blockDim.y)] = 0.0;
 
+		//Return threads that are not needed
 		if((i>=Ni)||(j>=Nj)) return;
 
+		//Calculate probabilities between trajectory x_i and mean mu_j
 		for(int k=0; k<M; k++){
 			for(int l=0; l<P; l++){
 				s[idx2d(threadIdx.x,tid,blockDim.y)] -= ( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)]);
@@ -60,6 +70,7 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 		s[idx2d(threadIdx.x,tid,blockDim.y)] =  exp(scale + sigma*s[idx2d(threadIdx.x,tid,blockDim.y)]);
 		__syncthreads();
 
+		//First part of reduction - collapses each threadblock down to one vector
 		for(unsigned int k=blockDim.y/2; k>0; k>>=1){
 			if(tid < k){
 				s[idx2d(threadIdx.x,tid,blockDim.y)] += s[idx2d(threadIdx.x,tid+k,blockDim.y)];
@@ -67,6 +78,7 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 			__syncthreads();
 		}
 
+		//Final part of reduction involves adding back any columns that were missed out from the first part
 		if(len_odd != -1){
 			for(unsigned int l=0; l<len_odd; l+=1){
 				if (tid == 0) s[idx2d(threadIdx.x,0,blockDim.y)] += s[idx2d(threadIdx.x, odd_nums[l]-1 ,blockDim.y)];
@@ -74,20 +86,31 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 			}
 		}
 
+		//Load the data back into global memory
 		if (tid==0) res1[idx2d(i,blockIdx.y,gridDim.y)] = s[idx2d(threadIdx.x,0,blockDim.y)];
 
 	}
 
+	//Function to calculate intemediary probabilities for mutual information calculation
 	__global__ void distance2(int len_odd, int* odd_nums, int Nj, int M, int P, float sigma, double scale, double *d1, double *d3, double *res2)
 	{
+
+		//Define shared memory dynamically
 		extern __shared__ double s[];
+
+		//Assign thread indicies
 		int j = threadIdx.x + blockDim.x * blockIdx.x;
+
+		//Assign thread index for shared memory
 		unsigned int tid = threadIdx.x;
 
+		//Initialise shared memory values
 		s[tid] = 0.0;
 
+		//Return threads that are not needed
 		if(j>=Nj) return;
 
+		//Calculate probabilities between trajectory x_i and mean mu_j
 		for(int k=0; k<M; k++){
 			for(int l=0; l<P; l++){
 				s[tid] -= (d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])*(d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)]);
@@ -97,6 +120,7 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 		s[tid] =  exp(scale + sigma*s[tid]);
 		__syncthreads();
 
+		//First part of reduction - collapses each threadblock down to one vector
 		for(unsigned int k=blockDim.x/2; k>0; k>>=1){
 			if(tid < k){
 				s[tid] += s[tid+k];
@@ -104,6 +128,7 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 			__syncthreads();
 		}
 
+		//Final part of reduction involves adding back any columns that were missed out from the first part
 		if(len_odd != -1){
 			for(unsigned int l=0; l<len_odd; l+=1){
 				if (tid == 0) s[0] += s[odd_nums[l]-1];
@@ -111,6 +136,7 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 			}
 		}
 
+		//Load the data back into global memory
 		if (tid==0) res2[blockIdx.x] = s[0];
 
 	}

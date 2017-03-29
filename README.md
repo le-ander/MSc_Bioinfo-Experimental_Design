@@ -8,8 +8,6 @@
 
 ## Next steps
 
-- Finish commenting (incl. kernel, incl. referencing) (Scott, Jonas, Leander)
-
 - Rename (models, functions, vars, files ) (?)
 
 - Presentation of results
