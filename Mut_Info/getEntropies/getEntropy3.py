@@ -257,7 +257,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 				temp_1 = iterations.size
 
 			# Call GPU kernel functions
-			dist_gpu1(int32(temp_1), driver.In(iterations), int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_inv_ref), float32(sigma_inv_mod), float64(mpscale_sum), driver.In(data1), driver.In(data2), driver.In(data3), driver.In(data4), driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)),shared=3000)
+			dist_gpu1(int32(temp_1), driver.In(iterations), int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_inv_ref), float32(sigma_inv_mod), float64(mpscale_sum), driver.In(data1), driver.In(data2), driver.In(data3), driver.In(data4), driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)),shared=int(2*bi*bj*8))
 
 			# Summing rows in GPU output for this run
 			result1[i*int(grid_i):i*int(grid_i)+Ni,j] = sum(res1,axis=1) ###Could be done on GPU?
@@ -358,7 +358,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 				temp_1 = iterations.size
 
 			# Call GPU kernel functions
-			dist_gpu2(int32(temp_1), driver.In(iterations), int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), float32(sigma_inv_ref), float64(mpscale_ref), driver.In(data1), driver.In(data6), driver.Out(res2), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)), shared=3000)
+			dist_gpu2(int32(temp_1), driver.In(iterations), int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), float32(sigma_inv_ref), float64(mpscale_ref), driver.In(data1), driver.In(data6), driver.Out(res2), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)), shared=int(bi*bj*8))
 
 			# Summing rows in GPU output for this run
 			result2[i*int(grid_i):i*int(grid_i)+Ni,j] = sum(res2, axis=1) ###Could be done on GPU?
@@ -461,7 +461,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 				temp_1 = iterations.size
 
 			# Call GPU kernel functions
-			dist_gpu2(int32(temp_1), driver.In(iterations), int32(Ni), int32(Nj), int32(M_Mod), int32(P_Mod), float32(sigma_inv_mod), float64(mpscale_mod), driver.In(data3), driver.In(data8), driver.Out(res3), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)),shared=3000)
+			dist_gpu2(int32(temp_1), driver.In(iterations), int32(Ni), int32(Nj), int32(M_Mod), int32(P_Mod), float32(sigma_inv_mod), float64(mpscale_mod), driver.In(data3), driver.In(data8), driver.Out(res3), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)),shared=int(bi*bj*8))
 
 			# Summing rows in GPU output for this run
 			result3[i*int(grid_i):i*int(grid_i)+Ni,j] = sum(res3, axis=1) ###Could be done on GPU?

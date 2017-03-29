@@ -296,7 +296,6 @@ def generateTemplate(source, analysis_type, filename="input_file", sumname="summ
 			####obtain prior distribution of model parameter	
 			try:
 				prior = prior_regex.search(info).group(1).split("\n")
-				print prior
 			except:
 				print "Prior distributions of model parameter are not the right format: >prior ... <prior in input data file " + dataname +"!"
 				sys.exit()

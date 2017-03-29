@@ -231,7 +231,7 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 				temp_1 = iterations.size
 
 			# Call GPU kernel function
-			dist_gpu1(int32(temp_1), driver.In(iterations), int32(Ni),int32(Nj), int32(M), int32(P), float32(sigmasq_inv), float64(mplogscale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)), shared = 3000)
+			dist_gpu1(int32(temp_1), driver.In(iterations), int32(Ni),int32(Nj), int32(M), int32(P), float32(sigmasq_inv), float64(mplogscale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)), shared = int(bi*bj*8) )
 
 			# Summing rows in GPU output for this run
 			result[i*int(grid_i):i*int(grid_i)+Ni,j]=sum(res1, axis=1)
@@ -309,7 +309,7 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 				temp_1 = iterations.size
 
 			# Call GPU kernel function
-			dist_gpu2(int32(temp_1), driver.In(iterations), int32(Nj), int32(M), int32(P), float32(sigmasq_inv), float64(mplogscale), driver.In(data1), driver.In(data3),  driver.Out(res2), block=(int(bj),1,1), grid=(int(gj),1), shared=3000)
+			dist_gpu2(int32(temp_1), driver.In(iterations), int32(Nj), int32(M), int32(P), float32(sigmasq_inv), float64(mplogscale), driver.In(data1), driver.In(data3),  driver.Out(res2), block=(int(bj),1,1), grid=(int(gj),1), shared=int(bi*bj*8) )
 
 			# Sum all elements in results array for this run
 			result[i,j] = sum(res2)
