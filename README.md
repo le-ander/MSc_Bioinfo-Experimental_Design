@@ -8,14 +8,9 @@
 
 ## Next steps
 
-- Finish commenting (incl. kernel, incl. referencing) (Scott, Jonas, Leander)
-
 - Rename (models, functions, vars, files ) (?)
 
-- Presentation of results
-  - Finalise Print statements (Scott, Jonas, Leander)
-  - CSV summary file (append not overwrite) (?)
-  - Bar graphs (Jonas)
+- Finalise Print statements (Scott, Jonas, Leander)
 
 - Peitho installation (Jonas)
 

@@ -7,11 +7,11 @@ ODE
 <dt
 
 >particles
-10000
+470000
 <particles
 
 >nsample
-1000 9000 0 0
+400000 70000 0 0
 <nsample
 
 >sigma
@@ -98,7 +98,7 @@ Unchanged
 <Parameter - Experiment 1
 
 >Parameter - Experiment 2
-alpha0 0.1 1  
+alpha0 0.1 1
 alpha0 0.1 3
 alpha0 0.1 5
 <Parameter - Experiment 2
@@ -121,4 +121,3 @@ alpha 7 5
 >combination
 initset1 paramexp1 fit1
 <combination
-

@@ -93,7 +93,7 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 	print "Block shape:", str(block_i)+"x"+str(block_j)
 
 	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
-	grid = launch.optimise_gridsize(8.59)
+	grid = launch.optimise_gridsize(0.65)
 	grid_prelim_i = launch.round_down(sqrt(grid),block_i)
 	grid_prelim_j = launch.round_down(grid/grid_prelim_i,block_j)
 	# If gridsize in one dimention too large, reshape grid to allow more threads in the second dimension
@@ -130,7 +130,11 @@ def getEntropy1(data,theta,N1,N2,sigma,scale):
 	Nj = int(grid_j)
 
 	# Create template array for res1
-	temp_res1 = zeros([Ni,Nj]).astype(float64)
+	try:
+		temp_res1 = zeros([Ni,int(ceil(Nj/block_j))]).astype(float64)
+	except:
+		print "ERROR: Not enought memory (RAM) available to create array for GPU results. Reduce GPU grid size."
+		sys.exit()
 
 	# Determine M*P*log(scale) for GPU calculation
 	mplogscale= M*P*log(scale)

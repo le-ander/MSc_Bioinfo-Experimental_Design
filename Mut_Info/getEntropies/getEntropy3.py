@@ -198,7 +198,11 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	Nj = int(grid_j)
 
 	# Create template array for res1
-	temp_res1 = zeros([Ni,Nj]).astype(float64)
+	try:
+		temp_res1 = zeros([Ni,int(ceil(Nj/block_j))]).astype(float64)
+	except:
+		print "ERROR: Not enought memory (RAM) available to create array for GPU results. Reduce GPU grid size."
+		sys.exit()
 
 	# Main nested for-loop for mutual information calculations
 	for i in range(numRuns_i):
@@ -301,7 +305,11 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	Nj = int(grid_j)
 
 	# Create template array for res1
-	temp_res2 = zeros([Ni,Nj]).astype(float64)
+	try:
+		temp_res1 = zeros([Ni,int(ceil(Nj/block_j))]).astype(float64)
+	except:
+		print "ERROR: Not enought memory (RAM) available to create array for GPU results. Reduce GPU grid size."
+		sys.exit()
 
 	# Main nested for-loop for mutual information calculations
 	for i in range(numRuns_i):
@@ -402,7 +410,11 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 	Nj = int(grid_j)
 
 	# Create template array for res1
-	temp_res3 = zeros([Ni,Nj]).astype(float64)
+	try:
+		temp_res1 = zeros([Ni,int(ceil(Nj/block_j))]).astype(float64)
+	except:
+		print "ERROR: Not enought memory (RAM) available to create array for GPU results. Reduce GPU grid size."
+		sys.exit()
 
 	# Main nested for-loop for mutual information calculations
 	for i in range(numRuns_i):
