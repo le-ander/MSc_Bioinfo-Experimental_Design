@@ -92,6 +92,10 @@ def main():
 ##input_file_data - this holds the additional data alongside an SBML file that is required such as total number of particles etc
 def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", input_file_data = ""):
 	#Used to remove the .xml at the end of the file if present to name directories
+	if analysis == 2 and refmod == "":
+		print "-----PRE-PROCESSING FOR REFERENCE MODEL-----\n"
+	elif analysis == 2 and refmod != "":
+		print "-----PRE-PROCESSING FOR EXPERIMENTS MODEL-----\n"
 	input_file_SBML_name = input_file_SBML
 	if input_file_SBML_name[-4:]==".xml":
 		input_file_SBML_name = input_file_SBML_name[:-4]
@@ -169,7 +173,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 		exp_xml_files = os.listdir(inPath)
 
 		#Start of creating the input.xml file
-		print "-----Input XML file-----"
+		print "-----Generating input XML file-----"
 		comb_list = input_data_file_parser.generateTemplate(exp_xml_files, analysis, "input_xml", "summmary", input_file_data, inpath = inPath, outpath= xml_out, iname=iname)
 
 		#input_xml holds the file name of the input.xml file
@@ -231,16 +235,18 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 	time1=time.time()
 	#####
 
+	print "\n"
+
 	if sbml_obj.analysisType == 0:
-		MutInfo1=mutInfo1.run_mutInfo1(sbml_obj)
+		MutInfo1=mutInfo1.run_mutInfo1(sbml_obj,input_file_SBML)
 		plotbar.plotbar(MutInfo1, sbml_obj.name ,sbml_obj.nmodels ,0)
 	elif sbml_obj.analysisType == 1:
-		MutInfo2=mutInfo2.run_mutInfo2(sbml_obj)
+		MutInfo2=mutInfo2.run_mutInfo2(sbml_obj,input_file_SBML)
 		plotbar.plotbar(MutInfo2, sbml_obj.name ,sbml_obj.nmodels ,1)
 	elif sbml_obj.analysisType == 2 and refmod == "":
 		return sbml_obj
 	elif sbml_obj.analysisType == 2 and refmod != "":
-		mutInfo3.run_mutInfo3(sbml_obj, refmod)
+		mutInfo3.run_mutInfo3(sbml_obj, refmod, input_file_SBML)
 
 	## End timing for mutual information calculation
 	time2=time.time()

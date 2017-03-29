@@ -388,7 +388,7 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 
 # A function calling mutInfo2 for all provided experiments and outputs the mutual information
 ##Argument: model_obj - an object containing all experiments and all their associated information
-def run_mutInfo2(model_obj):
+def run_mutInfo2(model_obj, input_SBML):
 	#Initiates list for mutual information
 	MutInfo2 = []
 	#Cycles through experiments
@@ -406,7 +406,7 @@ def run_mutInfo2(model_obj):
 			N3 = pos[2]
 
 		#Calculates mutual information
-		print "-----Calculating Mutual Information for Experiment", experiment+1,"-----"
+		print "-----Calculating Mutual Information for Experiment", experiment+1, "for", input_SBML ,"-----"
 		MutInfo2.append(mutInfo2(model_obj.trajectories[experiment],model_obj.cudaout[experiment],N1,N2,N3,model_obj.sigma,model_obj.scale[experiment]))
 		print "Mutual Information for Experiment", str(experiment+1)+":", MutInfo2[experiment]
 

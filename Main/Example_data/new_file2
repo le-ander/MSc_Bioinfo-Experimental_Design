@@ -7,11 +7,11 @@ ODE
 <dt
 
 >particles
-470000
+1000
 <particles
 
 >nsample
-400000 70000 0 0
+100 900 0 0
 <nsample
 
 >sigma

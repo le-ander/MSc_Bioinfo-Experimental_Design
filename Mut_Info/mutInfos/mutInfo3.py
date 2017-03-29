@@ -549,7 +549,7 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 ##Arguments:
 ##model_obj - an object containing all alternative experiments and all their associated information
 ##ref_obj - an object containing the reference experiment and all associated information
-def run_mutInfo3(model_obj, ref_obj):
+def run_mutInfo3(model_obj, ref_obj, input_SBML):
 	#Initiates list for mutual information
 	MutInfo3 = []
 
@@ -583,7 +583,7 @@ def run_mutInfo3(model_obj, ref_obj):
 		N2 = min(N2_mod,N2_ref)
 
 		#Calculates mutual information
-		print "-----Calculating Mutual Information for Experiment", experiment+1,"-----"
+		print "-----Calculating Mutual Information for Experiment", experiment+1, "for", input_SBML,"-----"
 		MutInfo3.append(mutInfo3(ref_obj.trajectories[0],ref_obj.cudaout[0],model_obj.trajectories[experiment], model_obj.cudaout[experiment],N1,N2,N3,N4,ref_obj.sigma,model_obj.sigma,ref_obj.scale[0],model_obj.scale[experiment]))
 		print "Mutual Information for Experiment", str(experiment+1)+":", MutInfo3[experiment]
 
