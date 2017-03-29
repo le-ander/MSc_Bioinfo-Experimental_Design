@@ -1,4 +1,4 @@
-import sys
+import sys, numpy
 import os
 from shutil import copyfile
 import re
@@ -206,7 +206,6 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 		#For approach 3 copies over the samples from the reference model
 		sbml_obj.copyTHETAS(refmod)
 
-	sbml_obj.print_info()
 	#Starts CUDA sim
 	print "-----Running CUDA-Sim-----"
 

@@ -10,6 +10,10 @@
 1000 4500 4500 4500
 <nsample
 
+>type
+ODE
+<type
+
 >sigma
 10.0
 <sigma
@@ -38,9 +42,9 @@ uniform 0 5
 uniform 0 5
 <prior
 
->fit
+>measuredspecies
 species3
-<fit
+<measuredspecies
 
 >paramfit
 All

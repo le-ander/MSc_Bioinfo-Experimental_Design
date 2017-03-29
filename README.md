@@ -34,10 +34,6 @@
 
 - Increase gridsize as less global mem is used now (Leander)
 
-- Include dynamic shared memory in launch config (consider max smem per SM) (Leander)
-
-- Dynamically assign shared memory based on block size (Scott)
-
 - SDE implementation (Scott, Leander)
 
 - HDF5 to avoid memory issues (Jonas)
