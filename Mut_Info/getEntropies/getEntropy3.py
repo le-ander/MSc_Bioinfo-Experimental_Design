@@ -163,7 +163,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 ########################Calulation 1############################################
 
 	# Launch configuration: Block size and shape (as close to square as possible)
-	block = launch.optimal_blocksize(autoinit.device, dist_gpu1)
+	block = launch.optimal_blocksize(autoinit.device, dist_gpu1, 16)
 	block_i = launch.factor_partial(block)
 	block_j = block / block_i
 	print "Optimal blocksize:", block, "threads"
@@ -266,7 +266,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 ########################Calulation 2############################################
 
 	# Launch configuration: Block size and shape (as close to square as possible)
-	block = launch.optimal_blocksize(autoinit.device, dist_gpu2)
+	block = launch.optimal_blocksize(autoinit.device, dist_gpu2, 8)
 	block_i = launch.factor_partial(block)
 	block_j = block / block_i
 	print "Optimal blocksize:", block, "threads"
@@ -367,7 +367,7 @@ def getEntropy3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mo
 ########################Calulation 3############################################
 
 	# Launch configuration: Block size and shape (as close to square as possible)
-	block = launch.optimal_blocksize(autoinit.device, dist_gpu2)
+	block = launch.optimal_blocksize(autoinit.device, dist_gpu2, 8)
 	block_i = launch.factor_partial(block)
 	block_j = block / block_i
 	print "Optimal blocksize:", block, "threads"

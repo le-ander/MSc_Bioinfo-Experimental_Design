@@ -124,7 +124,7 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	dist_gpu1 = mod.get_function("distance1")
 
 	# Launch configuration: Block size and shape (as close to square as possible)
-	block = launch.optimal_blocksize(autoinit.device, dist_gpu1)
+	block = launch.optimal_blocksize(autoinit.device, dist_gpu1, 8)
 	block_i = launch.factor_partial(block) # Maximum threads per block
 	block_j = block / block_i
 	print "Optimal blocksize:", block, "threads"
@@ -246,7 +246,7 @@ def getEntropy2(data,theta,N1,N2,N3,sigma,scale):
 	dist_gpu2 = mod.get_function("distance2")
 
 	# Launch configuration: Size of 1D block
-	block = launch.optimal_blocksize(autoinit.device, dist_gpu2)
+	block = launch.optimal_blocksize(autoinit.device, dist_gpu2, 8)
 	print "Block shape:", str(block)+"x1.0"
 
 	# Launch configuration: 1D Grid size (limited by GPU global memory and max grid size of GPU)

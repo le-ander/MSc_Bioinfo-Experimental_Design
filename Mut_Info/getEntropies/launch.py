@@ -38,7 +38,7 @@ def optimise_gridsize(gmem_per_thread):
 ##Arguments:
 ##device - the pycuda.driver.Context instance for the device the kernel will be executing (e.g. pycuda.autoinit.device)
 ##function - a handle of the cuda function (kernel) that will be executed
-def optimal_blocksize(device, function):
+def optimal_blocksize(device, function, dyn_smem_per_thread=0):
 
 	# Check that compute capability of the GPU is compatible with this launch configurator
 	print "Detected compute capability of device:", str(device.compute_capability()[0])+"."+str(device.compute_capability()[1])
@@ -52,7 +52,7 @@ def optimal_blocksize(device, function):
 	achieved_occupancy = 0
 	blocksize = device.warp_size
 	while blocksize <= max_blocksize:
-		occupancy = blocksize * max_active_blocks_per_sm(device, function, blocksize)
+		occupancy = blocksize * max_active_blocks_per_sm(device, function, blocksize, dyn_smem_per_thread)
 		if occupancy > achieved_occupancy:
 			optimal_blocksize = blocksize
 			achieved_occupancy = occupancy
@@ -72,8 +72,8 @@ def optimal_blocksize(device, function):
 ##device - the pycuda.driver.Context instance for the device the kernel will be executing (e.g. pycuda.autoinit.device)
 ##function - a handle of the cuda function (kernel) that will be executed
 ##blocksize - number of threads per block for which the maximum numbers of blocks per SM should be calculated
-##dyn_smem_per_block - number of bytes of dynamically allocated shared memory for a block of size blocksize
-def max_active_blocks_per_sm(device, function, blocksize, dyn_smem_per_block=0):
+##dyn_smem_per_thread - number of bytes of dynamically allocated shared memory for a each thread in the block
+def max_active_blocks_per_sm(device, function, blocksize, dyn_smem_per_thread):
 
 	# Define variables based on device and function properties
 	regs_per_thread = function.num_regs
@@ -83,6 +83,7 @@ def max_active_blocks_per_sm(device, function, blocksize, dyn_smem_per_block=0):
 	max_threads_per_sm = device.max_threads_per_multiprocessor
 	max_regs_per_block = device.max_registers_per_block
 	max_smem_per_block = device.max_shared_memory_per_block
+	max_smem_per_sm = device.max_shared_memory_per_multiprocessor
 
 	# Define variables that cannot be read directly from the device based on compute capability
 	if device.compute_capability()[0] == 2:
@@ -132,10 +133,13 @@ def max_active_blocks_per_sm(device, function, blocksize, dyn_smem_per_block=0):
 	block_lim_bSM = max_blocks_per_sm
 
 	# Calculate the maximum number of blocks, limited by shared memory
-	req_smem = smem_per_function + dyn_smem_per_block
+	req_smem = smem_per_function + blocksize * dyn_smem_per_thread
 	if req_smem > 0:
 		smem_per_block = round_up(req_smem, smem_granul)
-		block_lim_smem = max_smem_per_block / smem_per_block
+		if smem_per_block > max_smem_per_block:
+			block_lim_smem = 0
+		else:
+			block_lim_smem = max_smem_per_sm / smem_per_block
 	else:
 		block_lim_smem = max_blocks_per_sm
 
