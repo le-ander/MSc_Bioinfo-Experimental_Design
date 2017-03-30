@@ -6,14 +6,6 @@ import sys
 import launch
 import copy
 
-def odd_num(x):
-	temp = []
-	pos=0
-	while x > 1:
-		if x%2 ==1:
-			temp.append(x)
-		x = x >> 1
-	return asarray(temp).astype(int32)
 
 # A function to calculate the mutual information between the outcome of two experiments
 ##(gets called by run_mutInfo1)
@@ -276,7 +268,7 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 			elif j==0:
 				res1 = copy.deepcopy(temp_res1[:Ni,:int(gj)])
 
-			iterations = odd_num(int(bj))
+			iterations = launch.odd_num(int(bj))
 			if iterations.size == 0:
 				temp_1=-1
 				iterations = zeros([1]).astype(float64)
@@ -381,7 +373,7 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 			elif j==0:
 				res2 = copy.deepcopy(temp_res2[:Ni,:int(gj)])
 
-			iterations = odd_num(int(bj))
+			iterations = launch.odd_num(int(bj))
 			if iterations.size == 0:
 				temp_1=-1
 				iterations = zeros([1]).astype(float64)
@@ -487,7 +479,7 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 			elif j==0:
 				res3 = copy.deepcopy(temp_res3[:Ni,:int(gj)])
 
-			iterations = odd_num(int(bj))
+			iterations = launch.odd_num(int(bj))
 
 			if iterations.size == 0:
 				temp_1=-1

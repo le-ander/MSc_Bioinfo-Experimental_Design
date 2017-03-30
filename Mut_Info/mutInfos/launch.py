@@ -1,6 +1,14 @@
 from numpy import *
 from pycuda import driver
 
+def odd_num(x):
+	temp = []
+	pos=0
+	while x > 1:
+		if x%2 ==1:
+			temp.append(x)
+		x = x >> 1
+	return asarray(temp).astype(int32)
 
 # A function to find the next lowest number from num that is a multiple of divisor
 def round_down(num, divisor):

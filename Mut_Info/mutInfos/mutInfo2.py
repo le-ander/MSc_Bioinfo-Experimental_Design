@@ -6,14 +6,6 @@ import copy
 
 import launch, sys
 
-def odd_num(x):
-	temp = []
-	pos=0
-	while x > 1:
-		if x%2 ==1:
-			temp.append(x)
-		x = x >> 1
-	return asarray(temp).astype(int32)
 
 # A function to calculate the mutual information between a subset of parameters of a system and an experiment
 ##(gets called by run_mutInfo2)
@@ -253,7 +245,7 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 			elif j==0:
 				res1 = copy.deepcopy(temp_res1[:Ni,:int(gj)])
 
-			iterations = odd_num(int(bj))
+			iterations = launch.odd_num(int(bj))
 			if iterations.size == 0:
 				temp_1=-1
 				iterations = zeros([1]).astype(float64)
@@ -335,7 +327,7 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 			elif j==0:
 				res2 = copy.deepcopy(temp_res2[:int(gj)])
 
-			iterations = odd_num(int(bj))
+			iterations = launch.odd_num(int(bj))
 			if iterations.size == 0:
 				temp_1=-1
 				iterations = zeros([1]).astype(float64)
