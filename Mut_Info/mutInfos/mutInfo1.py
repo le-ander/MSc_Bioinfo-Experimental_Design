@@ -215,7 +215,7 @@ def mutInfo1(data,theta,N1,N2,sigma,scale):
 
 	print "-----Calculation part 1 of 1 complete-----\n"
 
-	print "Proportion of infs", int(((count_inf)/float(N1))*100), "% ("+str(count_inf)+" infs)"
+	print "Proportion of infs", int(((count_inf)/float(N1))*100), "% ("+str(count_inf)+" infs)\n"
 
 	return(Info)
 
