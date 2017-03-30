@@ -18,6 +18,7 @@ import sys
 sys.path.insert(1, '../error_checks')
 sys.path.insert(1, ".")
 import parse_infoEnt_new_2
+import covariance_sort
 
 
 # A function to run cudasim
@@ -51,6 +52,7 @@ def run_cudasim(m_object,inpath="", intType="ODE",usesbml=False):
 		#Sorts the output from cuda-sim
 		print "-----Sorting NaNs from CUDA-Sim output-----"
 		m_object.sortCUDASimoutput(list(set(m_object.cuda)),result)
+	
 	elif intType=="SDE":
 
 		if usesbml == True:
@@ -97,14 +99,8 @@ def run_cudasim(m_object,inpath="", intType="ODE",usesbml=False):
 		
 		result_var = LNAInstance.run(parameters, species_var, constant_sets = not(m_object.initialprior), pairings=m_object.pairParamsICS)
 		
-		#print result[0,0,:,:]
-		#print result.shape
-		#print "------------------------------------"
-		print result_var[0,0,:,:]
-		#print result_var.shape
-		#print parameters[0,:]
+		covariance_sort.sort_mu_covariance(result_var[:,0,:,:],nspecies)
 		sys.exit()
-		
 
 # A function to pickle object
 ##(method gets called when required)
