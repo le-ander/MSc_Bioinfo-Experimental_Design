@@ -8,7 +8,7 @@
 
 ## Next steps
 
-- Finalise Print statements (Leander)
+- Check for and filter nans (not just infs) (Jonas)
 
 - Peitho installation (Jonas)
 
@@ -25,15 +25,13 @@
 
 ## On Hold
 
-- Increase gridsize as less global mem is used now (Leander)
-
 - SDE implementation (Scott, Leander)
 
 - HDF5 to avoid memory issues (Jonas)
 
 - Pickling (reuse cudasim)  (Jonas)
 
-- Only load packages when required (libsbml and means) (wati for Julianes opinion)
+- Only load packages when required (libsbml and means) (wait for Julianes opinion)
 
 ## Further work ideas
 
