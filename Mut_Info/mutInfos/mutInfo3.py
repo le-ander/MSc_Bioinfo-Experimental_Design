@@ -512,11 +512,10 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 	Info2 = sum_2/float(N1-count_all_inf)
 
 	# Printing Infs  results
-	print "", "Infs"
-	print "1", count_inf1
-	print "2", count_inf2
-	print "3", count_inf3
-	print "total", count_all_inf, "\n"
+	print "Proportion of infs in 1st summation", int(((count_inf1)/float(N1))*100), "% ("+str(count_inf1)+" infs)"
+	print "Proportion of infs in 2nd summation", int(((count_inf2)/float(N1))*100), "% ("+str(count_inf2)+" infs)"
+	print "Proportion of infs in 3rd summation", int(((count_inf3)/float(N1))*100), "% ("+str(count_inf3)+" infs)"
+	print "Proportion of infinite trajectories in total", int(((count_all_inf)/float(N1))*100), "% ("+str(count_all_inf)+" infs)\n"
 
 	return(Info2)
 
