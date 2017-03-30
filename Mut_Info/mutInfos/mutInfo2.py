@@ -361,9 +361,9 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 	mask = ~master_mask
 
 	# Calculating proportions of Infs
-	print "Proportion of infs in 1st summation", int(((count_inf1)/float(N1))*100), "%"
-	print "Proportion of infs in 2nd summation", int(((count_inf2)/float(N1))*100), "%"
-	print "Proportion of infs in total", int(((count_all_inf)/float(N1))*100), "%\n"
+	print "Proportion of infs in 1st summation", int(((count_inf1)/float(N1))*100), "% ("+str(count_inf1)+" infs)"
+	print "Proportion of infs in 2nd summation", int(((count_inf2)/float(N1))*100), "% ("+str(count_inf2)+" infs)"
+	print "Proportion of infinite trajectories in total", int(((count_all_inf)/float(N1))*100), "% ("+str(count_all_inf)+" infs)\n"
 
 	# Raise error if calculation below cannot be carried out due to div by 0
 	if count_all_inf == N1:
