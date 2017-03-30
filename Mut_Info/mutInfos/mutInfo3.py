@@ -29,19 +29,19 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 	mod = compiler.SourceModule("""
 
 	//Function to index 3-dimensional flattened arrays
-	__device__ unsigned int idx3d(int i, int k, int l, int M, int P)
+	__device__ unsigned int idx3d(int i, int k, int l, int T, int S)
 	{
-		return k*P + i*M*P + l;
+		return k*S + i*T*S + l;
 	}
 
 	//Function to index 2-dimensional flattened arrays
-	__device__ unsigned int idx2d(int i, int j, int M)
+	__device__ unsigned int idx2d(int i, int j, int T)
 	{
-		return i*M + j;
+		return i*T + j;
 	}
 
 	//Function to calculate intemediary probabilities for mutual information calculation
-	__global__ void distance1(int len_odd, int* odd_nums, int Ni, int Nj, int M_Ref, int P_Ref, int M_Mod, int P_Mod, float sigma_ref, float sigma_mod, double mpscale_sum, double *d1, double *d2, double *d3, double *d4, double *res1)
+	__global__ void kernel_func3(int len_odd, int* odd_nums, int Ni, int Nj, int T_Ref, int S_Ref, int T_Mod, int S_Mod, float sigma_ref, float sigma_mod, double mpscale_sum, double *d1, double *d2, double *d3, double *d4, double *res1)
 	{
 		//Define shared memory dynamically
 		extern __shared__ double s[];
@@ -61,16 +61,16 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 		if((i>=Ni)||(j>=Nj)) return;
 
 		//Calculate probabilities between trajectory x_i and mean mu_j
-		for(int k=0; k<M_Ref; k++){
-			for(int l=0; l<P_Ref; l++){
-				s[idx2d(threadIdx.x,tid,blockDim.y)] -= ( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)])*( d2[idx3d(j,k,l,M_Ref,P_Ref)]-d1[idx3d(i,k,l,M_Ref,P_Ref)]);
+		for(int k=0; k<T_Ref; k++){
+			for(int l=0; l<S_Ref; l++){
+				s[idx2d(threadIdx.x,tid,blockDim.y)] -= ( d2[idx3d(j,k,l,T_Ref,S_Ref)]-d1[idx3d(i,k,l,T_Ref,S_Ref)])*( d2[idx3d(j,k,l,T_Ref,S_Ref)]-d1[idx3d(i,k,l,T_Ref,S_Ref)]);
 			}
 		}
 
 		//Calculate probabilities between trajectory x*_i and mean mu_j
-		for(int k=0; k<M_Mod; k++){
-			for(int l=0; l<P_Mod; l++){
-				s[idx2d(blockDim.x+threadIdx.x,tid,blockDim.y)] -= ( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)])*( d4[idx3d(j,k,l,M_Mod,P_Mod)]-d3[idx3d(i,k,l,M_Mod,P_Mod)]);
+		for(int k=0; k<T_Mod; k++){
+			for(int l=0; l<S_Mod; l++){
+				s[idx2d(blockDim.x+threadIdx.x,tid,blockDim.y)] -= ( d4[idx3d(j,k,l,T_Mod,S_Mod)]-d3[idx3d(i,k,l,T_Mod,S_Mod)])*( d4[idx3d(j,k,l,T_Mod,S_Mod)]-d3[idx3d(i,k,l,T_Mod,S_Mod)]);
 			}
 		}
 
@@ -99,7 +99,7 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 	}
 
 	//Function to calculate intemediary probabilities for mutual information calculation
-	__global__ void distance2(int len_odd, int* odd_nums,int Ni, int Nj, int M, int P, float sigma, double mpscale, double *d5, double *d6, double *res2)
+	__global__ void kernel_func1(int len_odd, int* odd_nums,int Ni, int Nj, int T, int S, float sigma, double mpscale, double *d5, double *d6, double *res2)
 	{
 		//Define shared memory dynamically
 		extern __shared__ double s[];
@@ -118,9 +118,9 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 		if((i>=Ni)||(j>=Nj)) return;
 
 		//Calculate probabilities between trajectory x_i and mean mu_j
-		for(int k=0; k<M; k++){
-			for(int l=0; l<P; l++){
-				s[idx2d(threadIdx.x,tid,blockDim.y)] -= ( d6[idx3d(j,k,l,M,P)]-d5[idx3d(i,k,l,M,P)])*( d6[idx3d(j,k,l,M,P)]-d5[idx3d(i,k,l,M,P)]);
+		for(int k=0; k<T; k++){
+			for(int l=0; l<S; l++){
+				s[idx2d(threadIdx.x,tid,blockDim.y)] -= ( d6[idx3d(j,k,l,T,S)]-d5[idx3d(i,k,l,T,S)])*( d6[idx3d(j,k,l,T,S)]-d5[idx3d(i,k,l,T,S)]);
 			}
 		}
 
@@ -151,8 +151,8 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 	""")
 
 	# Creating handles for global kernel functions
-	dist_gpu1 = mod.get_function("distance1")
-	dist_gpu2 = mod.get_function("distance2")
+	gpu_kernel_func3 = mod.get_function("kernel_func3")
+	gpu_kernel_func1 = mod.get_function("kernel_func1")
 
 	# Prepare input data
 	d1 = dataRef.astype(float64)
@@ -162,31 +162,31 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 	d6 = array(thetaRef)[(N1+N2):(N1+N2+N3),:,:].astype(float64)
 	d8 = array(thetaMod)[(N1+N2):(N1+N2+N4),:,:].astype(float64)
 
-	# Determine number of timepoints (M) and number of species (P)
+	# Determine number of timepoints (T) and number of species (S)
 	##Reference experiment
-	M_Ref=d1.shape[1]
-	P_Ref=d1.shape[2]
+	T_Ref=d1.shape[1]
+	S_Ref=d1.shape[2]
 	##Alternative experiment
-	M_Mod=d3.shape[1]
-	P_Mod=d3.shape[2]
+	T_Mod=d3.shape[1]
+	S_Mod=d3.shape[2]
 
-	# Determine M*P*scale and 1/(2*sigma^2) for reference and alternative experiment
+	# Determine T*S*scale and 1/(2*sigma^2) for reference and alternative experiment
 	##Reference experiment
-	mpscale_ref = M_Ref*P_Ref*scale_ref
+	tsscale_ref = T_Ref*S_Ref*scale_ref
 	sigma_inv_ref = 1.0/(2.0*sigma_ref*sigma_ref)
 
 	##Alternative experiment
-	mpscale_mod = M_Mod*P_Mod*scale_mod
+	tsscale_mod = T_Mod*S_Mod*scale_mod
 	sigma_inv_mod = 1/(2.0*sigma_mod*sigma_mod)
 
 	##Sum of scaling factors
-	mpscale_sum = mpscale_ref+mpscale_mod
+	mpscale_sum = tsscale_ref+tsscale_mod
 
 
 ########################Calulation 1############################################
 
 	# Launch configuration: Block size and shape (as close to square as possible)
-	block = launch.optimal_blocksize(autoinit.device, dist_gpu1, 16)
+	block = launch.optimal_blocksize(autoinit.device, gpu_kernel_func3, 16)
 	block_i = launch.factor_partial(block)
 	block_j = block / block_i
 	print "Optimal blocksize:", block, "threads"
@@ -284,16 +284,16 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 				temp_1 = iterations.size
 
 			# Call GPU kernel functions
-			dist_gpu1(int32(temp_1), driver.In(iterations), int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), int32(M_Mod), int32(P_Mod), float32(sigma_inv_ref), float32(sigma_inv_mod), float64(mpscale_sum), driver.In(data1), driver.In(data2), driver.In(data3), driver.In(data4), driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)),shared=int(2*bi*bj*8))
+			gpu_kernel_func3(int32(temp_1), driver.In(iterations), int32(Ni), int32(Nj), int32(T_Ref), int32(S_Ref), int32(T_Mod), int32(S_Mod), float32(sigma_inv_ref), float32(sigma_inv_mod), float64(mpscale_sum), driver.In(data1), driver.In(data2), driver.In(data3), driver.In(data4), driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)),shared=int(2*bi*bj*8))
 
 			# Summing rows in GPU output for this run
-			result1[i*int(grid_i):i*int(grid_i)+Ni,j] = sum(res1,axis=1) ###Could be done on GPU?
+			result1[i*int(grid_i):i*int(grid_i)+Ni,j] = sum(res1,axis=1)
 
 
 ########################Calulation 2############################################
 
 	# Launch configuration: Block size and shape (as close to square as possible)
-	block = launch.optimal_blocksize(autoinit.device, dist_gpu2, 8)
+	block = launch.optimal_blocksize(autoinit.device, gpu_kernel_func1, 8)
 	block_i = launch.factor_partial(block)
 	block_j = block / block_i
 	print "Optimal blocksize:", block, "threads"
@@ -389,16 +389,16 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 				temp_1 = iterations.size
 
 			# Call GPU kernel functions
-			dist_gpu2(int32(temp_1), driver.In(iterations), int32(Ni), int32(Nj), int32(M_Ref), int32(P_Ref), float32(sigma_inv_ref), float64(mpscale_ref), driver.In(data1), driver.In(data6), driver.Out(res2), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)), shared=int(bi*bj*8))
+			gpu_kernel_func1(int32(temp_1), driver.In(iterations), int32(Ni), int32(Nj), int32(T_Ref), int32(S_Ref), float32(sigma_inv_ref), float64(tsscale_ref), driver.In(data1), driver.In(data6), driver.Out(res2), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)), shared=int(bi*bj*8))
 
 			# Summing rows in GPU output for this run
-			result2[i*int(grid_i):i*int(grid_i)+Ni,j] = sum(res2, axis=1) ###Could be done on GPU?
+			result2[i*int(grid_i):i*int(grid_i)+Ni,j] = sum(res2, axis=1)
 
 
 ########################Calulation 3############################################
 
 	# Launch configuration: Block size and shape (as close to square as possible)
-	block = launch.optimal_blocksize(autoinit.device, dist_gpu2, 8)
+	block = launch.optimal_blocksize(autoinit.device, gpu_kernel_func1, 8)
 	block_i = launch.factor_partial(block)
 	block_j = block / block_i
 	print "Optimal blocksize:", block, "threads"
@@ -496,10 +496,10 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 				temp_1 = iterations.size
 
 			# Call GPU kernel functions
-			dist_gpu2(int32(temp_1), driver.In(iterations), int32(Ni), int32(Nj), int32(M_Mod), int32(P_Mod), float32(sigma_inv_mod), float64(mpscale_mod), driver.In(data3), driver.In(data8), driver.Out(res3), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)),shared=int(bi*bj*8))
+			gpu_kernel_func1(int32(temp_1), driver.In(iterations), int32(Ni), int32(Nj), int32(T_Mod), int32(S_Mod), float32(sigma_inv_mod), float64(tsscale_mod), driver.In(data3), driver.In(data8), driver.Out(res3), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)),shared=int(bi*bj*8))
 
 			# Summing rows in GPU output for this run
-			result3[i*int(grid_i):i*int(grid_i)+Ni,j] = sum(res3, axis=1) ###Could be done on GPU?
+			result3[i*int(grid_i):i*int(grid_i)+Ni,j] = sum(res3, axis=1)
 
 
 ########################Final Computations######################################

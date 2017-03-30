@@ -30,19 +30,19 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 	mod = compiler.SourceModule("""
 
 	//Function to index 3-dimensional flattened arrays
-	__device__ unsigned int idx3d(int i, int k, int l, int M, int P)
+	__device__ unsigned int idx3d(int i, int k, int l, int T, int S)
 	{
-		return k*P + i*M*P + l;
+		return k*S + i*T*S + l;
 	}
 
 	//Function to index 2-dimensional flattened arrays
-	__device__ unsigned int idx2d(int i, int j, int M)
+	__device__ unsigned int idx2d(int i, int j, int T)
 	{
-		return i*M + j;
+		return i*T + j;
 	}
 
 	//Function to calculate intemediary probabilities for mutual information calculation
-	__global__ void distance1(int len_odd, int* odd_nums, int Ni, int Nj, int M, int P, float sigma, double scale, double *d1, double *d2, double *res1)
+	__global__ void kernel_func1(int len_odd, int* odd_nums, int Ni, int Nj, int T, int S, float sigma, double scale, double *d1, double *d2, double *res1)
 	{
 		//Define shared memory dynamically
 		extern __shared__ double s[];
@@ -61,9 +61,9 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 		if((i>=Ni)||(j>=Nj)) return;
 
 		//Calculate probabilities between trajectory x_i and mean mu_j
-		for(int k=0; k<M; k++){
-			for(int l=0; l<P; l++){
-				s[idx2d(threadIdx.x,tid,blockDim.y)] -= ( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)])*( d2[idx3d(j,k,l,M,P)]-d1[idx3d(i,k,l,M,P)]);
+		for(int k=0; k<T; k++){
+			for(int l=0; l<S; l++){
+				s[idx2d(threadIdx.x,tid,blockDim.y)] -= ( d2[idx3d(j,k,l,T,S)]-d1[idx3d(i,k,l,T,S)])*( d2[idx3d(j,k,l,T,S)]-d1[idx3d(i,k,l,T,S)]);
 			}
 		}
 
@@ -92,7 +92,7 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 	}
 
 	//Function to calculate intemediary probabilities for mutual information calculation
-	__global__ void distance2(int len_odd, int* odd_nums, int Nj, int M, int P, float sigma, double scale, double *d1, double *d3, double *res2)
+	__global__ void kernel_func2(int len_odd, int* odd_nums, int Nj, int T, int S, float sigma, double scale, double *d1, double *d3, double *res2)
 	{
 
 		//Define shared memory dynamically
@@ -111,9 +111,9 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 		if(j>=Nj) return;
 
 		//Calculate probabilities between trajectory x_i and mean mu_j
-		for(int k=0; k<M; k++){
-			for(int l=0; l<P; l++){
-				s[tid] -= (d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)])*(d3[idx3d(j,k,l,M,P)]-d1[idx2d(k,l,P)]);
+		for(int k=0; k<T; k++){
+			for(int l=0; l<S; l++){
+				s[tid] -= (d3[idx3d(j,k,l,T,S)]-d1[idx2d(k,l,S)])*(d3[idx3d(j,k,l,T,S)]-d1[idx2d(k,l,S)]);
 			}
 		}
 
@@ -147,10 +147,10 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 ########################Calulation 1############################################
 
 	# Creating handle for global kernel function
-	dist_gpu1 = mod.get_function("distance1")
+	gpu_kernel_func1 = mod.get_function("kernel_func1")
 
 	# Launch configuration: Block size and shape (as close to square as possible)
-	block = launch.optimal_blocksize(autoinit.device, dist_gpu1, 8)
+	block = launch.optimal_blocksize(autoinit.device, gpu_kernel_func1, 8)
 	block_i = launch.factor_partial(block) # Maximum threads per block
 	block_j = block / block_i
 	print "Optimal blocksize:", block, "threads"
@@ -181,9 +181,9 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 	d1 = data[0:N1,:,:].astype(float64)
 	d2 = array(theta)[N1:(N1+N2),:,:].astype(float64)
 
-	# Determine number of timepoints (M) and number of species (P)
-	M = d1.shape[1]
-	P = d1.shape[2]
+	# Determine number of timepoints (T) and number of species (S)
+	T = d1.shape[1]
+	S = d1.shape[2]
 
 	#Initialize array for results
 	result = zeros([N1,numRuns_j])
@@ -192,8 +192,8 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 	Ni = int(grid_i)
 	Nj = int(grid_j)
 
-	# Determine M*P*log(scale) for GPU calculations
-	mplogscale= M*P*log(scale)
+	# Determine T*S*log(scale) for GPU calculations
+	tslogscale= T*S*log(scale)
 
 	# Determine 1/(2*sigma*sigma) for
 	sigmasq_inv = 1/(2*sigma*sigma)
@@ -261,7 +261,7 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 				temp_1 = iterations.size
 
 			# Call GPU kernel function
-			dist_gpu1(int32(temp_1), driver.In(iterations), int32(Ni),int32(Nj), int32(M), int32(P), float32(sigmasq_inv), float64(mplogscale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)), shared = int(bi*bj*8) )
+			gpu_kernel_func1(int32(temp_1), driver.In(iterations), int32(Ni),int32(Nj), int32(T), int32(S), float32(sigmasq_inv), float64(tslogscale), driver.In(data1), driver.In(data2),  driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj)), shared = int(bi*bj*8) )
 
 			# Summing rows in GPU output for this run
 			result[i*int(grid_i):i*int(grid_i)+Ni,j]=sum(res1, axis=1)
@@ -273,10 +273,10 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 ########################Calulation 2############################################
 
 	# Creating handle for global kernel function
-	dist_gpu2 = mod.get_function("distance2")
+	gpu_kernel_func2 = mod.get_function("kernel_func2")
 
 	# Launch configuration: Size of 1D block
-	block = launch.optimal_blocksize(autoinit.device, dist_gpu2, 8)
+	block = launch.optimal_blocksize(autoinit.device, gpu_kernel_func2, 8)
 	print "Block shape:", str(block)+"x1.0"
 
 	# Launch configuration: 1D Grid size (limited by GPU global memory and max grid size of GPU)
@@ -343,7 +343,7 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 				temp_1 = iterations.size
 
 			# Call GPU kernel function
-			dist_gpu2(int32(temp_1), driver.In(iterations), int32(Nj), int32(M), int32(P), float32(sigmasq_inv), float64(mplogscale), driver.In(data1), driver.In(data3),  driver.Out(res2), block=(int(bj),1,1), grid=(int(gj),1), shared=int(bi*bj*8) )
+			gpu_kernel_func2(int32(temp_1), driver.In(iterations), int32(Nj), int32(T), int32(S), float32(sigmasq_inv), float64(tslogscale), driver.In(data1), driver.In(data3),  driver.Out(res2), block=(int(bj),1,1), grid=(int(gj),1), shared=int(bi*bj*8) )
 
 			# Sum all elements in results array for this run
 			result[i,j] = sum(res2)
@@ -377,8 +377,8 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 		sys.exit()
 
 	# Final summations
-	sum1 = sum(sum_result1[mask])-log(float(N2))*(N1-count_all_inf)-mplogscale*(N1-count_all_inf)- M*P*log(2.0*pi*sigma*sigma)*(N1-count_all_inf)
-	sum2 = sum(sum_result2[mask]) - sum(log(N3)[mask]) - mplogscale*(N1-count_all_inf) - M*P*log(2.0*pi*sigma*sigma)*(N1-count_all_inf)
+	sum1 = sum(sum_result1[mask])-log(float(N2))*(N1-count_all_inf)-tslogscale*(N1-count_all_inf)- T*S*log(2.0*pi*sigma*sigma)*(N1-count_all_inf)
+	sum2 = sum(sum_result2[mask]) - sum(log(N3)[mask]) - tslogscale*(N1-count_all_inf) - T*S*log(2.0*pi*sigma*sigma)*(N1-count_all_inf)
 
 	# Final division to give mutual information
 	Info = (sum2 - sum1)/float(N1 - count_all_inf) ###Should be 2*N1 here?
