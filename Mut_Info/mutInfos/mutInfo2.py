@@ -141,6 +141,16 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 	# Creating handle for global kernel function
 	gpu_kernel_func1 = mod.get_function("kernel_func1")
 
+	# Prepare input data
+	d1 = data[0:N1,:,:].astype(float64)
+	d2 = array(theta)[N1:(N1+N2),:,:].astype(float64)
+
+	# Determine number of timepoints (T) and number of species (S)
+	T = d1.shape[1]
+	S = d1.shape[2]
+
+	print "-----Determining optimal kernel launch configuration (for part 1/2)-----"
+
 	# Launch configuration: Block size and shape (as close to square as possible)
 	block = launch.optimal_blocksize(autoinit.device, gpu_kernel_func1, 8)
 	block_i = launch.factor_partial(block) # Maximum threads per block
@@ -149,33 +159,15 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 	print "Block shape:", str(block_i)+"x"+str(block_j)
 
 	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
-	grid = launch.optimise_gridsize(0.65)
-	grid_prelim_i = launch.round_down(sqrt(grid),block_i)
-	grid_prelim_j = launch.round_down(grid/grid_prelim_i,block_j)
-	# If gridsize in one dimention too large, reshape grid to allow more threads in the second dimension
-	if N1 < grid_prelim_i:
-		grid_i = float(min(autoinit.device.max_grid_dim_x,N1))
-		grid_j = float(min(autoinit.device.max_grid_dim_y, launch.round_down(grid/grid_i,block_j)))
-	elif N2 < grid_prelim_j:
-		grid_j = float(min(autoinit.device.max_grid_dim_y,N2))
-		grid_i = float(min(autoinit.device.max_grid_dim_x, launch.round_down(grid/grid_j,block_i)))
-	else:
-		grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i))
-		grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j))
-	print "Maximum gridsize:", grid, "threads"
+	grid_prelim_i , grid_prelim_j = launch.optimise_gridsize(1, block_i, block_j, T, S)
+	grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i, N1))
+	grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j, N2))
 	print "Grid shape:", str(grid_i)+"x"+str(grid_j)
+	print "Registers:", gpu_kernel_func1.num_regs , "\n"
 
 	# Determine required number of runs for i and j
 	numRuns_i = int(ceil(N1/grid_i))
 	numRuns_j = int(ceil(N2/grid_j))
-
-	# Prepare input data
-	d1 = data[0:N1,:,:].astype(float64)
-	d2 = array(theta)[N1:(N1+N2),:,:].astype(float64)
-
-	# Determine number of timepoints (T) and number of species (S)
-	T = d1.shape[1]
-	S = d1.shape[2]
 
 	#Initialize array for results
 	result = zeros([N1,numRuns_j])
@@ -196,6 +188,8 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 	except:
 		print "ERROR: Not enought memory (RAM) available to create array for GPU results. Reduce GPU grid size."
 		sys.exit()
+
+	print "-----Calculation part 1 of 2 now running-----"
 
 	# Main nested for-loop for mutual information calculations
 	for i in range(numRuns_i):
@@ -261,19 +255,25 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 	# Sum all content of new results matrix and add/subtract constants for each row if there are no NANs or infs
 	sum_result1=ma.log(sum(result,axis=1))
 
+	print "-----Calculation part 1 of 2 completed-----\n"
 
 ########################Calulation 2############################################
 
 	# Creating handle for global kernel function
 	gpu_kernel_func2 = mod.get_function("kernel_func2")
 
+	print "-----Determining optimal kernel launch configuration (for part 2/2)-----"
+
 	# Launch configuration: Size of 1D block
 	block = launch.optimal_blocksize(autoinit.device, gpu_kernel_func2, 8)
+	print "Optimal blocksize:", block, "threads"
 	print "Block shape:", str(block)+"x1.0"
 
 	# Launch configuration: 1D Grid size (limited by GPU global memory and max grid size of GPU)
-	grid = float(min(autoinit.device.max_grid_dim_x, launch.optimise_gridsize(75)))
+	grid_prelim = launch.optimise_gridsize(2, block_i, block_j, T, S)[0]
+	grid = float(min(autoinit.device.max_grid_dim_x, grid_prelim, N3))
 	print "Grid shape:", str(grid_i)+"x1.0"
+	print "Registers:", gpu_kernel_func2.num_regs, "\n"
 
 	# Prepare input data
 	d3 = array(theta)[(N1+N2):(N1+N2+sum(N3)),:,:].astype(float64)
@@ -290,6 +290,8 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 	except:
 		print "ERROR: Not enought memory (RAM) available to create array for GPU results. Reduce GPU grid size."
 		sys.exit()
+
+	print "-----Calculation part 2 of 2 now running-----"
 
 	for i in range(N1):
 		# Prepare data that depends on i for this run
@@ -343,7 +345,7 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 	# Sum all content of new results matrix and add/subtract constants for each row if there are no NANs or infs
 	sum_result2=ma.log(sum(result, axis=1))
 
-
+	print "-----Calculation part 2 of 2 completed-----\n"
 
 ########################Final Computations######################################
 
@@ -361,7 +363,7 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 	# Calculating proportions of Infs
 	print "Proportion of infs in 1st summation", int(((count_inf1)/float(N1))*100), "%"
 	print "Proportion of infs in 2nd summation", int(((count_inf2)/float(N1))*100), "%"
-	print "Proportion of infs in total", int(((count_all_inf)/float(N1))*100), "%"
+	print "Proportion of infs in total", int(((count_all_inf)/float(N1))*100), "%\n"
 
 	# Raise error if calculation below cannot be carried out due to div by 0
 	if count_all_inf == N1:
@@ -398,9 +400,9 @@ def run_mutInfo2(model_obj, input_SBML):
 			N3 = pos[2]
 
 		#Calculates mutual information
-		print "-----Calculating Mutual Information for Experiment", experiment+1, "for", input_SBML ,"-----"
+		print "-----Calculating Mutual Information for Experiment", experiment+1, "for", input_SBML ,"-----\n"
 		MutInfo2.append(mutInfo2(model_obj.trajectories[experiment],model_obj.cudaout[experiment],N1,N2,N3,model_obj.sigma,model_obj.scale[experiment]))
-		print "Mutual Information for Experiment", str(experiment+1)+":", MutInfo2[experiment]
+		print "Mutual Information for Experiment", str(experiment+1)+":", MutInfo2[experiment], "\n"
 
 	#Returns mutual information
 	return MutInfo2

@@ -177,6 +177,8 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 
 ########################Calulation 1############################################
 
+	print "-----Determining optimal kernel launch configuration (for part 1/3)-----"
+
 	# Launch configuration: Block size and shape (as close to square as possible)
 	block = launch.optimal_blocksize(autoinit.device, gpu_kernel_func3, 16)
 	block_i = launch.factor_partial(block)
@@ -185,21 +187,11 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 	print "Block shape:", str(block_i)+"x"+str(block_j)
 
 	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
-	grid = launch.optimise_gridsize(9.0)
-	grid_prelim_i = launch.round_down(sqrt(grid),block_i)
-	grid_prelim_j = launch.round_down(grid/grid_prelim_i,block_j)
-	# If gridsize in one dimention too large, reshape grid to allow more threads in the second dimension
-	if N1 < grid_prelim_i:
-		grid_i = float(min(autoinit.device.max_grid_dim_x,N1))
-		grid_j = float(min(autoinit.device.max_grid_dim_y, launch.round_down(grid/grid_i,block_j)))
-	elif N2 < grid_prelim_j:
-		grid_j = float(min(autoinit.device.max_grid_dim_y,N2))
-		grid_i = float(min(autoinit.device.max_grid_dim_x, launch.round_down(grid/grid_j,block_i)))
-	else:
-		grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i))
-		grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j))
-	print "Maximum gridsize:", grid, "threads"
+	grid_prelim_i , grid_prelim_j = launch.optimise_gridsize(3, block_i, block_j, T_Mod, S_Mod, T_Ref, S_Ref)
+	grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i, N1))
+	grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j, N2))
 	print "Grid shape:", str(grid_i)+"x"+str(grid_j)
+	print "Registers:", gpu_kernel_func3.num_regs, "\n"
 
 	# Determine required number of runs for i and j
 	numRuns_i = int(ceil(N1/grid_i))
@@ -218,6 +210,8 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 	except:
 		print "ERROR: Not enought memory (RAM) available to create array for GPU results. Reduce GPU grid size."
 		sys.exit()
+
+	print "-----Calculation part 1 of 3 now running-----"
 
 	# Main nested for-loop for mutual information calculations
 	for i in range(numRuns_i):
@@ -281,8 +275,11 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 			# Summing rows in GPU output for this run
 			result1[i*int(grid_i):i*int(grid_i)+Ni,j] = sum(res1,axis=1)
 
+	print "-----Calculation part 1 of 3 completed-----\n"
 
 ########################Calulation 2############################################
+
+	print "-----Determining optimal kernel launch configuration (for part 2/3)-----"
 
 	# Launch configuration: Block size and shape (as close to square as possible)
 	block = launch.optimal_blocksize(autoinit.device, gpu_kernel_func1, 8)
@@ -291,22 +288,12 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 	print "Optimal blocksize:", block, "threads"
 	print "Block shape:", str(block_i)+"x"+str(block_j)
 
-	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
-	grid = launch.optimise_gridsize(9.0)
-	grid_prelim_i = launch.round_down(sqrt(grid),block_i)
-	grid_prelim_j = launch.round_down(grid/grid_prelim_i,block_j)
-	# If gridsize in one dimention too large, reshape grid to allow more threads in the second dimension
-	if N1 < grid_prelim_i:
-		grid_i = float(min(autoinit.device.max_grid_dim_x,N1))
-		grid_j = float(min(autoinit.device.max_grid_dim_y, launch.round_down(grid/grid_i,block_j)))
-	elif N3 < grid_prelim_j:
-		grid_j = float(min(autoinit.device.max_grid_dim_y,N3))
-		grid_i = float(min(autoinit.device.max_grid_dim_x, launch.round_down(grid/grid_j,block_i)))
-	else:
-		grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i))
-		grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j))
-	print "Maximum gridsize:", grid, "threads"
+	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multiple of block size)
+	grid_prelim_i , grid_prelim_j = launch.optimise_gridsize(1, block_i, block_j, T_Ref, S_Ref)
+	grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i, N1))
+	grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j, N3))
 	print "Grid shape:", str(grid_i)+"x"+str(grid_j)
+	print "Registers:", gpu_kernel_func1.num_regs, "\n"
 
 	# Determine required number of runs for i and j
 	numRuns_i = int(ceil(N1/grid_i))
@@ -325,6 +312,8 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 	except:
 		print "ERROR: Not enought memory (RAM) available to create array for GPU results. Reduce GPU grid size."
 		sys.exit()
+
+	print "-----Calculation part 2 of 3 now running-----"
 
 	# Main nested for-loop for mutual information calculations
 	for i in range(numRuns_i):
@@ -386,8 +375,11 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 			# Summing rows in GPU output for this run
 			result2[i*int(grid_i):i*int(grid_i)+Ni,j] = sum(res2, axis=1)
 
+	print "-----Calculation part 2 of 3 completed-----\n"
 
 ########################Calulation 3############################################
+
+	print "-----Determining optimal kernel launch configuration (for part 3/3)-----"
 
 	# Launch configuration: Block size and shape (as close to square as possible)
 	block = launch.optimal_blocksize(autoinit.device, gpu_kernel_func1, 8)
@@ -397,21 +389,11 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 	print "Block shape:", str(block_i)+"x"+str(block_j)
 
 	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
-	grid = launch.optimise_gridsize(9.0)
-	grid_prelim_i = launch.round_down(sqrt(grid),block_i)
-	grid_prelim_j = launch.round_down(grid/grid_prelim_i,block_j)
-	# If gridsize in one dimention too large, reshape grid to allow more threads in the second dimension
-	if N1 < grid_prelim_i:
-		grid_i = float(min(autoinit.device.max_grid_dim_x,N1))
-		grid_j = float(min(autoinit.device.max_grid_dim_y, launch.round_down(grid/grid_i,block_j)))
-	elif N4 < grid_prelim_j:
-		grid_j = float(min(autoinit.device.max_grid_dim_y,N4))
-		grid_i = float(min(autoinit.device.max_grid_dim_x, launch.round_down(grid/grid_j,block_i)))
-	else:
-		grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i))
-		grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j))
-	print "Maximum gridsize:", grid, "threads"
+	grid_prelim_i , grid_prelim_j = launch.optimise_gridsize(1, block_i, block_j, T_Mod, S_Mod)
+	grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i, N1))
+	grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j, N4))
 	print "Grid shape:", str(grid_i)+"x"+str(grid_j)
+	print "Registers:", gpu_kernel_func1.num_regs, "\n"
 
 	# Determine required number of runs for i and j
 	numRuns_i = int(ceil(N1/grid_i))
@@ -430,6 +412,8 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 	except:
 		print "ERROR: Not enought memory (RAM) available to create array for GPU results. Reduce GPU grid size."
 		sys.exit()
+
+	print "-----Calculation part 3 of 3 now running-----"
 
 	# Main nested for-loop for mutual information calculations
 	for i in range(numRuns_i):
@@ -493,6 +477,7 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 			# Summing rows in GPU output for this run
 			result3[i*int(grid_i):i*int(grid_i)+Ni,j] = sum(res3, axis=1)
 
+	print "-----Calculation part 3 of 3 completed-----\n"
 
 ########################Final Computations######################################
 
@@ -531,8 +516,7 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 	print "1", count_inf1
 	print "2", count_inf2
 	print "3", count_inf3
-	print "total", count_all_inf
-
+	print "total", count_all_inf, "\n"
 
 	return(Info2)
 
@@ -575,9 +559,9 @@ def run_mutInfo3(model_obj, ref_obj, input_SBML):
 		N2 = min(N2_mod,N2_ref)
 
 		#Calculates mutual information
-		print "-----Calculating Mutual Information for Experiment", experiment+1, "for", input_SBML,"-----"
+		print "-----Calculating Mutual Information for Experiment", experiment+1, "for", input_SBML,"-----\n"
 		MutInfo3.append(mutInfo3(ref_obj.trajectories[0],ref_obj.cudaout[0],model_obj.trajectories[experiment], model_obj.cudaout[experiment],N1,N2,N3,N4,ref_obj.sigma,model_obj.sigma,ref_obj.scale[0],model_obj.scale[experiment]))
-		print "Mutual Information for Experiment", str(experiment+1)+":", MutInfo3[experiment]
+		print "Mutual Information for Experiment", str(experiment+1)+":", MutInfo3[experiment], "\n"
 
 	#Returns mutual information
 	return MutInfo3

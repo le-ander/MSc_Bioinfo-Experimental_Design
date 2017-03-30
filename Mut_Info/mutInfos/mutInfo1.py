@@ -86,6 +86,16 @@ def mutInfo1(data,theta,N1,N2,sigma,scale):
 	# Creating handle for global kernel function
 	gpu_kernel_func1 = mod.get_function("kernel_func1")
 
+	# Prepare input data
+	d1 = data.astype(float64)
+	d2 = array(theta)[N1:(N1+N2),:,:].astype(float64)
+
+	# Determine number of timepoints (T) and number of species (S)
+	T = d1.shape[1]
+	S = d1.shape[2]
+
+	print "-----Determining optimal kernel launch configuration-----"
+
 	# Launch configuration: Block size and shape (as close to square as possible)
 	block = launch.optimal_blocksize(autoinit.device, gpu_kernel_func1, 8)
 	block_i = launch.factor_partial(block) # Maximum threads per block
@@ -94,34 +104,18 @@ def mutInfo1(data,theta,N1,N2,sigma,scale):
 	print "Block shape:", str(block_i)+"x"+str(block_j)
 
 	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
-	grid = launch.optimise_gridsize(0.65)
-	grid_prelim_i = launch.round_down(sqrt(grid),block_i)
-	grid_prelim_j = launch.round_down(grid/grid_prelim_i,block_j)
-	# If gridsize in one dimention too large, reshape grid to allow more threads in the second dimension
-	if N1 < grid_prelim_i:
-		grid_i = float(min(autoinit.device.max_grid_dim_x,N1))
-		grid_j = float(min(autoinit.device.max_grid_dim_y, launch.round_down(grid/grid_i,block_j)))
-	elif N2 < grid_prelim_j:
-		grid_j = float(min(autoinit.device.max_grid_dim_y,N2))
-		grid_i = float(min(autoinit.device.max_grid_dim_x, launch.round_down(grid/grid_j,block_i)))
-	else:
-		grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i))
-		grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j))
-	print "Maximum gridsize:", grid, "threads"
+	grid_prelim_i , grid_prelim_j = launch.optimise_gridsize(1, block_i, block_j, T, S)
+	print launch.optimise_gridsize(1, block_i, block_j, T, S)
+	grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i, N1))
+	grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j, N2))
 	print "Grid shape:", str(grid_i)+"x"+str(grid_j)
-	print "Registers:", gpu_kernel_func1.num_regs
+	print "Registers:", gpu_kernel_func1.num_regs, "\n"
+
+	print "-----Calculation part 1 of 1 now running-----"
 
 	# Determine required number of runs for i and j
 	numRuns_i = int(ceil(N1/grid_i))
 	numRuns_j = int(ceil(N2/grid_j))
-
-	# Prepare input data
-	d1 = data.astype(float64)
-	d2 = array(theta)[N1:(N1+N2),:,:].astype(float64)
-
-	# Determine number of timepoints (T) and number of species (S)
-	T = d1.shape[1]
-	S = d1.shape[2]
 
 	#Initialize array for results
 	result = zeros([N1,numRuns_j])
@@ -145,7 +139,6 @@ def mutInfo1(data,theta,N1,N2,sigma,scale):
 
 	# Main nested for-loop for mutual information calculations
 	for i in range(numRuns_i):
-		print "Runs left:", numRuns_i - i
 
 		# If last run with less that max remaining particles, set Ni to remaining number of particles
 		if((int(grid_i)*(i+1)) > N1):
@@ -220,7 +213,9 @@ def mutInfo1(data,theta,N1,N2,sigma,scale):
 	# Final division to give mutual information
 	Info = (sum1 / float(N1- count_inf) - T*S/2.0*(log(2.0*pi*sigma*sigma)+1))
 
-	print "Proportion of infs and NAs", int((count_inf/float(N1))*100), "%"
+	print "-----Calculation part 1 of 1 complete-----\n"
+
+	print "Proportion of infs and NAs", int((count_inf/float(N1))*100), "%\n"
 
 	return(Info)
 
@@ -243,9 +238,9 @@ def run_mutInfo1(model_obj,input_SBML):
 			N2 = pos[1]
 
 		#Calculates mutual information
-		print "-----Calculating Mutual Information for Experiment", experiment+1, "for", input_SBML,"-----"
+		print "-----Calculating Mutual Information for Experiment", experiment+1, "for", input_SBML,"-----\n"
 		MutInfo1.append(mutInfo1(model_obj.trajectories[experiment],model_obj.cudaout[experiment],N1,N2,model_obj.sigma,model_obj.scale[experiment]))
-		print "Mutual Information for Experiment", str(experiment+1)+":", MutInfo1[experiment]
+		print "Mutual Information for Experiment", str(experiment+1)+":", MutInfo1[experiment], "\n"
 
 	#Returns mutual information
 	return MutInfo1
