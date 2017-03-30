@@ -35,16 +35,16 @@ def factor_partial(N):
 ##Arguments:
 ##
 def optimise_gridsize(kernel_no, bx, by, T_Mod, S_Mod, T_Ref=0, S_Ref=0):
-	avail_mem = driver.mem_get_info()[0]
+	avail_mem = 0.95 * driver.mem_get_info()[0]
 	if kernel_no == 1 or kernel_no == 3:
 		a = 8/bx
 		b = 8 * (1 + by/bx) * (T_Mod*S_Mod + T_Ref*S_Mod)
-		c = 250 - 0.95 * avail_mem
+		c = 250 - avail_mem
 
 		x_pre = (-b + sqrt(pow(b,2)-4*a*c))/(2*a)
 		y_pre = (by/bx)*x_pre
 	else:
-		x_pre = (0.95*avail_mem+250-8*S_Mod*T_Mod)/(8/bx+S_Mod*T_Mod)
+		x_pre = (avail_mem+250-8*S_Mod*T_Mod)/(8/bx+S_Mod*T_Mod)
 		y_pre = 0
 
 	x = round_down(x_pre, bx)
