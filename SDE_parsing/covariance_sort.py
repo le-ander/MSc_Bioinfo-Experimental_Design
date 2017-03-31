@@ -8,27 +8,23 @@ def sort_mu_covariance(covariance_matrix,nspecies):
 	mu = covariance_matrix[:,:,0:nspecies]
 	variances = covariance_matrix[:,:,nspecies:]
 
+	#means_list = [[mu[i,j,:] for j in range(0,mu.shape[1])] for i in range(0,mu.shape[0])]
 	covariance_list = [[""]*ntimes]*nparams
-	eigenvalues = [[""]*ntimes]*nparams
 
 	temp_cov = numpy.zeros((nspecies,nspecies))
 
 	for param in range(0,nparams):
 		for time in range(0,ntimes):
 			cov_mat = copy.deepcopy(temp_cov)
-			count = 0
+			count = -nspecies
 			for i in range(0,nspecies):
-				count += 1
+				count += nspecies-i
 				for j in range(i,nspecies):
-					if i == j:
-						cov_mat[i,i] = variances[param, time, i*(nspecies-count) + i]
+					if j == i:
+						cov_mat[i,i] = variances[param, time, count + i]
 					else:
-						cov_mat[i,j] = variances[param, time, i*(nspecies-count) + j]
-						cov_mat[j,i] = variances[param, time, i*(nspecies-count) + j]
+						cov_mat[i,j] = variances[param, time, count + j]
+						cov_mat[j,i] = variances[param, time, count + j]
 			covariance_list[param][time] = cov_mat
-			eigenvalues[param][time] = numpy.linalg.eigvals(cov_mat)
-			print eigenvalues[param][time]
-
-	
 
 	return mu, covariance_list

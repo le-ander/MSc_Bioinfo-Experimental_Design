@@ -68,8 +68,6 @@ def run_cudasim(m_object,inpath="", intType="ODE",usesbml=False):
 		else:
 			parameters = m_object.parameterSample
 
-		#print parameters
-
 		#Sets species
 		species = m_object.speciesSample
 
@@ -100,6 +98,8 @@ def run_cudasim(m_object,inpath="", intType="ODE",usesbml=False):
 		result_var = LNAInstance.run(parameters, species_var, constant_sets = not(m_object.initialprior), pairings=m_object.pairParamsICS)
 		
 		covariance_sort.sort_mu_covariance(result_var[:,0,:,:],nspecies)
+
+		covariance_sort.measured_species(m_object)
 		sys.exit()
 
 # A function to pickle object

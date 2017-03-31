@@ -16,6 +16,9 @@ class ParsedModel:
         #self.kineticLaw = []
         self.ODElist = []
         self.numReactions = 0
+
+        self.numComps = 0
+        self.numSpecies_exvar = 0
         
         #self.listOfRules = []
         #self.ruleFormula = []
