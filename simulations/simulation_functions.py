@@ -99,7 +99,7 @@ def run_cudasim(m_object,inpath="", intType="ODE",usesbml=False):
 		
 		covariance_sort.sort_mu_covariance(result_var[:,0,:,:],nspecies)
 
-		covariance_sort.measured_species(m_object)
+		#covariance_sort.measured_species(m_object)
 		sys.exit()
 
 # A function to pickle object
