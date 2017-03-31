@@ -105,7 +105,6 @@ def mutInfo1(data,theta,N1,N2,sigma,scale):
 
 	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
 	grid_prelim_i , grid_prelim_j = launch.optimise_gridsize(1, block_i, block_j, T, S)
-	print launch.optimise_gridsize(1, block_i, block_j, T, S)
 	grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i, N1))
 	grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j, N2))
 	print "Grid shape:", str(grid_i)+"x"+str(grid_j)
