@@ -33,7 +33,10 @@ def factor_partial(N):
 # A funtion to determine total number of threads limited by global memory
 ##Attention: user needs to manually check that max grid dimensions are not exceeded
 ##Arguments:
-##
+##kernel_no - Which of the three gpu_kernel_func is this launch configuration for (1,2,3)?
+##bx, by - Block x-, and y-dimensions
+##T_Mod, S_Mod - Number of timepoints and species for the proposed experiments
+##T_Ref=0, S_Ref=0 - Number of timepoints and species for the reference experiment. (Only provide for gpu_kernel_func3)
 def optimise_gridsize(kernel_no, bx, by, T_Mod, S_Mod, T_Ref=0, S_Ref=0):
 	avail_mem = 0.95 * driver.mem_get_info()[0]
 	if kernel_no == 1 or kernel_no == 3:
