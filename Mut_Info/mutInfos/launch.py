@@ -60,6 +60,7 @@ def optimise_gridsize(kernel_no, bx, by, T_Mod, S_Mod, T_Ref=0, S_Ref=0):
 ##Arguments:
 ##device - the pycuda.driver.Context instance for the device the kernel will be executing (e.g. pycuda.autoinit.device)
 ##function - a handle of the cuda function (kernel) that will be executed
+##dyn_smem_per_thread - number of bytes of shared memory that is required per thread
 def optimal_blocksize(device, function, dyn_smem_per_thread=0):
 
 	# Check that compute capability of the GPU is compatible with this launch configurator
