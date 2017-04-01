@@ -244,10 +244,11 @@ class algorithm_info:
 		### get dt
 		self.dt = parse_required_single_value( xmldoc, "dt", "Please provide an float value for <dt>", float )
 
+		### get dt
+		self.beta = parse_required_single_value( xmldoc, "beta", "Please provide an int value for <beta>", int )
 
 		### get data attributes
 		dataref = xmldoc.getElementsByTagName('data')[0]
-
 
 		# times
 		self.times = parse_required_vector_value( dataref, "times", "Please provide a whitespace separated list of values for <data><times>" , float )
@@ -1146,3 +1147,98 @@ class algorithm_info:
 		if refmod.ncompparams_all > 0:	
 			self.compsSample = numpy.concatenate((refmod.compsSample[:self.N1sample+self.N2sample,:],refmod.N4compsSample),axis = 0)
 
+	def sort_mu_covariance(self,cuda_order,covariance_matricies,nspecies):
+		self.mus = [""]*self.nmodels
+		self.covariances = [""]*self.nmodels
+
+		if self.analysisType == 1:
+			Nparticles = self.N1sample+self.N2sample+self.N1sample*self.N3sample
+		else:
+			Nparticles = self.particles
+
+		if self.initialprior == False:
+			x0priors = [[y[1] for y in x] for x in self.x0prior]
+			for p, cuda in enumerate(self.cuda):
+				which_cuda = cuda_order.index(cuda)
+				which_IC = self.pairParamsICS[cuda].index(x0priors[p])
+				covariance_matrix = covariance_matricies[which_cuda][which_IC*Nparticles:(which_IC+1)*Nparticles,:,:]
+				
+				nparams = covariance_matrix.shape[0]
+				ntimes = covariance_matrix.shape[1]
+				ncov = covariance_matrix.shape[2]-nspecies
+
+				mus = covariance_matrix[:,:,0:nspecies]
+				variances_old = covariance_matrix[:,:,nspecies:]
+
+				covariances = numpy.zeros((nparams,ntimes*nspecies,nspecies))
+
+				for param in range(0,nparams):
+					count_1 = -1
+					for time in range(0,ntimes):
+						count_1 += 1
+						count_2 = -nspecies
+						for i in range(0, nspecies):
+							count_2 += nspecies-i
+							for j in range(i, nspecies):
+								if i == j:
+									covariances[param,i+count_1*nspecies,j] = variances_old[param, time, count_2 + j]
+								else:
+									covariances[param,i+count_1*nspecies,j] = variances_old[param, time, count_2 + j]
+									covariances[param,j+count_1*nspecies,i] = variances_old[param, time, count_2 + j]
+
+				self.mus[p] = mus
+				self.covariances[p] = covariances
+		
+		else:
+			for p, cuda in enumerate(self.cuda):
+				which_cuda = cuda_order.index(cuda)
+				covariance_matrix = covariance_matricies[which_cuda]
+				
+				nparams = covariance_matrix.shape[0]
+				ntimes = covariance_matrix.shape[1]
+				ncov = covariance_matrix.shape[2]-nspecies
+
+				mus = covariance_matrix[:,:,0:nspecies]
+				variances_old = covariance_matrix[:,:,nspecies:]
+
+				covariances = numpy.zeros((nparams,ntimes*nspecies,nspecies))
+
+				for param in range(0,nparams):
+					count_1 = -1
+					for time in range(0,ntimes):
+						count_1 += 1
+						count_2 = -nspecies
+						for i in range(0, nspecies):
+							count_2 += nspecies-i
+							for j in range(i, nspecies):
+								if i == j:
+									covariances[param,i+count_1*nspecies,j] = variances_old[param, time, count_2 + j]
+								else:
+									covariances[param,i+count_1*nspecies,j] = variances_old[param, time, count_2 + j]
+									covariances[param,j+count_1*nspecies,i] = variances_old[param, time, count_2 + j]
+
+				self.mus[p] = mus
+				self.covariances[p] = covariances
+
+	def measured_species(self):
+		self.B=[""]*self.nmodels
+		for i in range(0,self.nmodels):
+			fits = self.fitSpecies[i]
+			for count, j in enumerate(fits):
+				temp = numpy.zeros((self.nspecies_all))
+				if len(j) == 1:
+					temp[j[0]] += 1.0
+				else:
+					temp[j[0]] += 1.0
+					for pos, x in enumerate(j[1::2]):
+						if x=="+":
+							temp[j[1:][pos+1]] += 1.0
+						elif x=="-":
+							temp[j[1:][pos+1]] -= 1.0
+
+				if count == 0:
+					B = temp
+				else:
+					B = numpy.vstack((B,temp))
+
+			self.B[i]=B

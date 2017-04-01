@@ -60,7 +60,7 @@ def run_cudasim(m_object,inpath="", intType="ODE",usesbml=False):
 		else:
 			inpath_LNA = inpath
 
-		modelInstance = EulerMaruyama.EulerMaruyama(m_object.times, list(set(m_object.cuda)), dt=m_object.dt, inpath=inpath, beta = 10) 
+		modelInstance = EulerMaruyama.EulerMaruyama(m_object.times, list(set(m_object.cuda)), dt=m_object.dt, inpath=inpath, beta = m_object.beta) 
 		LNAInstance = Lsoda.Lsoda(m_object.times, list(set(m_object.cuda)), dt=m_object.dt, inpath=inpath_LNA)
 		
 		if m_object.ncompparams_all > 0:
@@ -97,9 +97,11 @@ def run_cudasim(m_object,inpath="", intType="ODE",usesbml=False):
 		
 		result_var = LNAInstance.run(parameters, species_var, constant_sets = not(m_object.initialprior), pairings=m_object.pairParamsICS)
 		
-		covariance_sort.sort_mu_covariance(result_var[:,0,:,:],nspecies)
+		cuda_order = list(set(m_object.cuda))
 
-		#covariance_sort.measured_species(m_object)
+		m_object.sort_mu_covariance(cuda_order, [x[:,0,:,:] for x in result_var],nspecies)
+
+		m_object.measured_species()
 		sys.exit()
 
 # A function to pickle object

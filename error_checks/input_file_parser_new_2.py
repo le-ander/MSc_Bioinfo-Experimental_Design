@@ -112,6 +112,8 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 
  	dt_regex = re.compile(r'>dt\n(.+)\n<dt', re.DOTALL)
 
+ 	beta_regex = re.compile(r'>beta\n(.+)\n<beta', re.DOTALL)
+
 	init_regex = re.compile(r'>Initial\sConditions\s\d+\s*\n(.+?)\n<Initial\sConditions\s\d', re.DOTALL)
 
 	init_prior_regex = re.compile(r'>initials\s*\n(.+)\n<initials', re.DOTALL)
@@ -159,6 +161,10 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 		dt = float(dt)
 		#######################
 
+		####obtain dt value####
+		beta = beta_regex.search(info).group(1)
+		beta = int(beta)
+		#######################
 
 		####obtain number of particles####
 		particles = particles_regex.search(info).group(1)
@@ -331,6 +337,14 @@ def generateTemplate(source, filename="input_file", sumname="summary_file", data
 		out_file.write("<dt> "+ repr(dt) +" </dt>\n\n")
 	else:
 		out_file.write("<dt> 0.01 </dt>\n\n")
+
+	out_file.write("######################## beta\n\n")
+	#out_file.write("# Internal timestep for solver.\n# Make this small for a stiff model.\n")
+	if (have_data==True and beta):
+		out_file.write("<beta> "+ repr(beta) +" </beta>\n\n")
+	else:
+		print "No beta defined"
+		sys.exit()
 
 	###################################################################################################################################
 	

@@ -3,11 +3,15 @@
 <dt
 
 >particles
-100
+10
 <particles
 
+>beta
+10
+<beta
+
 >nsample
-10 90 0 0
+1 9 0 0
 <nsample
 
 >sigma
@@ -46,7 +50,7 @@ constant 0
 
 
 >fit
-All
+species1 species2 species3+species4 species2-species3
 <fit
 
 >paramfit
@@ -121,5 +125,7 @@ alpha 7 5
 
 >combination
 initset2 paramexp1 fit1
+initset3 paramexp2 fit1
+initset2 paramexp2 fit1
 <combination
 
