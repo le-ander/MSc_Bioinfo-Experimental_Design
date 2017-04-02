@@ -8,16 +8,9 @@
 
 ## Next steps
 
-- Check for and filter nans (not just infs) (Jonas)
-
 - Peitho installation (Jonas)
 
 - Run timing runs
-
-- Group report
-  - Figure out how to present repressilator results (incl. results)
-  - Complete Troubleshooting (Jonas)
-  - Write Future Work
 
 - Read through group report
 
