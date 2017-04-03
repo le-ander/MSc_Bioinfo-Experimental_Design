@@ -10,6 +10,12 @@
 
 - Final run through code (rm print statements, rm seeds, sort example Data) (Scott, Jonas, Leander)
 
+- Push to master
+
+- Add manual to repository
+
+## To Do
+
 - SDE implementation (Scott, Leander)
 
 - HDF5 to avoid memory issues (Jonas)
