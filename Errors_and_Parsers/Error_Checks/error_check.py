@@ -36,7 +36,7 @@ def input_checker(sys_arg):
 	file_exist_SBML=False #for when the SBML or input.xml file exists
 	file_exist_data=False #whether the assocaited input file for an SBML file is also provided
 	usesbml=True #whether SBML or local code used
-	fname = "_results_" #string for the output file
+	fname = "Output_Folder" #string for the output file
 	iname = "" #string for where the input files are
 	analysis = 3 #sets the type of approach
 	input_file_data=[] #list containing associated input files for SBML files
