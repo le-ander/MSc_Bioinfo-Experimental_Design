@@ -2,21 +2,13 @@
 
 ## Ask Juliane
 
-- How to present repressilator results?
 - Should libsbml be a dependency or not?
-- Should we have a table with author contributions at the end of the report?
 
 ## Next steps
 
 - Peitho installation (Jonas)
 
-- Run timing runs
-
-- Read through group report
-
-- At very end: Final run through code (rm print statements, rm seeds) (Scott, Jonas, Leander) - remove Example data rubbish
-
-## On Hold
+- Final run through code (rm print statements, rm seeds, sort example Data) (Scott, Jonas, Leander)
 
 - SDE implementation (Scott, Leander)
 
@@ -24,7 +16,7 @@
 
 - Pickling (reuse cudasim)  (Jonas)
 
-- Only load packages when required (libsbml and means) (wait for Julianes opinion)
+- Only load packages when required (libsbml and means)
 
 ## Further work ideas
 
