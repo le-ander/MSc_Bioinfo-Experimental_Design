@@ -98,7 +98,7 @@ def main():
 ##usesbml - indicates whether an SBML file is used or local code
 ##refmod - used for approach 2 when the first SBML/local code is the reference model
 ##input_file_data - this holds the additional data alongside an SBML file that is required such as total number of particles etc
-def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", input_file_data = ""):
+def sorting_files(input_file_SBML, analysis, fname, usesbml, iname,memory_check, refmod="", input_file_data = ""):
 	#Used to remove the .xml at the end of the file if present to name directories
 	if analysis == 2 and refmod == "":
 		print "-----PRE-PROCESSING FOR REFERENCE MODEL-----\n"

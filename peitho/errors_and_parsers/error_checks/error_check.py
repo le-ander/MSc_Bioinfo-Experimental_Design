@@ -51,6 +51,7 @@ def input_checker(sys_arg):
 	analysis = 3 #sets the type of approach
 	input_file_data=[] #list containing associated input files for SBML files
 	template_creator=False
+	memory_check=False
 
 	#For loop cycles over the command line arguments
 	for i in range(1,len(sys_arg)):
