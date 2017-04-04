@@ -1,3 +1,7 @@
+>type
+ODE
+<type
+
 >dt
 0.05
 <dt
@@ -38,9 +42,9 @@ uniform 0 5
 uniform 0 5
 <prior
 
->fit
+>measuredspecies
 species2+species3
-<fit
+<measuredspecies
 
 >paramfit
 All
@@ -67,5 +71,5 @@ Unchanged
 <Parameter - Experiment 1
 
 >combination
-initset1 paramexp1 fit1
+initset1 paramexp1 measured1
 <combination

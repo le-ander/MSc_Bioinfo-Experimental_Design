@@ -95,3 +95,7 @@ ENV/
 
 # mkdocs documentation
 /site
+
+# results folder
+_reults_/
+results/

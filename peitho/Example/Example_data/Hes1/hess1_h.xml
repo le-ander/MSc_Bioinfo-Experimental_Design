@@ -52,7 +52,7 @@
 <cuda> hess1.cu </cuda>
 <type> ODE </type>
 
-<fit> species1 </fit>
+<measuredspecies> species1 </measuredspecies>
 
 <initial>
  <ic1> constant 0.5 </ic1>
@@ -75,7 +75,7 @@
 <cuda> hess1.cu </cuda>
 <type> ODE </type>
 
-<fit> species2+species3 </fit>
+<measuredspecies> species2+species3 </measuredspecies>
 
 <initial>
  <ic1> constant 0.5 </ic1>

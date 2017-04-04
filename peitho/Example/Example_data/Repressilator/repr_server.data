@@ -1,3 +1,7 @@
+>type
+ODE
+<type
+
 >dt
 1
 <dt
@@ -45,9 +49,9 @@ constant 0
 <initials
 
 
->fit
+>measuredspecies
 All
-<fit
+<measuredspecies
 
 >paramfit
 All
@@ -107,6 +111,6 @@ beta 0.1 10
 
 
 >combination
-initset1 paramexp5 fit1
+initset1 paramexp5 measured1
 <combination
 
