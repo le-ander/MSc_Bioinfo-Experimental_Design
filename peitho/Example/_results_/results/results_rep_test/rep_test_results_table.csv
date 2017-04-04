@@ -1,0 +1,6 @@
+Experiment name;Type;Measured species;Approach;Fitted parameter;Fitted initials;Fitted compartments;Total particle;N1;N2;N3;N4;Sigma;dt;Cuda file;SBML file;Data input file;Posterior sample;Posterior sample particles;Posterior sample weights;Total infinites/nan;Percentage infinites/nan;Mutual Information
+experiment1;0;[[0], [1], [2], [3], [4], [5]];0;[0, 1, 2, 3];[];[0];18100;100;18000;0;0;5.0;1.0;Exp_1.cu;Exp_1.xml;rep_test_data;False;;;1;1;276.12303757766011
+experiment2;0;[[0], [1], [2], [3], [4], [5]];0;[0, 1, 2, 3];[];[0];18100;100;18000;0;0;5.0;1.0;Exp_2.cu;Exp_2.xml;rep_test_data;False;;;12;12;419.44571652362191
+experiment3;0;[[0], [1], [2], [3], [4], [5]];0;[0, 1, 2, 3];[];[0];18100;100;18000;0;0;5.0;1.0;Exp_3.cu;Exp_3.xml;rep_test_data;False;;;9;9;412.6306631099763
+experiment4;0;[[0], [1], [2], [3], [4], [5]];0;[0, 1, 2, 3];[];[0];18100;100;18000;0;0;5.0;1.0;Exp_4.cu;Exp_4.xml;rep_test_data;False;;;6;6;266.73920128123638
+experiment5;0;[[0], [1], [2], [3], [4], [5]];0;[0, 1, 2, 3];[];[0];18100;100;18000;0;0;5.0;1.0;Exp_5.cu;Exp_5.xml;rep_test_data;False;;;18;18;481.16321403308024

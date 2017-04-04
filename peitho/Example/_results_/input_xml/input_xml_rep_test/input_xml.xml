@@ -1,0 +1,267 @@
+<input>
+
+######################## number of experiments
+
+# Number of experiments for which details are described in this input file
+<experimentnumber> 5 </experimentnumber>
+
+######################## type of models
+
+# type: the method used to simulate your model. ODE, SDE or Gillespie.
+<type> ODE </type>
+
+######################## particles
+
+<particles> 18100 </particles>
+
+######################## dt
+
+# Internal timestep for solver.
+# Make this small for a stiff model.
+<dt> 1.0 </dt>
+
+######################## User-supplied data
+
+<data>
+# times: For ABC SMC, times must be a whitespace delimited list
+# In simulation mode these are the timepoints for which the simulations will be output
+<times> 0.0 2.0 4.0 6.0 8.0 10.0 12.0 14.0 16.0 18.0 20.0 22.0 24.0 26.0 28.0 30.0 </times>
+
+# Sizes of N1, N2, N3 and N4 samples for entropy calculation
+<nsamples>
+<N1> 100 </N1>
+<N2> 18000 </N2>
+<N3> 0 </N3>
+<N4> 0 </N4>
+ </nsamples>
+
+# Sigma
+<sigma> 5.0 </sigma>
+
+# Numbers of parameters defined in experimental models below 
+<nparameters_all> 4 </nparameters_all> 
+
+# Indicates if a initial conditions are provided as prior distributions 
+<initialprior> False </initialprior>
+
+# Single or subset of parameters to be considered for calculation of mututal inforamtion:
+<paramfit> All </paramfit>
+
+<initfit> None </initfit>
+
+<compfit> All </compfit>
+
+# Indicates if a sample from a posterior + associated weights are provided(1=True / 0=False) and the names of sample and weight file 
+<samplefrompost> False </samplefrompost>
+<samplefrompost_file>  </samplefrompost_file>
+<samplefrompost_weights>  </samplefrompost_weights>
+
+</data>
+
+######################## experiments
+
+<experiments>
+<experiment1>
+<name> experiment1 </name>
+<source> Exp_1.xml </source>
+<cuda> Exp_1.cu </cuda>
+
+# Fitting information. If measured species is ALL, all species in the experiment are fitted to the data in the order they are listed in the experiment.
+# Otherwise, give a whitespace delimited list of fitting instrictions the same length as the dimensions of your data.
+# Use speciesN to denote the Nth species in your model. Simple arithmetic operations can be performed on the species from your model.
+# For example, to fit the sum of the first two species in your model to your first variable, write fit: species1+species2
+<measuredspecies> All </measuredspecies>
+
+# Priors on initial conditions, compartments and parameters:
+# one of 
+#       constant, value 
+#       normal, mean, variance 
+#       uniform, lower, upper 
+#       lognormal, mean, variance 
+#       posterior 
+
+<initial>
+ <ic1> constant 0.0 </ic1>
+ <ic2> constant 1.0 </ic2>
+ <ic3> constant 0.0 </ic3>
+ <ic4> constant 0.0 </ic4>
+ <ic5> constant 0.0 </ic5>
+ <ic6> constant 0.0 </ic6>
+</initial>
+
+<compartments>
+<compartment1> constant 1 </compartment1>
+</compartments>
+
+<parameters>
+<parameter1> uniform 1 10 </parameter1>
+<parameter2> uniform 0 20 </parameter2>
+<parameter3> uniform 500 2000 </parameter3>
+<parameter4> uniform 0 10 </parameter4>
+</parameters>
+</experiment1>
+
+<experiment2>
+<name> experiment2 </name>
+<source> Exp_2.xml </source>
+<cuda> Exp_2.cu </cuda>
+
+# Fitting information. If measured species is ALL, all species in the experiment are fitted to the data in the order they are listed in the experiment.
+# Otherwise, give a whitespace delimited list of fitting instrictions the same length as the dimensions of your data.
+# Use speciesN to denote the Nth species in your model. Simple arithmetic operations can be performed on the species from your model.
+# For example, to fit the sum of the first two species in your model to your first variable, write fit: species1+species2
+<measuredspecies> All </measuredspecies>
+
+# Priors on initial conditions, compartments and parameters:
+# one of 
+#       constant, value 
+#       normal, mean, variance 
+#       uniform, lower, upper 
+#       lognormal, mean, variance 
+#       posterior 
+
+<initial>
+ <ic1> constant 0.0 </ic1>
+ <ic2> constant 1.0 </ic2>
+ <ic3> constant 0.0 </ic3>
+ <ic4> constant 0.0 </ic4>
+ <ic5> constant 0.0 </ic5>
+ <ic6> constant 0.0 </ic6>
+</initial>
+
+<compartments>
+<compartment1> constant 1 </compartment1>
+</compartments>
+
+<parameters>
+<parameter1> uniform 1 10 </parameter1>
+<parameter2> uniform 0 20 </parameter2>
+<parameter3> uniform 500 2000 </parameter3>
+<parameter4> uniform 0 10 </parameter4>
+</parameters>
+</experiment2>
+
+<experiment3>
+<name> experiment3 </name>
+<source> Exp_3.xml </source>
+<cuda> Exp_3.cu </cuda>
+
+# Fitting information. If measured species is ALL, all species in the experiment are fitted to the data in the order they are listed in the experiment.
+# Otherwise, give a whitespace delimited list of fitting instrictions the same length as the dimensions of your data.
+# Use speciesN to denote the Nth species in your model. Simple arithmetic operations can be performed on the species from your model.
+# For example, to fit the sum of the first two species in your model to your first variable, write fit: species1+species2
+<measuredspecies> All </measuredspecies>
+
+# Priors on initial conditions, compartments and parameters:
+# one of 
+#       constant, value 
+#       normal, mean, variance 
+#       uniform, lower, upper 
+#       lognormal, mean, variance 
+#       posterior 
+
+<initial>
+ <ic1> constant 0.0 </ic1>
+ <ic2> constant 1.0 </ic2>
+ <ic3> constant 0.0 </ic3>
+ <ic4> constant 0.0 </ic4>
+ <ic5> constant 0.0 </ic5>
+ <ic6> constant 0.0 </ic6>
+</initial>
+
+<compartments>
+<compartment1> constant 1 </compartment1>
+</compartments>
+
+<parameters>
+<parameter1> uniform 1 10 </parameter1>
+<parameter2> uniform 0 20 </parameter2>
+<parameter3> uniform 500 2000 </parameter3>
+<parameter4> uniform 0 10 </parameter4>
+</parameters>
+</experiment3>
+
+<experiment4>
+<name> experiment4 </name>
+<source> Exp_4.xml </source>
+<cuda> Exp_4.cu </cuda>
+
+# Fitting information. If measured species is ALL, all species in the experiment are fitted to the data in the order they are listed in the experiment.
+# Otherwise, give a whitespace delimited list of fitting instrictions the same length as the dimensions of your data.
+# Use speciesN to denote the Nth species in your model. Simple arithmetic operations can be performed on the species from your model.
+# For example, to fit the sum of the first two species in your model to your first variable, write fit: species1+species2
+<measuredspecies> All </measuredspecies>
+
+# Priors on initial conditions, compartments and parameters:
+# one of 
+#       constant, value 
+#       normal, mean, variance 
+#       uniform, lower, upper 
+#       lognormal, mean, variance 
+#       posterior 
+
+<initial>
+ <ic1> constant 0.0 </ic1>
+ <ic2> constant 1.0 </ic2>
+ <ic3> constant 0.0 </ic3>
+ <ic4> constant 0.0 </ic4>
+ <ic5> constant 0.0 </ic5>
+ <ic6> constant 0.0 </ic6>
+</initial>
+
+<compartments>
+<compartment1> constant 1 </compartment1>
+</compartments>
+
+<parameters>
+<parameter1> uniform 1 10 </parameter1>
+<parameter2> uniform 0 20 </parameter2>
+<parameter3> uniform 500 2000 </parameter3>
+<parameter4> uniform 0 10 </parameter4>
+</parameters>
+</experiment4>
+
+<experiment5>
+<name> experiment5 </name>
+<source> Exp_5.xml </source>
+<cuda> Exp_5.cu </cuda>
+
+# Fitting information. If measured species is ALL, all species in the experiment are fitted to the data in the order they are listed in the experiment.
+# Otherwise, give a whitespace delimited list of fitting instrictions the same length as the dimensions of your data.
+# Use speciesN to denote the Nth species in your model. Simple arithmetic operations can be performed on the species from your model.
+# For example, to fit the sum of the first two species in your model to your first variable, write fit: species1+species2
+<measuredspecies> All </measuredspecies>
+
+# Priors on initial conditions, compartments and parameters:
+# one of 
+#       constant, value 
+#       normal, mean, variance 
+#       uniform, lower, upper 
+#       lognormal, mean, variance 
+#       posterior 
+
+<initial>
+ <ic1> constant 0.0 </ic1>
+ <ic2> constant 1.0 </ic2>
+ <ic3> constant 0.0 </ic3>
+ <ic4> constant 0.0 </ic4>
+ <ic5> constant 0.0 </ic5>
+ <ic6> constant 0.0 </ic6>
+</initial>
+
+<compartments>
+<compartment1> constant 1 </compartment1>
+</compartments>
+
+<parameters>
+<parameter1> uniform 1 10 </parameter1>
+<parameter2> uniform 0 20 </parameter2>
+<parameter3> uniform 500 2000 </parameter3>
+<parameter4> uniform 0 10 </parameter4>
+</parameters>
+</experiment5>
+
+</experiments>
+
+</input>
+
