@@ -2,14 +2,6 @@ import sys, numpy
 import os
 from shutil import copyfile
 import re
-<<<<<<< HEAD:mains/main_1.py
-sys.path.insert(1, '../error_checks')
-sys.path.insert(1, '../simulations')
-sys.path.insert(1, '../mutualInfo')
-sys.path.insert(1, '../abc-sysbio')
-sys.path.insert(1, '../cudasim')
-sys.path.insert(1, '../SDE_parsing')
-=======
 sys.path.insert(1, '../Errors_and_Parsers/Error_Checks')
 sys.path.insert(1, '../Errors_and_Parsers/ODE_Parsers')
 sys.path.insert(1, '../Errors_and_Parsers/SDE_Parsers')
@@ -18,8 +10,6 @@ sys.path.insert(1, '../Simulations/cudasim')
 sys.path.insert(1, '../Simulations/Simulate')
 sys.path.insert(1, '../Mut_Info/mutInfos')
 sys.path.insert(1, '../Mut_Info/Outputs')
-
->>>>>>> working:Main/main.py
 
 import simulation_functions
 import error_check
@@ -31,11 +21,8 @@ import mutInfo2
 import mutInfo3
 import cudacodecreater
 import plotbar
-<<<<<<< HEAD:mains/main_1.py
 import SDE_parse
-=======
 import SBML_reactions
->>>>>>> working:Main/main.py
 from numpy import *
 import time
 
@@ -72,13 +59,8 @@ def main():
 		#If statment between whether SBML or local code used as requires two different workflows
 		#Reference model
 		if usesbml[0] == True:
-<<<<<<< HEAD:mains/main_1.py
 			random.seed(123) #NEED TO REMOVE SEED
 			ref_model = sorting_files(input_file_SBMLs[0],analysis,fname,usesbml[0], iname, input_file_data = input_file_datas[count], intType=intType)
-=======
-			#random.seed(123) #NEED TO REMOVE SEED
-			ref_model = sorting_files(input_file_SBMLs[0],analysis,fname,usesbml[0], iname, input_file_data = input_file_datas[count])
->>>>>>> working:Main/main.py
 			count += 1
 		else:
 			ref_model = sorting_files(input_file_SBMLs[0],analysis,fname,usesbml[0], iname, intType=intType)
@@ -91,12 +73,9 @@ def main():
 				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, refmod = ref_model,input_file_data = input_file_datas[count], intType=intType)
 				count += 1
 			else:
-<<<<<<< HEAD:mains/main_1.py
 				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, refmod = ref_model, intType=intType)
-=======
-				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, refmod = ref_model)
 	## Stop timing for total runtime
->>>>>>> working:Main/main.py
+
 	time4=time.time()
 
 	## Print total runtime

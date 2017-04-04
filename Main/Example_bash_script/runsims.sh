@@ -8,11 +8,11 @@ then
 	export CUDA_DEVICE=1
 fi
 
-#cd $GPUDIR/Main
-cd ~/work/Experimental-Design/Main
+cd $GPUDIR/Main
+#cd ~/work/Experimental-Design/Main
 
 ##gE1 (SBML input):
-python main.py -a 0 -of=results -i1 rep_test.xml -i2 new_file2 -lc 0 -if=Example_data &> /cluster/home/ld2113/work/Testing/timing_final_46e5_cuda10.log
+python main.py -a 0 -of=results -i1 rep_test.xml -i2 new_file2 -lc 0 -if=Example_data -iT SDE 
 
 ##gE2 (local code):
 #python main.py -a 1 -of=results -i1 input_file_hess1.xml -lc 1 -if=Example_data
