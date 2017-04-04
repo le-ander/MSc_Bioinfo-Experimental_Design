@@ -1,0 +1,75 @@
+>type
+ODE
+<type
+
+>dt
+0.05
+<dt
+
+>particles
+145000
+<particles
+
+>nsample
+10000 45000 45000 45000
+<nsample
+
+>sigma
+15.0
+<sigma
+
+>timepoint
+0.0 5.0 10.0 15.0 20.0 25.0
+<timepoint
+
+>samplefromposterior
+False
+data_2.txt
+w_1.txt
+<samplefromposterior
+
+>initprior
+False
+<initprior
+
+>prior
+uniform 90 120
+uniform 1 5
+uniform 5 20
+uniform 10 20
+uniform 0 5
+uniform 0 5
+uniform 0 5
+<prior
+
+>measuredspecies
+species2+species3
+<measuredspecies
+
+>paramfit
+All
+<paramfit
+
+>initialfit
+None
+<initialfit
+
+>compfit
+None
+<compfit
+
+>compartment
+constant 1
+<compartment
+
+>Initial Conditions 1
+Unchanged
+<Initial Conditions 1
+
+>Parameter - Experiment 1
+k5 4.0 5
+<Parameter - Experiment 1
+
+>combination
+initset1 paramexp1 measured1
+<combination

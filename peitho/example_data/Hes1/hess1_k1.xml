@@ -1,0 +1,96 @@
+<input>
+
+# Number of models for which details are described in this input file
+<experimentnumber> 2 </experimentnumber>
+
+# Population size
+<particles> 3000 </particles>
+
+
+# Make this small for a stiff model.
+<dt> 1 </dt>
+
+
+<data>
+<times> 0.0 30.0 60.0 90.0 120.0 150.0 180.0 210.0 240.0  </times>
+
+<nsamples>
+<N1> 1000 </N1>
+<N2> 1000 </N2>
+<N3> 1000 </N3>
+<N4> 0 </N4>
+</nsamples>
+
+# Sigma
+<sigma> 0.1 </sigma>
+
+# Numbers of parameters defined in models below 
+<nparameters_all> 4 </nparameters_all> 
+
+# Indicates if a initial conditions are provided as prior distributions 
+<initialprior> False </initialprior>
+
+<paramfit> parameter4 </paramfit>
+
+<initfit> None </initfit>
+
+<compfit> None </compfit>
+
+
+# Indicates if a sample from a posterior + associated weights are provided(1=True / 0=False) and the names of sample and weight file 
+<samplefrompost> False </samplefrompost>
+<samplefrompost_file>  </samplefrompost_file>
+<samplefrompost_weights>  </samplefrompost_weights>
+
+</data>
+
+
+<experiments>
+<experiment1>
+<name> mRNA </name>
+<source> hess1.xml </source>
+<cuda> hess1.cu </cuda>
+<type> ODE </type>
+
+<measuredspecies> species1 </measuredspecies>
+
+<initial>
+ <ic1> constant 0.5 </ic1>
+ <ic2> constant 3.0 </ic2>
+ <ic3> constant 2.0 </ic3>
+</initial>
+
+<parameters>
+<parameter1> uniform 0 2 </parameter1>
+<parameter2> uniform 1 10 </parameter2>
+<parameter3> uniform 0 0.1 </parameter3>
+<parameter4> uniform 0 0.1 </parameter4>
+</parameters>
+
+</experiment1>
+
+<experiment2>
+<name> Protein </name>
+<source> hess1.xml </source>
+<cuda> hess1.cu </cuda>
+<type> ODE </type>
+
+<measuredspecies> species2+species3 </measuredspecies>
+
+<initial>
+ <ic1> constant 0.5 </ic1>
+ <ic2> constant 3.0 </ic2>
+ <ic3> constant 2.0 </ic3>
+</initial>
+
+<parameters>
+<parameter1> uniform 0 2 </parameter1>
+<parameter2> uniform 1 10 </parameter2>
+<parameter3> uniform 0 0.1 </parameter3>
+<parameter4> uniform 0 0.1 </parameter4>
+</parameters>
+
+</experiment2>
+</experiments>
+
+</input>
