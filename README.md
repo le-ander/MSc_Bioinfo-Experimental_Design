@@ -1,4 +1,4 @@
-#PEITHO
+# PEITHO
 
 ## ABSTRACT
 Different experiments provide differing levels of information about a biological system.
