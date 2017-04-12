@@ -177,8 +177,8 @@ def generateTemplate(source, analysis_type, filename="input_file", sumname="summ
 			sys.exit()
 		#### SDE model message#################	
 		if model_type == "SDE":
-			print "SDE models will be supported in next version!"
-			sys.exit()
+			print "Under Construction"
+			#sys.exit()
 		########################################
 
 		####obtain timepoint for cudasim####

@@ -1,4 +1,4 @@
-import sys, os
+import sys, os, libsbml
 sys.path.insert(1, '../abc-sysbio')
 import means
 import numpy as np
@@ -13,14 +13,20 @@ def LNA_CUDAWriter(infiles,inpath="",outpath=""):
 			os.mkdir(outpath+"/"+"LNA")
 		outPath = outpath+"/"+"LNA"+"/"
 
+		reader = libsbml.SBMLReader()
+		document = reader.readSBML(inpath+infile)
+		sbml_model = document.getModel()
+
+		ncomps = len(sbml_model.getListOfCompartments())
+
 		model_test , rep_parameters, rep_IC = means.io.read_sbml(inpath+infile)
 
 		ode_problem_lna = means.lna_approximation(model_test)
 
-		txt_obj = ODECUDAWriter_SDE.OdeCUDAWriter(MEANS_obj = model_test, LNA_obj = ode_problem_lna ,modelName = infile[:-4],outputPath = outPath)
+		txt_obj = ODECUDAWriter_SDE.OdeCUDAWriter(num_comps = ncomps, MEANS_obj = model_test, LNA_obj = ode_problem_lna ,modelName = infile[:-4],outputPath = outPath)
 		
 		txt_obj.write()
-		
+
 		#simulation = means.Simulation(ode_problem_lna,"cvode")
 		
 		#parameters = [1.0, 1544.70378, 5.61815339, 5.42635926, 0.327849618]

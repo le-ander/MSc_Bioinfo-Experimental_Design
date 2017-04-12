@@ -1,3 +1,7 @@
+>type
+SDE
+<type
+
 >dt
 1
 <dt
@@ -49,9 +53,9 @@ constant 0
 <initials
 
 
->fit
+>measuredspecies
 species1 species2 species3+species4 species2-species3
-<fit
+<measuredspecies
 
 >paramfit
 All

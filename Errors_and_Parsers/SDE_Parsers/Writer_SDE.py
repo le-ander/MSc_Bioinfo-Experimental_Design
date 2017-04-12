@@ -3,7 +3,7 @@
 from ParsedModel_SDE import ParsedModel
 
 class Writer:
-    def __init__(self, sbmlFileName, modelName = "", inputPath = "", outputPath = ""):
+    def __init__(self, modelName = "", inputPath = "", outputPath = ""):
         self.parsedModel = ParsedModel()
         
         if(modelName == ""):

@@ -12,12 +12,13 @@ class EulerMaruyama(sim.Simulator):
     
     _param_tex = None
     _putIntoShared = False
+    _runtimeCompile = True
     
     #general RNG parameters (fixed)
     _warp_size = 32
     _state_words = 32
     
-    def _compile(self, step_code):         
+    def _compileAtRuntime(self, step_code, parameter = False):         
     
         # determine if shared memory is enough to fit parameters 
         # maxThreads = self._maxThreadsPerMP

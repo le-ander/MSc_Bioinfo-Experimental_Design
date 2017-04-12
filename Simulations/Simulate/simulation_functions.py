@@ -5,8 +5,8 @@ from numpy.random import *
 import math
 import re
 
-import cudasim.Lsoda as Lsoda
-import cudasim.EulerMaruyama as EulerMaruyama
+import Lsoda 
+import EulerMaruyama
 
 try:
 	import cPickle as pickle
@@ -15,8 +15,8 @@ except:
 
 import time
 import sys
-sys.path.insert(1, '../error_checks')
-sys.path.insert(1, ".")
+#sys.path.insert(1, '../error_checks')
+#sys.path.insert(1, ".")
 import parse_infoEnt_new_2
 import covariance_sort
 
@@ -93,16 +93,24 @@ def run_cudasim(m_object,inpath="", intType="ODE",usesbml=False):
 			species_var = [concatenate((x,var_IC),axis=1) for x in species]
 		except:
 			species_var = concatenate((species,var_IC),axis=1)
-
-		result = modelInstance.run(parameters, species, constant_sets = not(m_object.initialprior), pairings=m_object.pairParamsICS)
 		
+		#print parameters
+		#print "------------------"
+		#print species_var
+		#print "\n\n\n"
+		result = modelInstance.run(parameters, species, constant_sets = not(m_object.initialprior), pairings=m_object.pairParamsICS)
+
 		result_var = LNAInstance.run(parameters, species_var, constant_sets = not(m_object.initialprior), pairings=m_object.pairParamsICS)
 		
-		cuda_order = list(set(m_object.cuda))
+		print result[0][0,0,:,:]
+		#print "----------------"
+		#print result_var[0][0,0,:,:]
+				
+		#cuda_order = list(set(m_object.cuda))
 
-		m_object.sort_mu_covariance(cuda_order, [x[:,0,:,:] for x in result_var],nspecies)
+		#m_object.sort_mu_covariance(cuda_order, [x[:,0,:,:] for x in result_var],nspecies)
 
-		m_object.measured_species()
+		#m_object.measured_species()
 		sys.exit()
 
 # A function to pickle object

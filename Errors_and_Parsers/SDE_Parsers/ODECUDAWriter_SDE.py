@@ -6,8 +6,8 @@ import sys
 from Writer_SDE import Writer
 
 class OdeCUDAWriter(Writer):
-    def __init__(self, MEANS_obj, LNA_obj, modelName="",  outputPath=""):
-        Writer.__init__(self, sbmlFileName, modelName, inputPath, outputPath)
+    def __init__(self, MEANS_obj, LNA_obj, modelName="",  outputPath="", num_comps = 0):
+        Writer.__init__(self, modelName, outputPath = outputPath)
         self.out_file=open(os.path.join(outputPath,self.parsedModel.name+".cu"),"w")
         
         numSpecies_tot = len(MEANS_obj.species)
@@ -15,20 +15,21 @@ class OdeCUDAWriter(Writer):
 
         #print a
         a = [x.strip() for x in a.split("\n")[7::3]]
-
+        self.parsedModel.numSpecies_exvar = numSpecies_tot
         self.parsedModel.numSpecies = numSpecies_tot*(numSpecies_tot+3)/2
-        self.parsedModel.numGlobalParameters = len(MEANS_obj.parameters)
         self.parsedModel.numReactions = MEANS_obj.stoichiometry_matrix.shape[1]
-
+        self.parsedModel.numComps = num_comps
         variances = [""]*(numSpecies_tot*(numSpecies_tot+1)/2)
         pos = 0
         for i in range(numSpecies_tot):
             for j in range(i,numSpecies_tot):
                 variances[pos] = "V_"+str(i)+"_"+str(j)
                 pos+=1
-	
+    
         self.parsedModel.species = [str(x) for x in MEANS_obj.species]+variances
-	self.parsedModel.parameter = [str(x) for x in MEANS_obj.parameters]
+        self.parsedModel.parameter = [str(x) for x in MEANS_obj.parameters]
+        self.parsedModel.numGlobalParameters = len(MEANS_obj.parameters)
+
         for i in range(self.parsedModel.numGlobalParameters):
             self.parsedModel.parameterId.append("tex2D(param_tex,"+str(i)+",tid)")
 
@@ -52,9 +53,14 @@ class OdeCUDAWriter(Writer):
 
         for i in range(self.parsedModel.numSpecies-1,-1,-1):
             self.out_file.write("        ydot["+repr(i)+"]=")
-	            
-            self.out_file.write(self.reactionTransform(i))
 
+            if self.parsedModel.numComps == 1:
+                self.out_file.write('(')
+            self.out_file.write(self.reactionTransform(i))
+            if self.parsedModel.numComps == 1 and i > (self.parsedModel.numSpecies_exvar - 1):
+                self.out_file.write(')/__powf(tex2D(param_tex,0,tid),2)')
+            elif self.parsedModel.numComps == 1 and i <= (self.parsedModel.numSpecies_exvar -1):
+                self.out_file.write(')/tex2D(param_tex,0,tid)')
             self.out_file.write(";\n")
 
         self.out_file.write("\n    }")
@@ -67,7 +73,7 @@ class OdeCUDAWriter(Writer):
         reaction = self.parsedModel.ODElist[reac_no]
         param_species_sort = sorted(param_species, key=len)
         param_species_sort.reverse()
-	
+    
         pos = 0
         while pos < len(reaction):
             for i in param_species_sort:

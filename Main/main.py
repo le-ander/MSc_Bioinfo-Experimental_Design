@@ -46,7 +46,7 @@ def main():
 		#Cycles through the list of SBML and local code files
 		for i in range(0,len(input_file_SBMLs)):
 			#NEED TO REMOVE SEED
-			#random.seed(123)
+			random.seed(123)
 			#If statment between whether SBML or local code used as requires two different workflows
 			if usesbml[i]==True:
 				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, input_file_data = input_file_datas[count], intType=intType)
@@ -59,7 +59,7 @@ def main():
 		#If statment between whether SBML or local code used as requires two different workflows
 		#Reference model
 		if usesbml[0] == True:
-			random.seed(123) #NEED TO REMOVE SEED
+			#random.seed(123) #NEED TO REMOVE SEED
 			ref_model = sorting_files(input_file_SBMLs[0],analysis,fname,usesbml[0], iname, input_file_data = input_file_datas[count], intType=intType)
 			count += 1
 		else:
