@@ -1,28 +1,30 @@
 # Experimental-Design ToDo
 
-## Ask Juliane
+## Jonas
 
-- Should libsbml be a dependency or not?
+- Install means
 
-## Next steps
+- Package installation from working branch
 
-- Peitho installation (Jonas)
+- Tackle memory requirements (HDF5 or cPickle)
 
-- Final run through code (rm print statements, rm seeds, sort example Data) (Scott, Jonas, Leander)
+## Scott
 
-- Push to master
+- Check that CUDASim sorting aligns with dimensions of GPU transformation arrays
+
+- Check CUDAsim outputs are correct
+
+- Write NA checker
+
+## Leander
+
+- Write getEntropy1,2,3
+
+## Other
 
 - Add manual to repository
 
-## To Do
-
-- SDE implementation (Scott, Leander)
-
-- HDF5 to avoid memory issues (Jonas)
-
-- Pickling (reuse cudasim)  (Jonas)
-
-- Only load packages when required (libsbml and means)
+- Soft dependencies and importing means/libsbml only if required
 
 ## Further work ideas
 
