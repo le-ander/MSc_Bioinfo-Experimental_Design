@@ -1,35 +1,15 @@
-# Experimental-Design ToDo
+# PEITHO - EXPERIMENTAL DESIGN
 
-## Ask Juliane
+## ABSTRACT
+Different experiments provide differing levels of information about a biological system.
+This makes it difficult, a priori, to select one of them beyond mere speculation and/or
+belief, especially when resources are limited. Herein we present PEITH(Θ), a general
+purpose, command line interface built in Python, and developed to tackle the problem
+of experimental selection using information theory. PEITH(Θ) extends the work of Liepe
+et al. [1] giving users the capability to simulate a range of experiments and make a
+selection beyond guesswork.
 
-- Should libsbml be a dependency or not?
+## REFERENCES
 
-## Next steps
-
-- Peitho installation (Jonas)
-
-- Final run through code (rm print statements, rm seeds, sort example Data) (Scott, Jonas, Leander)
-
-- Push to master
-
-- Add manual to repository
-
-## To Do
-
-- SDE implementation (Scott, Leander)
-
-- HDF5 to avoid memory issues (Jonas)
-
-- Pickling (reuse cudasim)  (Jonas)
-
-- Only load packages when required (libsbml and means)
-
-## Further work ideas
-
-- Improve CUDA-sim implementation
-  - Scott's for-loop to be pushed to new update
-  - Fix CUDAsim device detection
-
-- Convert to Python 3.5
-  - Modernize package
-  - Use Six package for compatibility
+[1] J. Liepe, S. Filippi, M. Komorowski, and M. P. Stumpf, “Maximizing the information content of experiments in systems biology,” PLoS Comput Biol, vol. 9, no. 1,
+p. e1002888, 2013.
