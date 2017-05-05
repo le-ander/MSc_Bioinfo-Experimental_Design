@@ -46,12 +46,15 @@ def input_checker(sys_arg):
 	file_exist_SBML=False #for when the SBML or input.xml file exists
 	file_exist_data=False #whether the assocaited input file for an SBML file is also provided
 	usesbml=True #whether SBML or local code used
-	fname = "_results_" #string for the output file
+
+	fname = "Output_Folder" #string for the output file
 	iname = "" #string for where the input files are
 	analysis = 3 #sets the type of approach
 	input_file_data=[] #list containing associated input files for SBML files
+	intType="ODE"
 	template_creator=False
 	memory_check=False
+
 
 	#For loop cycles over the command line arguments
 	for i in range(1,len(sys_arg)):
@@ -117,6 +120,9 @@ def input_checker(sys_arg):
 			elif option[0:9] == "infolder=":
 				iname = option[9:]
 				print "Input file destination: " + iname + "\n"
+
+			elif option == 'intType' :
+				intType = sys_arg[i+1]
 			#If flag not recognised calls printOptions()
 			elif not(sys_arg[i-1][2:] == 'infile_SBML'):
 				print "\nERROR: unknown option "+sys_arg[i]
@@ -177,6 +183,7 @@ def input_checker(sys_arg):
 			elif option[0:3] == "if=":
 				iname = option[3:]
 				print "Input file destination: " + iname + "\n"
+
 			elif option == 'tc':
 				template_creator=True
 				usesbml = "0"
@@ -186,6 +193,9 @@ def input_checker(sys_arg):
 				print "Create template from SBML file"
 			elif option == 'mc':
 				memory_check=True
+
+			elif option == 'iT' :
+				intType = sys_arg[i+1]
 
 			#If an unrecognised flag is called and calls printOptions
 			elif not(sys_arg[i-1][2:] == 'i1'):
@@ -213,4 +223,5 @@ def input_checker(sys_arg):
 	if not(os.path.isdir("./"+fname)):
 		os.mkdir(fname)
 
-	return input_file_SBML, input_file_data, analysis, fname, usesbml, iname, template_creator, memory_check
+
+	return input_file_SBML, input_file_data, analysis, fname, usesbml, iname, intType, template_creator, memory_check

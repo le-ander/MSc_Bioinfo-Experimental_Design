@@ -16,6 +16,8 @@ import peitho.errors_and_parsers.ode_parsers.cudacodecreater as cudacodecreater
 import peitho.mut_Info.outputs.plotbar as plotbar
 import peitho.errors_and_parsers.ode_parsers.SBML_reactions as SBML_reactions
 import peitho.mut_Info.outputs.csv_output as csv_output
+import peitho.errors_and_parsers.sde_parsers.sde_parse as sde_parse
+
 from numpy import *
 import time
 
@@ -26,7 +28,7 @@ def main():
 	time3=time.time()
 
 	# Reads in command line arguments
-	input_file_SBMLs, input_file_datas, analysis, fname, usesbml, iname, template_creator, memory_check = error_check.input_checker(sys.argv)
+	input_file_SBMLs, input_file_datas, analysis, fname, usesbml, iname, intType, template_creator, memory_check = error_check.input_checker(sys.argv)
 
 	# Run program when in non template mode
 	if template_creator==False:
@@ -52,10 +54,10 @@ def main():
 				#random.seed(123)
 				#If statment between whether SBML or local code used as requires two different workflows
 				if usesbml[i]==True:
-					sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, input_file_data = input_file_datas[count], memory_check = memory_check)
+					sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, input_file_data = input_file_datas[count], intType=intType, memory_check = memory_check)
 					count += 1
 				else:
-					sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, memory_check = memory_check)
+					sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, memory_check = memory_check,intType=intType)
 		else:
 			#In the case of the last approach the first file is always the reference model so is treated differently
 			count = 0
@@ -63,20 +65,20 @@ def main():
 			#Reference model
 			if usesbml[0] == True:
 				#random.seed(123) #NEED TO REMOVE SEED
-				ref_model = sorting_files(input_file_SBMLs[0],analysis,fname,usesbml[0], iname, input_file_data = input_file_datas[count], memory_check = memory_check)
+				ref_model = sorting_files(input_file_SBMLs[0],analysis,fname,usesbml[0], iname, input_file_data = input_file_datas[count], memory_check = memory_check, intType=intType)
 				count += 1
 			else:
-				ref_model = sorting_files(input_file_SBMLs[0],analysis,fname,usesbml[0], iname, memory_check = memory_check)
+				ref_model = sorting_files(input_file_SBMLs[0],analysis,fname,usesbml[0], iname, memory_check = memory_check, intType=intType)
 
 			#Not reference models
 			for i in range(1,len(input_file_SBMLs)):
 				#random.seed(123) #NEED TO REMOVE SEED
 				#If statment between whether SBML or local code used as requires two different workflows
 				if usesbml[i] == True:
-					sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, refmod = ref_model,input_file_data = input_file_datas[count], memory_check = memory_check)
+					sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, refmod = ref_model,input_file_data = input_file_datas[count], memory_check = memory_check, intType=intType)
 					count += 1
 				else:
-					sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, refmod = ref_model)
+					sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, refmod = ref_model, intType=intType) ## does not have memory check
 		## Stop timing for total runtime
 		time4=time.time()
 
@@ -98,7 +100,8 @@ def main():
 ##usesbml - indicates whether an SBML file is used or local code
 ##refmod - used for approach 2 when the first SBML/local code is the reference model
 ##input_file_data - this holds the additional data alongside an SBML file that is required such as total number of particles etc
-def sorting_files(input_file_SBML, analysis, fname, usesbml, iname,memory_check, refmod="", input_file_data = ""):
+def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, memory_check, refmod="", input_file_data = "", intType="ODE"):
+
 	#Used to remove the .xml at the end of the file if present to name directories
 	if analysis == 2 and refmod == "":
 		print "-----PRE-PROCESSING FOR REFERENCE MODEL-----\n"
@@ -130,6 +133,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname,memory_check,
 		if memory_check == False:
 			print "-----Creating SBML files for experiments-----"
 
+
 		#Sets directory to hold new SBML files
 		if not(os.path.isdir("./"+fname+"/exp_xml")):
 			os.mkdir(fname+"/exp_xml")
@@ -150,7 +154,9 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname,memory_check,
 			print "<Parameter - Experiment 1"
 			print ""
 			print ">Parameter - Experiment 2"
+
 			print "..."
+
 			print "<Parameter - Experiment 2"
 			print ""
 			print ">Parameter - Experiment 3"
@@ -172,7 +178,11 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname,memory_check,
 			input_files_SBML.append("Exp_" + repr(i+1) + ".xml")
 
 		#Creates cudacode and saves to the directory made
-		cudacodecreater.cudacodecreater(input_files_SBML,inPath=inPath+"/",outPath=outPath)
+
+		cudacodecreater.cudacodecreater(input_files_SBML,inPath=inPath+"/",outPath=outPath, typeInt=intType)
+		
+		if intType == "SDE":
+			sde_parse.LNA_CUDAWriter(input_files_SBML,inpath=inPath+"/",outpath=outPath)
 
 		#Creates directory to store the input.xml file along with a summary file
 		if not(os.path.isdir("./"+fname+"/input_xml")):
@@ -190,6 +200,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname,memory_check,
 			print "-----Generating input XML file-----"
 		comb_list = input_data_file_parser.generateTemplate(exp_xml_files, analysis, "input_xml", input_file_data, inpath = inPath, outpath= xml_out, iname=iname)
 
+
 		#input_xml holds the file name of the input.xml file
 		input_xml="/input_xml"
 
@@ -206,6 +217,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname,memory_check,
 	#Starts making the object from the input.xml file
 	if memory_check == False:
 		print "-----Creating object from input XML file-----"
+
 
 	#Calls function to make the object
 	sbml_obj = parse_object_info.algorithm_info(xml_out+input_xml+".xml", comb_list)
@@ -231,7 +243,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname,memory_check,
 		print "-----Running CUDA-Sim-----"
 
 		#Calls function to run cudasim and sort output
-		cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath)
+		cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath,intType=intType,usesbml=usesbml)
 
 		#Calculates the scaling factor
 		print "-----Calculating scaling factor-----"
@@ -355,5 +367,3 @@ def memory_checker(sbml_obj, fname="_results_",required_mem = 0, ref_mod = False
 			print "WARNING: The estimated RAM requirements are less than the recommended size of 32 GB\n"
 		shutil.rmtree(fname)
 		sys.exit()
-#Starts the program
-#main()

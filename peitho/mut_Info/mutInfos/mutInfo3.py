@@ -2,8 +2,10 @@ from numpy import *
 
 from pycuda import compiler, driver
 from pycuda import autoinit
+
 import peitho.mut_Info.mutInfos.launch as launch
 import sys
+
 import copy
 
 
@@ -521,6 +523,7 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 	return Info2, count_all_inf, count_all_inf_prop
 
 
+
 # A function calling mutInfo3 for all provided experiments and outputs the mutual information
 ##Arguments:
 ##model_obj - an object containing all alternative experiments and all their associated information
@@ -532,6 +535,7 @@ def run_mutInfo3(model_obj, ref_obj, input_SBML):
 	MutInfo3_infs = []
 	#Initiates list to hold percentage of infinites
 	MutInfo3_infs_prop = []
+
 
 	#Cycles through experiments
 	for experiment in range(model_obj.nmodels):

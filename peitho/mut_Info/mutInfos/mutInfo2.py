@@ -8,6 +8,7 @@ import peitho.mut_Info.mutInfos.launch as launch
 import sys
 
 
+
 # A function to calculate the mutual information between a subset of parameters of a system and an experiment
 ##(gets called by run_mutInfo2)
 ##Arguments:
@@ -394,6 +395,7 @@ def run_mutInfo2(model_obj, input_SBML):
 	MutInfo2_infs = []
 	#Initiates list to hold percentage of infinites
 	MutInfo2_infs_prop = []	
+
 	#Cycles through experiments
 	for experiment in range(model_obj.nmodels):
 		#Extracts N1, N2, N3

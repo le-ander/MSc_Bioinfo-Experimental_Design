@@ -1,0 +1,78 @@
+<input>
+
+# Number of models for which details are described in this input file
+<modelnumber> 1 </modelnumber>
+
+# Population size
+<particles> 4600 </particles>
+
+# Internal timestep for solver.
+# Make this small for a stiff model.
+<dt> 1.0 </dt>
+
+
+<data>
+# times: For ABC SMC, times must be a whitespace delimited list
+# In simulation mode these are the timepoints for which the simulations will be output
+<times> 0.0 2.0 4.0 6.0 8.0 10.0 12.0 14.0 16.0 18.0 20.0 22.0 24.0 26.0 28.0 30.0 </times>
+ 
+<nsamples>
+<N1> 100 </N1>
+<N2> 4500 </N2>
+<N3> 0 </N3>
+<N4> 0 </N4>
+ </nsamples>
+
+# Sigma
+<sigma> 5.0 </sigma>
+
+# Numbers of parameters defined in models below 
+<nparameters_all> 4 </nparameters_all> 
+
+# Indicates if a initial conditions are provided as prior distributions 
+<initialprior> False </initialprior>
+
+# Single or subset of parameters to be considered for calculation of mututal inforamtion:
+<paramfit> All </paramfit>
+
+<initfit> None </initfit>
+
+<compfit> None </compfit>
+
+# Indicates if a sample from a posterior + associated weights are provided(1=True / 0=False) and the names of sample and weight file 
+<samplefrompost> False </samplefrompost>
+<samplefrompost_file>  </samplefrompost_file>
+<samplefrompost_weights>  </samplefrompost_weights>
+
+</data>
+
+
+<models>
+<model1>
+<name> repressilator_WT </name>
+<source> repressilator_WT.xml </source>
+<cuda> repressilator_WT.cu </cuda>
+<type> ODE </type>
+
+<fit> All </fit>
+
+<initial>
+ <ic1> constant 0.0 </ic1>
+ <ic2> constant 1.0 </ic2>
+ <ic3> constant 0.0 </ic3>
+ <ic4> constant 0.0 </ic4>
+ <ic5> constant 0.0 </ic5>
+ <ic6> constant 0.0 </ic6>
+</initial>
+
+<parameters>
+<parameter1> uniform 1 10 </parameter1>
+<parameter2> uniform 0 20 </parameter2>
+<parameter3> uniform 500 2000 </parameter3>
+<parameter4> uniform 0 10 </parameter4>
+</parameters>
+</model1>
+
+</models>
+
+</input>

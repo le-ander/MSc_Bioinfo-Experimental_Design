@@ -45,6 +45,7 @@ class Lsoda(sim.Simulator):
 
 
     def _compileAtRuntime(self, step_code, parameters):
+
         # set beta to 1 - deterministic!!
         self._beta = 1
 

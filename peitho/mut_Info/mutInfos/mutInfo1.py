@@ -215,11 +215,13 @@ def mutInfo1(data,theta,N1,N2,sigma,scale):
 
 	print "-----Calculation part 1 of 1 complete-----\n"
 
+
 	# Calculate and print proportion of infinites
 	infs_na_prop=int((count_inf/float(N1))*100)
 	print "Proportion of infs and NAs", infs_na_prop, "% ("+str(count_inf)+" infs)\n"
 
 	return Info,count_inf,infs_na_prop
+
 
 # A function calling mutInfo1 for all provided experiments and outputs the mutual information
 ##Argument: model_obj - an object containing all experiments and all their associated information
@@ -230,6 +232,7 @@ def run_mutInfo1(model_obj,input_SBML):
 	MutInfo1_infs = []
 	#Initiates list to hold percentage of infinites
 	MutInfo1_infs_prop = []	
+
 	#Cycles through each experiment
 	for experiment in range(model_obj.nmodels):
 

@@ -67,7 +67,9 @@ def parse_required_single_value( node, tagname, message, cast ):
 
 
 #### Function to obtain a vector of value from given node and tag in input xml file################
+
 def parse_required_vector_value(self, node, tagname, message, cast ):
+
 	try:
 		data = node.getElementsByTagName(tagname)[0].firstChild.data
 	except:
@@ -89,13 +91,14 @@ def parse_required_vector_value(self, node, tagname, message, cast ):
 	return(ret)
 
 
+
 def type_parser (type, filename):
 	
 	if re_ODE.match(type):
 		return 0
 	elif re_SDE.match(type):
-		print "\n\nERROR: Type of the model in " ,filename,  self.name[self.nmodels-1], " is not supported!\n\n"
-		sys.exit()
+		print "\n\nWARNING: Type of the model in " ,filename,  self.name[self.nmodels-1], " is not fully supported yet!\n\n"
+		return 1
 
 	else:
 		print "\n\nERROR: Type of the model ", self.name[self.nmodels-1], " is not supported in " +filename+ "!\n\n"
@@ -104,6 +107,7 @@ def type_parser (type, filename):
 
 #### Function to identify prior the user given prior and obtain its values#########################
 #####
+
 def process_prior(self, tmp ,filename):
 	prior_tmp = [0,0,0]
 
@@ -112,6 +116,7 @@ def process_prior(self, tmp ,filename):
 		try:
 			prior_tmp[1] = float( tmp[1] )
 		except:
+
 			print "\n\nERROR: Value of the prior for experiment ", self.name[self.nmodels-1], "has the wrong format in" +filename+ "!\n\n"
 			sys.exit()
 
@@ -121,6 +126,7 @@ def process_prior(self, tmp ,filename):
 			prior_tmp[1] = float( tmp[1] )
 			prior_tmp[2] = float( tmp[2] )
 		except:
+
 			print "\n\nERROR: Value of the prior for experiment ", self.name[self.nmodels-1], "has the wrong format in" +filename+ "!\n\n"
 			sys.exit()
 
@@ -130,6 +136,7 @@ def process_prior(self, tmp ,filename):
 			prior_tmp[1] = float( tmp[1] )
 			prior_tmp[2] = float( tmp[2] )
 		except:
+
 			print "\n\nERROR: Value of the prior for experiment ", self.name[self.nmodels-1], "has the wrong format in" +filename+ "!\n\n"
 			sys.exit()
 
@@ -139,6 +146,7 @@ def process_prior(self, tmp ,filename):
 			prior_tmp[1] = float( tmp[1] )
 			prior_tmp[2] = float( tmp[2] )
 		except:
+
 			print "\n\nERROR: Value of the prior for experiment ", self.name[self.nmodels-1], "has the wrong format in" +filename+ "!\n\n"
 			sys.exit()
 
@@ -146,6 +154,7 @@ def process_prior(self, tmp ,filename):
 		prior_tmp[0] = 4
 
 	else:
+
 		print "\n\nERROR: Supplied parameter prior  in", filename , tmp[0], " is unsupported!\n\n"
 		sys.exit()
 
@@ -299,6 +308,7 @@ class algorithm_info:
 		## Required arguments
 
 		### get number of models
+
 		self.modelnumber = parse_required_single_value( xmldoc, "experimentnumber", "\n\nERROR: Please provide an integer value for <experimentnumber> in"+ filename+ "!", int )
 
 		#### gets type of model (ODE/SDE)#####################
@@ -312,9 +322,13 @@ class algorithm_info:
 		### get dt
 		self.dt = parse_required_single_value( xmldoc, "dt", "\n\nERROR: Please provide an float value for <dt> in"+ filename+ "!", float )
 
+		### get beta
+		self.beta = parse_required_single_value( xmldoc, "beta", "\n\nERROR: Please provide an int value for <beta> in"+ filename+ "!", int )
+
 
 		### indetifies data node in input xml file
 		dataref = xmldoc.getElementsByTagName('data')[0]
+
 
 
 		### get timepoints
@@ -323,6 +337,7 @@ class algorithm_info:
 		#### check if times are in ascending order
 
 		### get global number of parameters
+
 		self.nparameters_all = parse_required_single_value(dataref, "nparameters_all", "\n\nERROR: Please provide an integer value for <data><nparameters_all> in"+ filename+ "!", int)
 
 
@@ -347,6 +362,7 @@ class algorithm_info:
 		#### get sizes of N1, N2, N3 and N4 samples
 		nsampleref = xmldoc.getElementsByTagName('nsamples')[0]
 
+
 		self.N1sample = parse_required_single_value( dataref, "N1", "\n\nERROR: Please provide an integer value for <nsamples><N1> in"+ filename+ "!", int )
 		self.N2sample = parse_required_single_value( dataref, "N2", "\n\nERROR: Please provide an integer value for <nsamples><N2> in"+ filename+ "!", int )
 		self.N3sample = parse_required_single_value( dataref, "N3", "\n\nERROR: Please provide an integer value for <nsamples><N3> in"+ filename+ "!", int )
@@ -358,6 +374,7 @@ class algorithm_info:
 
 
 		### get model attributes
+
 		modelref = xmldoc.getElementsByTagName('experiments')[0]
 		for m in modelref.childNodes:
 			if m.nodeType == m.ELEMENT_NODE:
@@ -365,6 +382,7 @@ class algorithm_info:
 				self.prior.append([])
 				self.x0prior.append([])
 				self.compprior.append([])
+
 
 				#### gets name of experiment##################
 				try:
@@ -377,6 +395,7 @@ class algorithm_info:
 				try:
 					self.source.append( str(m.getElementsByTagName('source')[0].firstChild.data).strip() )
 				except:
+
 					print "\n\nERROR: Please provide an string value for <source> for experiment ", self.nmodels, " in ", filename, "!"
 					sys.exit()
 				
@@ -384,6 +403,7 @@ class algorithm_info:
 				try:
 					self.cuda.append( str(m.getElementsByTagName('cuda')[0].firstChild.data).strip() )
 				except:
+
 					print "\n\nERROR: Please provide an string value for <cuda> for experiment ", self.nmodels, " in ", filename, "!"
 					sys.exit()
 				
@@ -399,6 +419,7 @@ class algorithm_info:
 							ncompparam += 1
 							prior_tmp = [0,0,0]
 							tmp = str( p.firstChild.data ).split()
+
 							self.compprior[self.nmodels-1].append( process_prior(self, tmp ,filename) )
 				except:
 					ncompparam = 0
@@ -410,6 +431,7 @@ class algorithm_info:
 						nparameter += 1
 						prior_tmp = [0,0,0]
 						tmp = str( p.firstChild.data ).split()
+
 						self.prior[self.nmodels-1].append( process_prior(self, tmp, filename) )
 
 
@@ -421,6 +443,7 @@ class algorithm_info:
 						ninit += 1
 						prior_tmp = [0,0,0]
 						tmp = str( inn.firstChild.data ).split()
+
 						self.x0prior[self.nmodels-1].append( process_prior(self, tmp, filename) )
 
 
@@ -433,6 +456,7 @@ class algorithm_info:
 
 				#### Error checking for parameter prior, initial condtion prior and measurable species
 				if nparameter == 0:
+
 					print "\n\nERROR: No parameters specified in experiment ", self.nmodels, " in ", filename, "!"
 					sys.exit()
 				if ninit == 0:
@@ -448,6 +472,7 @@ class algorithm_info:
 
 
 		if self.nmodels == 0:
+
 			print "\n\nERROR: No experiments specified in "+ filename+ "!"
 			sys.exit()
 
@@ -475,6 +500,7 @@ class algorithm_info:
 		try:
 			self.param_fit =( parse_fitting_information_parameters('paramfit', dataref, 'parameter' ,self.nparameters_all )  )
 		except:
+
 			print "\n\nERROR: Parameters to be fitted are not defined properly in <paramfit> ... </paramfit> in" +filename+ "!"
 			sys.exit()
 		###
@@ -483,6 +509,7 @@ class algorithm_info:
 		try:
 			self.init_fit =( parse_fitting_information_parameters('initfit', dataref, 'initial' ,self.nspecies_all )  )
 		except:
+
 			print "\n\nERROR: Initial conditions to be fitted are not defined properly in <initfit> ... </initfit> in" +filename+ "!"
 			sys.exit()
 		###
@@ -491,6 +518,7 @@ class algorithm_info:
 		try:
 			self.comp_fit=( parse_fitting_information_parameters('compfit', dataref, 'compartment' ,self.ncompparams_all )  )
 		except:
+
 			print "\n\nERROR: Compartments to be fitted are not defined properly in <compfit> ... </compfit> in" +filename+ "!"
 			sys.exit()
 		###
@@ -498,6 +526,7 @@ class algorithm_info:
 	# A method which prints out details about the models/experiments defined in the object
 	def print_info(self):
 		print "\nALGORITHM INFO"
+
 		print "experimentnumber:", self.modelnumber
 		print "samples:", self.particles
 		print "dt:", self.dt
@@ -522,6 +551,7 @@ class algorithm_info:
 
 
 		print "times:", self.times
+
 
 
 		print "EXPERIMENTS:", self.nmodels
@@ -1189,3 +1219,103 @@ class algorithm_info:
 		if refmod.ncompparams_all > 0:	
 			self.compsSample = numpy.concatenate((refmod.compsSample[:self.N1sample+self.N2sample,:],refmod.N4compsSample),axis = 0)
 
+
+	def sort_mu_covariance(self,cuda_order,covariance_matricies,nspecies):
+		self.mus = [""]*self.nmodels
+		self.covariances = [""]*self.nmodels
+
+		if self.analysisType == 1:
+			Nparticles = self.N1sample+self.N2sample+self.N1sample*self.N3sample
+		else:
+			Nparticles = self.particles
+
+		if self.initialprior == False:
+			x0priors = [[y[1] for y in x] for x in self.x0prior]
+			for p, cuda in enumerate(self.cuda):
+				which_cuda = cuda_order.index(cuda)
+				which_IC = self.pairParamsICS[cuda].index(x0priors[p])
+				covariance_matrix = covariance_matricies[which_cuda][which_IC*Nparticles:(which_IC+1)*Nparticles,:,:]
+				
+				nparams = covariance_matrix.shape[0]
+				ntimes = covariance_matrix.shape[1]
+				ncov = covariance_matrix.shape[2]-nspecies
+
+				mus = covariance_matrix[:,:,0:nspecies]
+				variances_old = covariance_matrix[:,:,nspecies:]
+
+				covariances = numpy.zeros((nparams,ntimes*nspecies,nspecies))
+
+				for param in range(0,nparams):
+					count_1 = -1
+					for time in range(0,ntimes):
+						count_1 += 1
+						count_2 = -nspecies
+						for i in range(0, nspecies):
+							count_2 += nspecies-i
+							for j in range(i, nspecies):
+								if i == j:
+									covariances[param,i+count_1*nspecies,j] = variances_old[param, time, count_2 + j]
+								else:
+									covariances[param,i+count_1*nspecies,j] = variances_old[param, time, count_2 + j]
+									covariances[param,j+count_1*nspecies,i] = variances_old[param, time, count_2 + j]
+
+				self.mus[p] = mus
+				self.covariances[p] = covariances
+		
+		else:
+			for p, cuda in enumerate(self.cuda):
+				which_cuda = cuda_order.index(cuda)
+				covariance_matrix = covariance_matricies[which_cuda]
+				
+				nparams = covariance_matrix.shape[0]
+				ntimes = covariance_matrix.shape[1]
+				ncov = covariance_matrix.shape[2]-nspecies
+
+				mus = covariance_matrix[:,:,0:nspecies]
+				variances_old = covariance_matrix[:,:,nspecies:]
+
+				covariances = numpy.zeros((nparams,ntimes*nspecies,nspecies))
+
+				for param in range(0,nparams):
+					count_1 = -1
+					for time in range(0,ntimes):
+						count_1 += 1
+						count_2 = -nspecies
+						for i in range(0, nspecies):
+							count_2 += nspecies-i
+							for j in range(i, nspecies):
+								if i == j:
+									covariances[param,i+count_1*nspecies,j] = variances_old[param, time, count_2 + j]
+								else:
+									covariances[param,i+count_1*nspecies,j] = variances_old[param, time, count_2 + j]
+									covariances[param,j+count_1*nspecies,i] = variances_old[param, time, count_2 + j]
+
+				self.mus[p] = mus
+				self.covariances[p] = covariances
+
+		print [x.shape for x in self.mus]
+		print "----------"
+		print [x.shape for x in covariances]
+
+	def measured_species(self):
+		self.B=[""]*self.nmodels
+		for i in range(0,self.nmodels):
+			fits = self.fitSpecies[i]
+			for count, j in enumerate(fits):
+				temp = numpy.zeros((self.nspecies_all))
+				if len(j) == 1:
+					temp[j[0]] += 1.0
+				else:
+					temp[j[0]] += 1.0
+					for pos, x in enumerate(j[1::2]):
+						if x=="+":
+							temp[j[1:][pos+1]] += 1.0
+						elif x=="-":
+							temp[j[1:][pos+1]] -= 1.0
+
+				if count == 0:
+					B = temp
+				else:
+					B = numpy.vstack((B,temp))
+
+			self.B[i]=B

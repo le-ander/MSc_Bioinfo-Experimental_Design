@@ -18,3 +18,4 @@ setup(name='peitho',
 		'console_scripts': ['peitho=peitho.main.main:main']
 		},
 	zip_safe=False)
+
