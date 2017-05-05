@@ -161,7 +161,7 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 	print "Block shape:", str(block_i)+"x"+str(block_j)
 
 	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
-	grid_prelim_i , grid_prelim_j = launch.optimise_gridsize(1, block_i, block_j, T, S)
+	grid_prelim_i , grid_prelim_j = launch.optimise_gridsize_ode(1, block_i, block_j, T, S)
 	grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i, N1))
 	grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j, N2))
 	print "Grid shape:", str(grid_i)+"x"+str(grid_j)
@@ -272,7 +272,7 @@ def mutInfo2(data,theta,N1,N2,N3,sigma,scale):
 	print "Block shape:", str(block)+"x1.0"
 
 	# Launch configuration: 1D Grid size (limited by GPU global memory and max grid size of GPU)
-	grid_prelim = launch.optimise_gridsize(2, block_i, block_j, T, S)[0]
+	grid_prelim = launch.optimise_gridsize_ode(2, block_i, block_j, T, S)[0]
 	grid = float(min(autoinit.device.max_grid_dim_x, grid_prelim, N3))
 	print "Grid shape:", str(grid_i)+"x1.0"
 	print "Registers:", gpu_kernel_func2.num_regs, "\n"
