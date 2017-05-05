@@ -2,8 +2,10 @@ import sys, os, libsbml
 sys.path.insert(1, '../abc-sysbio')
 import means
 import numpy as np
-import ODECUDAWriter_SDE
-import abcsysbio_parser.ParseAndWrite
+import peitho.errors_and_parsers.sde_parser.ODECUDAWriter_SDE as ODECUDAWriter_SDE
+#import abcsysbio_parser.ParseAndWrite
+import peitho.errors_and_parsers.abc_sysbio.abcsysbio_parser.ParseAndWrite as ParseAndWrite
+
 
 
 def LNA_CUDAWriter(infiles,inpath="",outpath=""):
