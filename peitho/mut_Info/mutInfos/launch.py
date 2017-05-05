@@ -10,12 +10,12 @@ def odd_num(x):
 		x = x >> 1
 	return asarray(temp).astype(int32)
 
-# A function to find the next lowest number from num that is a multiple of divisor
+# A helper function to find the next lowest number from num that is a multiple of divisor
 def round_down(num, divisor):
 	return num - (num%divisor)
 
 
-# A function to find the next highest number from num that is a multiple of divisor
+# A helper function to find the next highest number from num that is a multiple of divisor
 def round_up(num, divisor):
 	if num%divisor == 0:
 		return num
@@ -23,11 +23,24 @@ def round_up(num, divisor):
 		return num - (num%divisor) + divisor
 
 
-# A function to find the divisor R of number N that closest to and smaller than sqrt(N)
+# A helper function to find the divisor R of number N that closest to and smaller than sqrt(N)
 def factor_partial(N):
 	for R in range(int(sqrt(N)),1,-1):
 		if N%R == 0:
 			return float(R)
+
+#A helper function to find the prime factors of 'n'
+def pFactors(n):
+	from math import sqrt
+	pFact, limit, check, num = [], int(sqrt(n)) + 1, 2, n
+	if n == 1: return [1]
+	for check in range(2, limit):
+		while num % check == 0:
+			pFact.append(check)
+			num /= check
+	if num > 1:
+		pFact.append(num)
+	return pFact
 
 
 # A funtion to determine total number of threads limited by global memory
@@ -37,11 +50,11 @@ def factor_partial(N):
 ##bx, by - Block x-, and y-dimensions
 ##T_Mod, S_Mod - Number of timepoints and species for the proposed experiments
 ##T_Ref=0, S_Ref=0 - Number of timepoints and species for the reference experiment. (Only provide for gpu_kernel_func3)
-def optimise_gridsize(kernel_no, bx, by, T_Mod, S_Mod, T_Ref=0, S_Ref=0):
+def optimise_gridsize_ode(kernel_no, bx, by, T_Mod, S_Mod, T_Ref=0, S_Ref=0):
 	avail_mem = 0.95 * driver.mem_get_info()[0]
 	if kernel_no == 1 or kernel_no == 3:
 		a = 8/bx
-		b = 8 * (1 + by/bx) * (T_Mod*S_Mod + T_Ref*S_Mod)
+		b = 8 * (1 + by/bx) * (T_Mod*S_Mod + T_Ref*S_Ref)
 		c = 250 - avail_mem
 
 		x_pre = (-b + sqrt(pow(b,2)-4*a*c))/(2*a)
@@ -54,6 +67,30 @@ def optimise_gridsize(kernel_no, bx, by, T_Mod, S_Mod, T_Ref=0, S_Ref=0):
 	y = round_down(y_pre, by)
 
 	return x, y
+
+# A funtion to determine total number of threads limited by global memory
+##Attention: user needs to manually check that max grid dimensions are not exceeded
+##Arguments:
+##kernel_no - Which of the three gpu_kernel_func is this launch configuration for (data_gpu=1,theta_gpu=2,cov_gpu=3)?
+##bx, by - Block x-, and y-dimensions
+##T, S, A - Number of timepoints, species and fitted species for the proposed experiments
+def optimise_gridsize_trans(kernel_no, bx, by, T, S, A):
+	avail_mem = 0.95 * driver.mem_get_info()[0]
+	if kernel_no == 1:
+		x_pre = sqrt( (bx*(avail_mem-(4*S*A)) / (8*T*(S+A)*by)) )
+		y_pre = (by/bx)*x_pre
+	elif kernel_no == 2:
+		x_pre = (avail_mem-(4*S*A)) / (8*T*(S+A))
+		y_pre = 1
+	elif kernel_no == 3:
+		x_pre = sqrt( (bx*(avail_mem-(4*S*A)) / (8*(A*A+S*S+A*S)*by)) )
+		y_pre = (by/bx)*x_pre
+
+	x = round_down(x_pre, bx)
+	y = round_down(y_pre, by)
+	xy = x_pre*y_pre
+
+	return x, y, xy
 
 
 # A function to calculate the minumum blocksize that achieves maximum occupancy of the GPU and hence minimises runtime

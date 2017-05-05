@@ -6,7 +6,8 @@ from pycuda import autoinit
 import sys
 import operator
 
-from mutInfos import launch
+#from mutInfos import launch
+from peitho.mut_Info.mutInfos import launch
 
 
 random.seed(123)

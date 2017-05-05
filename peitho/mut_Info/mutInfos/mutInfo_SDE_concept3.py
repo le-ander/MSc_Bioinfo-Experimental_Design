@@ -4,8 +4,8 @@ from pycuda import compiler, driver
 from pycuda import autoinit
 
 import sys
-
-from mutInfos import launch
+from peitho.mut_Info.mutInfos import launch
+#from mutInfos import launch
 import copy
 
 
