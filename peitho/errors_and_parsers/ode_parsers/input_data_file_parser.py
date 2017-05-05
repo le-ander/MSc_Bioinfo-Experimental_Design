@@ -429,7 +429,7 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 						comb.append([h,i,j])
 		else:
 			try:
-				comb = [[int(j)-1 for j in re.search(r'initset(\d+) paramexp(\d+) fit(\d+)', i).group(1,2,3)] for i in comb_list]
+				comb = [[int(j)-1 for j in re.search(r'initset(\d+) paramexp(\d+) measured(\d+)', i).group(1,2,3)] for i in comb_list]
 			except:
 
 				print "\n\nERROR: Combinations of initial conditions, parameter changes and species fit defining an experiment are not in the right format: >combination .... <combination in input data file " + dataname +"!\n\n"
