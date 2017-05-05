@@ -221,7 +221,8 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 				print "\n\nERROR: N3 and N4 must be of size 0: >nsample ... <nsample in input data file " + dataname +"!\n\n"
 				sys.exit()
 			elif nsample[0]+nsample[1]!=particles:
-				print "\n\nERROR: Sum of samples N1 and N2 is not equal to number of particle: >nsample ... <nsample in input data file " + dataname +"!\n\n"				sys.exit()
+				print "\n\nERROR: Sum of samples N1 and N2 is not equal to number of particle: >nsample ... <nsample in input data file " + dataname +"!\n\n"
+				sys.exit()
 
 		elif analysis_type == 1:
 			if nsample[0]==0 or nsample[1]==0 or nsample[2]==0:
