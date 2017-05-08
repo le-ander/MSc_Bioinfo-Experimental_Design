@@ -71,6 +71,31 @@ def optimise_gridsize_ode(kernel_no, bx, by, T_Mod, S_Mod, T_Ref=0, S_Ref=0):
 # A funtion to determine total number of threads limited by global memory
 ##Attention: user needs to manually check that max grid dimensions are not exceeded
 ##Arguments:
+##kernel_no - Which of the three gpu_kernel_func is this launch configuration for (1,2,3)?
+##bx, by, bz - Block x-, y-, and z-dimensions
+##T_Mod, S_Mod - Number of timepoints and species for the proposed experiments
+##T_Ref=0, S_Ref=0 - Number of timepoints and species for the reference experiment. (Only provide for gpu_kernel_func3)
+def optimise_gridsize_sde(kernel_no, bx, by, T_Mod, S_Mod, T_Ref=0, S_Ref=0):
+	avail_mem = 0.95 * driver.mem_get_info()[0]
+	if kernel_no == 1 or kernel_no == 3:
+		a = 8/bx
+		b = 8 * (1 + by/bx) * (T_Mod*S_Mod + T_Ref*S_Ref)
+		c = 250 - avail_mem
+
+		x_pre = (-b + sqrt(pow(b,2)-4*a*c))/(2*a)
+		y_pre = (by/bx)*x_pre
+	else:
+
+
+	x = round_down(x_pre, bx)
+	y = round_down(y_pre, by)
+
+	return x, y
+
+
+# A funtion to determine total number of threads limited by global memory
+##Attention: user needs to manually check that max grid dimensions are not exceeded
+##Arguments:
 ##kernel_no - Which of the three gpu_kernel_func is this launch configuration for (data_gpu=1,theta_gpu=2,cov_gpu=3)?
 ##bx, by - Block x-, and y-dimensions
 ##T, S, A - Number of timepoints, species and fitted species for the proposed experiments

@@ -21,6 +21,7 @@ data_t = random.rand(N1,B,T,S).astype(float64)
 theta_t = random.rand(N1+N3,T,S).astype(float64)
 cov_t = random.rand(N1+N3,S*T,S).astype(float64)
 
+##Check input types!!
 
 
 
@@ -78,6 +79,8 @@ def mutInfo1SDE(data,theta,cov):
 	}
 	"""
 
+	print "-----Preprocessing Data (matrix inversion etc.)-----"
+
 	# Determine number of particles (N1,N3), betas (B), timepoints (T), species (S)
 	N1, B, T, S = data.shape
 	N3 = theta.shape[0] - N1
@@ -91,6 +94,10 @@ def mutInfo1SDE(data,theta,cov):
 
 	# Compile GPU kernel
 	mod = compiler.SourceModule(kernel_code)
+
+	# Reshape theta array to exclude forst N1 particles
+	theta = array(theta)[N1:,:,:]
+	cov = array(cov)[N1:,:,:]
 
 	# Create GPU function handle
 	gpu_kernel_func1SDE = mod.get_function("kernel_func1SDE")
@@ -106,10 +113,12 @@ def mutInfo1SDE(data,theta,cov):
 	##Remove abs() for invdet
 	for i in range(N3):
 		for j in range(T):
-			invcov[i,j*S:(j+1)*S,:] = linalg.inv(cov[i+N1,j*S:(j+1)*S,:])
+			invcov[i,j*S:(j+1)*S,:] = linalg.inv(cov[i,j*S:(j+1)*S,:])
 			invdet[i,j] = abs(linalg.det(invcov[i,j*S:(j+1)*S,:]))
 
 	######################Calculating second log term###########################
+
+	print "-----Determining optimal kernel launch configuration (for part 1/2)-----"
 
 	# Launch configuration: Block size and shape (as close to square as possible)
 	block = launch.optimal_blocksize(autoinit.device, gpu_kernel_func1SDE)
@@ -122,17 +131,24 @@ def mutInfo1SDE(data,theta,cov):
 	print "Optimal blocksize:", block, "threads"
 	print "Block shape:", str(block_i)+"x"+str(block_j)+"x"+str(block_k)
 
-	print primes
-	print block_i, block_j, block_k
-	print block_i * block_j * block_k
-	print gpu_kernel_func1SDE.num_regs
-
 	sys.exit()
+
+	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
+	grid_prelim_i , grid_prelim_j = launch.optimise_gridsize_sde(1, block_i, block_j, T, S)
+	grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i, N1))
+	grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j, N2))
+	print "Grid shape:", str(grid_i)+"x"+str(grid_j)
+	print "Registers:", gpu_kernel_func1.num_regs , "\n"
+
+	print "-----Calculation part 1 of 2 now running-----"
+
+
+
 
 
 	res1 = zeros((N1,B,N3), dtype=float64)
 
-	gpu_kernel_func1SDE(int32(N1), int32(B), int32(N3), float64(pre), driver.In(invdet), driver.In(data),driver.In(theta[N1:,:,:]), driver.In(invcov),driver.Out(res1), block=(int(8),int(4),int(4)),grid=(int(1),int(1),int(1)))
+	gpu_kernel_func1SDE(int32(N1), int32(B), int32(N3), float64(pre), driver.In(invdet), driver.In(data),driver.In(theta), driver.In(invcov),driver.Out(res1), block=(int(8),int(4),int(4)),grid=(int(1),int(1),int(1)))
 
 	cpu_res = zeros((N1,B,N3), dtype=float64)
 
@@ -140,7 +156,7 @@ def mutInfo1SDE(data,theta,cov):
 		for j in range(B):
 			for k in range(N3):
 				for l in range(T):
-					cpu_res[i,j,k] += pre + log(sqrt(invdet[k,l])) - 0.5 * dot(dot(expand_dims(data[i,j,l,:]-theta[N1+k,l,:],0),invcov[k,l*S:(l+1)*S,:]),expand_dims(data[i,j,l,:]-theta[N1+k,l,:],1))
+					cpu_res[i,j,k] += pre + log(sqrt(invdet[k,l])) - 0.5 * dot(dot(expand_dims(data[i,j,l,:]-theta[k,l,:],0),invcov[k,l*S:(l+1)*S,:]),expand_dims(data[i,j,l,:]-theta[k,l,:],1))
 
 				cpu_res[i,j,k] = exp(cpu_res[i,j,k])
 	print ""
