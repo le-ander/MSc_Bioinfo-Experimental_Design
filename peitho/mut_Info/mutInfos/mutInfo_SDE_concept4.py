@@ -6,8 +6,9 @@ from pycuda import autoinit
 import sys
 import operator
 
-#from mutInfos import launch
-from peitho.mut_Info.mutInfos import launch
+# RESET THIS FOR PACKAGE IMPLEMENTATION!!
+import launch
+#from peitho.mut_Info.mutInfos import launch
 
 
 random.seed(123)
@@ -131,14 +132,15 @@ def mutInfo1SDE(data,theta,cov):
 	print "Optimal blocksize:", block, "threads"
 	print "Block shape:", str(block_i)+"x"+str(block_j)+"x"+str(block_k)
 
-	sys.exit()
 
 	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
-	grid_prelim_i , grid_prelim_j = launch.optimise_gridsize_sde(1, block_i, block_j, T, S)
+	grid_prelim_i , grid_prelim_j, grid_prelim_k = launch.optimise_gridsize_sde(1, float(block_i), float(block_j), float(block_k), T, S)
 	grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i, N1))
-	grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j, N2))
-	print "Grid shape:", str(grid_i)+"x"+str(grid_j)
-	print "Registers:", gpu_kernel_func1.num_regs , "\n"
+	grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j, B))
+	grid_k = float(min(autoinit.device.max_grid_dim_y, grid_prelim_k, N3))
+	print "Grid shape:", str(grid_i)+"x"+str(grid_j)+"x"+str(grid_k)
+	print "Registers:", gpu_kernel_func1SDE.num_regs , "\n"
+	sys.exit()
 
 	print "-----Calculation part 1 of 2 now running-----"
 
