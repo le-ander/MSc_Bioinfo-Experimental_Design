@@ -5,6 +5,7 @@ from pycuda import autoinit
 
 import sys
 import operator
+import copy
 
 # RESET THIS FOR PACKAGE IMPLEMENTATION!!
 import launch
@@ -12,9 +13,9 @@ import launch
 
 
 random.seed(123)
-N1 = 7
-B = 4
-N3 = 4
+N1 = 1200
+B = 600
+N3 = 600
 T = 50
 S = 7
 
@@ -117,7 +118,7 @@ def mutInfo1SDE(data,theta,cov):
 			invcov[i,j*S:(j+1)*S,:] = linalg.inv(cov[i,j*S:(j+1)*S,:])
 			invdet[i,j] = abs(linalg.det(invcov[i,j*S:(j+1)*S,:]))
 
-	######################Calculating second log term###########################
+	#################### Calculating second log term ###########################
 
 	print "-----Determining optimal kernel launch configuration (for part 1/2)-----"
 
@@ -140,13 +141,100 @@ def mutInfo1SDE(data,theta,cov):
 	grid_k = float(min(autoinit.device.max_grid_dim_y, grid_prelim_k, N3))
 	print "Grid shape:", str(grid_i)+"x"+str(grid_j)+"x"+str(grid_k)
 	print "Registers:", gpu_kernel_func1SDE.num_regs , "\n"
-	sys.exit()
 
 	print "-----Calculation part 1 of 2 now running-----"
 
+	# Determine required number of runs for i and j
+	numRuns_i = int(ceil(N1/grid_i))
+	numRuns_j = int(ceil(B/grid_j))
+	numRuns_k = int(ceil(N3/grid_k))
 
+	# Initialise array to hold results of log N3 avarage
+	result = zeros([N1,B], dtype=float64)
 
+	# Create template array for res1
+	try:
+		temp_res1 = zeros([int(grid_i),int(grid_j),int(grid_k)], dtype=float64)
+	except:
+		print "ERROR: Not enought memory (RAM) available to create array for GPU results. Reduce GPU grid size."
+		sys.exit()
 
+	# Maximum number of particles per run in i, j and k direction
+	Ni = int(grid_i)
+
+	# Main nested for-loop for calculation of second log term
+	for i in range(numRuns_i):
+
+		# If last run with less that max remaining particles, set Ni to remaining number of particles
+		if((int(grid_i)*(i+1)) > N1):
+			Ni = int(N1 - grid_i*i)
+
+		# Set i dimension of block and grid for this run
+		if(Ni<block_i):
+			gi = 1
+			bi = Ni
+		else:
+			gi = ceil(Ni/block_i)
+			bi = block_i
+
+		# Maximum number of particles per run in j direction
+		Nj = int(grid_j)
+
+		for j in range(numRuns_j):
+
+			# If last run with less that max remaining particles, set Ni to remaining number of particles
+			if((int(grid_j)*(j+1)) > B):
+				Nj = int(B - grid_j*j)
+
+			# Prepare data that depends on i and j for this run
+			data_subset = ascontiguousarray(data[(i*int(grid_i)):(i*int(grid_i)+Ni),(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]) # d1 subunit for the next k runs
+
+			# Set i dimension of block and grid for this run
+			if(Nj<block_j):
+				gj = 1
+				bj = Nj
+			else:
+				gj = ceil(Nj/block_j)
+				bj = block_j
+
+			# Reset last to "False"
+			last = False
+
+			# Maximum number of particles per run in k direction
+			Nk = int(grid_k)
+
+			for k in range(numRuns_k):
+
+				# If last run with less that max remaining particles, set Nj to remaining number of particles
+				if((int(grid_k)*(k+1)) > N3):
+					Nk = int(N3 - grid_k*k)
+					last = True
+
+				# Prepare input that depends on k for this run
+				theta_subset = theta[(k*int(grid_k)):(k*int(grid_k)+Nk),:,:]
+				invcov_subset = invcov[(k*int(grid_k)):(k*int(grid_k)+Nk),:,:]
+				invdet_subset = invdet[(k*int(grid_k)):(k*int(grid_k)+Nk),:]
+
+				# Set k dimension of block and grid for this run
+				if(Nk<block_k):
+					gk = 1
+					bk = Nk
+				else:
+					gk = ceil(Nk/block_k)
+					bk = block_k
+
+				# Prepare results array for run
+				if last == True:
+					res1 = copy.deepcopy(temp_res1[:Ni,:Nj,:Nk])
+				elif k == 0:
+					res1 = copy.deepcopy(temp_res1[:Ni,:Nj,:Nk])
+
+				# Call GPU kernel function
+				gpu_kernel_func1SDE(int32(Ni), int32(Nj), int32(Nk), float64(pre), driver.In(invdet_subset), driver.In(data_subset),driver.In(theta_subset), driver.In(invcov_subset),driver.Out(res1), block=(int(bi),int(bj),int(bk)),grid=(int(gi),int(gj),int(gk)))
+
+				print res1
+
+	sys.exit()
 
 	res1 = zeros((N1,B,N3), dtype=float64)
 
