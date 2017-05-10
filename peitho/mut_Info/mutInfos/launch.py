@@ -78,20 +78,22 @@ def optimise_gridsize_ode(kernel_no, bx, by, T_Mod, S_Mod, T_Ref=0, S_Ref=0):
 ##T_Ref=0, S_Ref=0 - Number of timepoints and species for the reference experiment. (Only provide for gpu_kernel_func3)
 def optimise_gridsize_sde(kernel_no, bx, by, bz, T_Mod, S_Mod, T_Ref=0, S_Ref=0):
 	avail_mem = 0.95 * driver.mem_get_info()[0]
+
 	if kernel_no == 1:
 		a = 8 * ((by*bz)/(pow(bx,2)))
 		b = 8 * (by/bx) * (T_Mod*S_Mod)
-		c = 8 * (bz/bx) * (1+S_Mod) * (T_Mod*S_Mod)
+		c = 8 * (bz/bx) * (1 + 0.5*S_Mod + 1/(2*S_Mod)) * (T_Mod*S_Mod)
 		d = 8 - avail_mem
 
 		root = roots([a,b,c,d])
 		indices = invert(iscomplex(root))
 
-		x_pre = max(root[indices]).astype(float)
+		x_pre = max(real(root[indices]))
 		y_pre = (by/bx)*x_pre
 		z_pre = (bz/bx)*x_pre
+
 	else:
-		print "UNDIFINED GRIDSIZE FOR THIS KERNEL NUMBER"
+		print "UNDEFINED GRIDSIZE FOR THIS KERNEL NUMBER"
 		return
 
 	x = round_down(x_pre, bx)
