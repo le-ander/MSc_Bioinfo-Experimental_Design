@@ -120,13 +120,9 @@ def mutInfo1(data,theta,N1,N2,sigma,scale):
 	#Initialize array for results
 	result = zeros([N1,numRuns_j])
 
-	# Maximum number of particles per run in i and j direction
-	Ni = int(grid_i)
-	Nj = int(grid_j)
-
 	# Create template array for res1
 	try:
-		temp_res1 = zeros([Ni,int(ceil(Nj/block_j))]).astype(float64)
+		temp_res1 = zeros([Ni,int(ceil(grid_j/block_j))]).astype(float64)
 	except:
 		print "ERROR: Not enought memory (RAM) available to create array for GPU results. Reduce GPU grid size."
 		sys.exit()
@@ -136,6 +132,9 @@ def mutInfo1(data,theta,N1,N2,sigma,scale):
 
 	# Determine 1/2*sigma*sigma for GPU calculation
 	sigmasq_inv = 1/(2*sigma*sigma)
+
+	# Maximum number of particles per run in i and j direction
+	Ni = int(grid_i)
 
 	# Main nested for-loop for mutual information calculations
 	for i in range(numRuns_i):
@@ -194,7 +193,7 @@ def mutInfo1(data,theta,N1,N2,sigma,scale):
 				#print "here2"
 				temp_1 = iterations.size
 
-			# Call GPU kernel functions
+			# Call GPU kernel function
 			gpu_kernel_func1(int32(temp_1), driver.In(iterations),int32(Ni),int32(Nj), int32(T), int32(S), float32(sigmasq_inv), float64(tslogscale), driver.In(data1), driver.In(data2), driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj),1), shared = int(bi*bj*8) )
 
 			# Summing rows in GPU output for this run
@@ -231,7 +230,7 @@ def run_mutInfo1(model_obj,input_SBML):
 	#Initiates list to hold number of infinites
 	MutInfo1_infs = []
 	#Initiates list to hold percentage of infinites
-	MutInfo1_infs_prop = []	
+	MutInfo1_infs_prop = []
 
 	#Cycles through each experiment
 	for experiment in range(model_obj.nmodels):
@@ -248,7 +247,7 @@ def run_mutInfo1(model_obj,input_SBML):
 
 		#Calculates mutual information
 		print "-----Calculating Mutual Information for Experiment", experiment+1, "for", input_SBML,"-----\n"
-		
+
 		## Assign mutual information and number of infinites to lists
 		temp_list=mutInfo1(model_obj.trajectories[experiment],model_obj.cudaout[experiment],N1,N2,model_obj.sigma,model_obj.scale[experiment])
 		MutInfo_lists = [MutInfo1, MutInfo1_infs, MutInfo1_infs_prop]
