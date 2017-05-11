@@ -49,7 +49,7 @@ def mutInfo1SDE(data,theta,cov):
 		return i*S + j;
 	}
 
-	//Function to calculate intemediary probabilities for mutual information calculation
+	//Function to calculate sum multivariate gaussians for second log term
 	__global__ void kernel_func1SDE(int n1, int b, int n3, double pre, float *invdet, double *x, double *mu, float *invcov, double *res1){
 
 		unsigned int ti = threadIdx.x + blockDim.x * blockIdx.x;
@@ -80,7 +80,7 @@ def mutInfo1SDE(data,theta,cov):
 		res1[idx3d(ti,tj,tk,b,n3)] = exp(res1[idx3d(ti,tj,tk,b,n3)]);
 	}
 
-	//Function to calculate intemediary probabilities for mutual information calculation
+	//Function to calculate sum multivariate gaussians for first log term
 	__global__ void kernel_func2SDE(int n1, int b, double pre, float *invdet, double *x, double *mu, float *invcov, double *res1){
 
 		unsigned int ti = threadIdx.x + blockDim.x * blockIdx.x;
@@ -297,7 +297,7 @@ def mutInfo1SDE(data,theta,cov):
 	# Initialise array to hold results of second log term
 	res_log_1 = zeros([N1,B], dtype=float64)
 
-############################HERE
+	############################HERE
 
 	# Create template array for res1
 	try:
