@@ -110,7 +110,7 @@ def mutInfo1SDE(data,theta,cov):
 	}
 	"""
 
-	print "-----Preprocessing Data (matrix inversion etc.)-----"
+	print "\n", "-----Preprocessing Data (matrix inversion etc.)-----", "\n"
 
 	# Determine number of particles (N1,N3), betas (B), timepoints (T), species (S)
 	N1, B, T, S = data.shape
@@ -168,7 +168,7 @@ def mutInfo1SDE(data,theta,cov):
 	print "Grid shape:", str(grid_i)+"x"+str(grid_j)+"x"+str(grid_k)
 	print "Registers:", gpu_kernel_func1SDE.num_regs , "\n"
 
-	print "-----Calculation part 1 of 2 now running-----"
+	print "-----Calculation part 1 of 2 now running-----", "\n"
 
 	# Determine required number of runs for i and j
 	numRuns_i = int(ceil(N1/grid_i))
@@ -354,7 +354,7 @@ def mutInfo1SDE(data,theta,cov):
 				res1 = copy.deepcopy(template_res1[:Ni,:Nj])
 
 			# Call GPU kernel function
-			gpu_kernel_func2SDE(int32(Ni), int32(Nj), float64(pre), driver.In(invdet_subset), driver.In(data_subset),driver.In(theta_subset), driver.In(invcov_subset),driver.Out(res1), block=(int(bi),int(bj)),grid=(int(gi),int(gj)))
+			gpu_kernel_func2SDE(int32(Ni), int32(Nj), float64(pre), driver.In(invdet_subset), driver.In(data_subset),driver.In(theta_subset), driver.In(invcov_subset),driver.Out(res1), block=(int(bi),int(bj),int(1)),grid=(int(gi),int(gj),int(1)))
 
 			# Store in results array
 			res_log_1[i*int(grid_i):i*int(grid_i)+Ni,j*int(grid_j):j*int(grid_j)+Nj] = res1
@@ -362,6 +362,7 @@ def mutInfo1SDE(data,theta,cov):
 	# Calculate final result
 	mutinfo = sum(res_log_1 - res_log_2) / (N1 * B)
 
+	print "\n", "------CPU CALCS RUNNING NOW---------"
 ###############################CPU TEST#########################################
 	cpu_log2 = zeros((N1,B,N3), dtype=float64)
 	cpu_log1 = zeros((N1,B), dtype=float64)
