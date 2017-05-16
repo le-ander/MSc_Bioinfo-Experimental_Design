@@ -1,0 +1,159 @@
+../cudasim/cudasim/Lsoda.py:73: UserWarning: The CUDA compiler succeeded, but said the following:
+kernel.cu(287): warning: variable "ewti" was set but never used
+
+kernel.cu(287): warning: variable "ewti" was set but never used
+
+
+  compiled = pycuda.compiler.SourceModule( _code_, nvcc="nvcc", options=options, no_extern_c=True )
+../cudasim/cudasim/Lsoda.py:82: UserWarning: The CUDA compiler succeeded, but said the following:
+kernel.cu(287): warning: variable "ewti" was set but never used
+
+kernel.cu(287): warning: variable "ewti" was set but never used
+
+
+  compiled = pycuda.compiler.SourceModule( _code_, nvcc="nvcc", options=options, no_extern_c=True)
+Type of Analysis: Prediction for all parameters
+
+Output file destination: results/Repressilator/repr_paper_run1
+
+Input SBML files: 
+	repressilator.xml
+
+Input data files: 
+	repr_paper.data
+
+Input file destination: Example_data/Repressilator
+
+-----Creating SBML files for experiments-----
+-----Creating CUDA code-----
+-----Input XML file-----
+-----Creating object from input XML file-----
+
+ALGORITHM INFO
+modelnumber: 5
+samples: 4600
+dt: 1.0
+parameters: 4
+nspecies: 6
+ncompparams: 1
+sample from posterior: False
+sample file: 
+weight file: 
+parameter fit: [0, 1, 2, 3]
+initial condition fit: []
+compartment fit: []
+initial prior: False
+sigma: 5.0
+N1: 100
+N2: 4500
+N3: 0
+N4: 0
+times: [0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0, 26.0, 28.0, 30.0]
+MODELS: 5
+	npar: 4
+	nspecies: 6
+	ncompparams: 1
+	name: model1
+	source: Exp_1.xml
+	type: ODE
+	fitSpecies: [[0], [1], [2], [3], [4], [5]]
+	init: [[0, 0.0, 0], [0, 1.0, 0], [0, 0.0, 0], [0, 0.0, 0], [0, 0.0, 0], [0, 0.0, 0]]
+	prior: [[2, 1.0, 10.0], [2, 0.0, 20.0], [2, 500.0, 2000.0], [2, 0.0, 10.0]]
+	comp_prior: [[0, 1.0, 0]]
+
+
+	npar: 4
+	nspecies: 6
+	ncompparams: 1
+	name: model2
+	source: Exp_2.xml
+	type: ODE
+	fitSpecies: [[0], [1], [2], [3], [4], [5]]
+	init: [[0, 0.0, 0], [0, 1.0, 0], [0, 0.0, 0], [0, 0.0, 0], [0, 0.0, 0], [0, 0.0, 0]]
+	prior: [[2, 1.0, 10.0], [2, 0.0, 20.0], [2, 500.0, 2000.0], [2, 0.0, 10.0]]
+	comp_prior: [[0, 1.0, 0]]
+
+
+	npar: 4
+	nspecies: 6
+	ncompparams: 1
+	name: model3
+	source: Exp_3.xml
+	type: ODE
+	fitSpecies: [[0], [1], [2], [3], [4], [5]]
+	init: [[0, 0.0, 0], [0, 1.0, 0], [0, 0.0, 0], [0, 0.0, 0], [0, 0.0, 0], [0, 0.0, 0]]
+	prior: [[2, 1.0, 10.0], [2, 0.0, 20.0], [2, 500.0, 2000.0], [2, 0.0, 10.0]]
+	comp_prior: [[0, 1.0, 0]]
+
+
+	npar: 4
+	nspecies: 6
+	ncompparams: 1
+	name: model4
+	source: Exp_4.xml
+	type: ODE
+	fitSpecies: [[0], [1], [2], [3], [4], [5]]
+	init: [[0, 0.0, 0], [0, 1.0, 0], [0, 0.0, 0], [0, 0.0, 0], [0, 0.0, 0], [0, 0.0, 0]]
+	prior: [[2, 1.0, 10.0], [2, 0.0, 20.0], [2, 500.0, 2000.0], [2, 0.0, 10.0]]
+	comp_prior: [[0, 1.0, 0]]
+
+
+	npar: 4
+	nspecies: 6
+	ncompparams: 1
+	name: model5
+	source: Exp_5.xml
+	type: ODE
+	fitSpecies: [[0], [1], [2], [3], [4], [5]]
+	init: [[0, 0.0, 0], [0, 1.0, 0], [0, 0.0, 0], [0, 0.0, 0], [0, 0.0, 0], [0, 0.0, 0]]
+	prior: [[2, 1.0, 10.0], [2, 0.0, 20.0], [2, 500.0, 2000.0], [2, 0.0, 10.0]]
+	comp_prior: [[0, 1.0, 0]]
+
+
+None
+-----Sampling from prior-----
+-----Running CUDA-Sim-----
+cuda-sim: Using device 0
+cuda-sim: GPU blocks / threads / running time: 64 72 1.3658 s
+cuda-sim: GPU blocks / threads / running time: 64 72 1.3301 s
+cuda-sim: GPU blocks / threads / running time: 64 72 1.2756 s
+cuda-sim: GPU blocks / threads / running time: 64 72 1.2747 s
+cuda-sim: GPU blocks / threads / running time: 64 72 1.2819 s
+cuda-sim: total running time: 6.5282 s
+-----Sorting NaNs from CUDA-Sim output-----
+-----Sorting out measurable species-----
+-----Adding noise to CUDA-Sim outputs-----
+-----Calculating scaling factor-----
+-----Calculating Mutual Information for Experiment 1 -----
+Detected compute capability of device: 2.0
+Theoretically achieved GPU occupancy: 70.8333333333 %
+Optimal blocksize: 544.0 threads
+Block shape: 17.0x32.0
+Maximum gridsize: 648171257.0 threads
+Grid shape: 100.0x65535.0
+Registers: 28
+Runs left: 1
+Traceback (most recent call last):
+  File "main_1.py", line 231, in <module>
+    main()
+  File "main_1.py", line 49, in main
+    sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, input_file_data = input_file_datas[count])
+  File "main_1.py", line 213, in sorting_files
+    MutInfo1=getEntropy1.run_getEntropy1(sbml_obj)
+  File "../mutualInfo/getEntropy1.py", line 249, in run_getEntropy1
+    MutInfo1.append(getEntropy1(model_obj.trajectories[experiment],model_obj.cudaout[experiment],N1,N2,model_obj.sigma,model_obj.scale[experiment]))
+  File "../mutualInfo/getEntropy1.py", line 208, in getEntropy1
+    dist_gpu1(int32(temp_1), driver.In(iterations),int32(Ni),int32(Nj), int32(M), int32(P), float32(sigmasq_inv), float64(mplogscale), driver.In(data1), driver.In(data2), driver.Out(res1), block=(int(bi),int(bj),1), grid=(int(gi),int(gj),1), shared = 3000 )
+  File "/cluster/home/jm2716/work/localpackages/pycuda_2016_1-2/cuda_v_75/lib/python/pycuda-2016.1.2-py2.7-linux-x86_64.egg/pycuda/driver.py", line 405, in function_call
+    Context.synchronize()
+pycuda._driver.LogicError: cuCtxSynchronize failed: an illegal memory access was encountered
+PyCUDA WARNING: a clean-up operation failed (dead context maybe?)
+cuMemFree failed: an illegal memory access was encountered
+PyCUDA WARNING: a clean-up operation failed (dead context maybe?)
+cuMemFree failed: an illegal memory access was encountered
+PyCUDA WARNING: a clean-up operation failed (dead context maybe?)
+cuMemFree failed: an illegal memory access was encountered
+PyCUDA WARNING: a clean-up operation failed (dead context maybe?)
+cuMemFree failed: an illegal memory access was encountered
+PyCUDA WARNING: a clean-up operation failed (dead context maybe?)
+cuModuleUnload failed: an illegal memory access was encountered

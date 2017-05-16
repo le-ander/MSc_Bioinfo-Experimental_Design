@@ -1,0 +1,87 @@
+>dt
+1
+<dt
+
+>particles
+100
+<particles
+
+>nsample
+10 90 0 0
+<nsample
+
+>sigma
+5.0
+<sigma
+
+>timepoint
+0.0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30
+<timepoint
+
+>samplefromposterior
+False
+data_2.txt
+w_1.txt
+<samplefromposterior
+
+>initprior
+False
+<initprior
+
+>prior
+uniform 500 2000
+uniform 1 10
+uniform 0 10
+uniform 0 20
+<prior
+
+>initials
+constant 0
+constant 1
+constant 0
+constant 0
+constant 0
+constant 0
+<initials
+
+>compartment
+None
+<compartment
+
+>fit
+All
+<fit
+
+>paramfit
+All
+<paramfit
+
+>initialfit
+None
+<initialfit
+
+>compfit
+None
+<compfit
+
+>Initial Conditions 1
+Unchanged
+<Initial Conditions 1
+
+>Initial Conditions 2
+constant 2
+constant 3
+constant 4
+constant 5
+constant 6
+constant 7
+<Initial Conditions 2
+
+>Parameter - Experiment 1
+Unchanged
+<Parameter - Experiment 1
+
+>combination
+initset2 paramexp1 fit1
+<combination
+
