@@ -11,13 +11,13 @@ import copy
 import launch
 #from peitho.mut_Info.mutInfos import launch
 
-
+## REMOVE SEED
 random.seed(123)
-N1 = 4
-B = 2
-N3 = 3
-T = 17
-S = 7
+N1 = 43
+B = 159
+N3 = 37
+T = 3
+S = 3
 
 data_t = random.rand(N1,B,T,S).astype(float64)
 theta_t = random.rand(N1+N3,T,S).astype(float64)
@@ -153,9 +153,9 @@ def mutInfo1SDE(data,theta,cov):
 	primes = launch.pFactors(block)
 	l1 = int(len(primes)/3)
 	l2 = int(len(primes)- 2*l1)
-	block_i = reduce(operator.mul, primes[:l2])
-	block_j = reduce(operator.mul, primes[l2:l2+l1])
-	block_k = reduce(operator.mul, primes[l2+l1:l2+2*l1])
+	block_i = float(reduce(operator.mul, primes[:l2]))
+	block_j = float(reduce(operator.mul, primes[l2:l2+l1]))
+	block_k = float(reduce(operator.mul, primes[l2+l1:l2+2*l1]))
 	print "Optimal blocksize:", block, "threads"
 	print "Block shape:", str(block_i)+"x"+str(block_j)+"x"+str(block_k)
 
@@ -361,7 +361,7 @@ def mutInfo1SDE(data,theta,cov):
 
 	# Calculate final result
 	mutinfo = sum(res_log_1 - res_log_2) / (N1 * B)
-
+	print mutinfo
 	print "\n", "------CPU CALCS RUNNING NOW---------"
 ###############################CPU TEST#########################################
 	cpu_log2 = zeros((N1,B,N3), dtype=float64)
