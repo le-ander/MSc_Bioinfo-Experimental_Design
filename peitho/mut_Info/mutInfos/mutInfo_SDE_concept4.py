@@ -7,9 +7,7 @@ import sys
 import operator
 import copy
 
-# RESET THIS FOR PACKAGE IMPLEMENTATION!!
-import launch
-#from peitho.mut_Info.mutInfos import launch
+from peitho.mut_Info.mutInfos import launch
 
 ## REMOVE SEED
 random.seed(123)
