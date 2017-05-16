@@ -106,10 +106,6 @@ beta 0.1 10
 <Parameter - Experiment 5
 
 >combination
-initset1 paramexp1 fit1
-initset1 paramexp2 fit1
-initset1 paramexp3 fit1
-initset1 paramexp4 fit1
 initset1 paramexp5 fit1
 <combination
 
