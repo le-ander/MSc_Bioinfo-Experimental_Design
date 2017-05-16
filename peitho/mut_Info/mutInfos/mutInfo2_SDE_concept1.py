@@ -28,15 +28,9 @@ cov_t = random.rand(N1+N3+N1*N4,S*T,S).astype(float64)
 
 
 
-def mutInfo1SDE(data,theta,cov,N4):
+def mutInfo2SDE(data,theta,cov,N4):
 
 	kernel_code_template = """
-
-	//Function to index 4-dimensional flattened arrays
-	__device__ unsigned int idx4d(int i, int j, int k, int l, int m, int N, int B, int T, int S)
-	{
-		return i*N*B*T*S + j*B*T*S + k*T*S + l*S + m;
-	}
 
 	//Function to index 4-dimensional flattened arrays
 	__device__ unsigned int idx4d(int i, int j, int k, int l, int B, int T, int S)
@@ -88,18 +82,17 @@ def mutInfo1SDE(data,theta,cov,N4):
 	}
 
 	//Function to calculate sum multivariate gaussians for first log term
-__global__ void kernel_func3SDE(int n1, int b, int n4, double pre, float *invdet, double *x, double *mu, float *invcov, double *res1){
+	__global__ void kernel_func3SDE(int b, int n4, double pre, float *invdet, double *x, double *mu, float *invcov, double *res1){
 
 		unsigned int ti = threadIdx.x + blockDim.x * blockIdx.x;
 		unsigned int tj = threadIdx.y + blockDim.y * blockIdx.y;
-		unsigned int tk = threadIdx.z + blockDim.z * blockIdx.z;
 
-		if((ti>=n1)||(tj>=b)||(tk>=n4)) return;
+		if((ti>=b)||(tj>=n4)) return;
 
 		double vector1[%(ST)s] = {0.0};
 		double vector2[%(T)s] = {0.0};
 
-		res1[idx3d(ti,tj,tk,b,n4)] = 0.0;
+		res1[idx2d(ti,tj,n4)] = 0.0;
 
 		for(int t=0; t<%(T)s; t++){
 
@@ -109,13 +102,13 @@ __global__ void kernel_func3SDE(int n1, int b, int n4, double pre, float *invdet
 
 				for(int s_j=0; s_j<%(S)s; s_j++){
 
-					vector1[idx2d(t,s_i,%(S)s)] += (x[idx4d(ti,tj,t,s_j,b,%(T)s,%(S)s)] - mu[idx4d(ti,tk,t,s_j,n4,%(T)s,%(S)s)]) * invcov[idx5d(ti,tk,t,s_j,s_i,n4,%(T)s,%(S)s,%(S)s)];
+					vector1[idx2d(t,s_i,%(S)s)] += (x[idx3d(ti,t,s_j,%(T)s,%(S)s)] - mu[idx3d(tj,t,s_j,%(T)s,%(S)s)]) * invcov[idx4d(tj,t,s_j,s_i,%(T)s,%(S)s,%(S)s)];
 				}
-				vector2[t] += vector1[idx2d(t,s_i,%(S)s)] * (x[idx4d(ti,tj,t,s_i,b,%(T)s,%(S)s)] - mu[idx4d(ti,tk,t,s_i,n4,%(T)s,%(S)s)]);
+				vector2[t] += vector1[idx2d(t,s_i,%(S)s)] * (x[idx3d(ti,t,s_i,%(T)s,%(S)s)] - mu[idx3d(tj,t,s_i,%(T)s,%(S)s)]);
 			}
-			res1[idx3d(ti,tj,tk,b,n4)] += log(sqrtf(invdet[idx2d(tk,t,%(T)s)])) - 0.5 * vector2[t] + pre;
+			res1[idx2d(ti,tj,n4)] += log(sqrtf(invdet[idx2d(ti,t,%(T)s)])) - 0.5 * vector2[t] + pre;
 		}
-		res1[idx3d(ti,tj,tk,b,n4)] = exp(res1[idx3d(ti,tj,tk,b,n4)]);
+		res1[idx2d(ti,tj,n4)] = exp(res1[idx2d(ti,tj,n4)]);
 	}
 	"""
 
@@ -163,9 +156,9 @@ __global__ void kernel_func3SDE(int n1, int b, int n4, double pre, float *invdet
 	primes = launch.pFactors(block)
 	l1 = int(len(primes)/3)
 	l2 = int(len(primes)- 2*l1)
-	block_i = reduce(operator.mul, primes[:l2])
-	block_j = reduce(operator.mul, primes[l2:l2+l1])
-	block_k = reduce(operator.mul, primes[l2+l1:l2+2*l1])
+	block_i = float(reduce(operator.mul, primes[:l2]))
+	block_j = float(reduce(operator.mul, primes[l2:l2+l1]))
+	block_k = float(reduce(operator.mul, primes[l2+l1:l2+2*l1]))
 	print "Optimal blocksize:", block, "threads"
 	print "Block shape:", str(block_i)+"x"+str(block_j)+"x"+str(block_k)
 
@@ -278,3 +271,7 @@ __global__ void kernel_func3SDE(int n1, int b, int n4, double pre, float *invdet
 	#################### Calculating first log term ###########################
 
 	print "-----Determining optimal kernel launch configuration (for part 2/2)-----"
+
+
+
+mutInfo2SDE(data_t,theta_t,cov_t, N4)
