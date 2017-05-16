@@ -56,7 +56,7 @@ def main():
 		#If statment between whether SBML or local code used as requires two different workflows
 		#Reference model
 		if usesbml[0] == True:
-			random.seed(123) #NEED TO REMOVE SEED
+			#random.seed(123) #NEED TO REMOVE SEED
 			ref_model = sorting_files(input_file_SBMLs[0],analysis,fname,usesbml[0], iname, input_file_data = input_file_datas[count])
 			count += 1
 		else:
@@ -64,7 +64,7 @@ def main():
 
 		#Not reference models
 		for i in range(1,len(input_file_SBMLs)):
-			random.seed(123) #NEED TO REMOVE SEED
+			#random.seed(123) #NEED TO REMOVE SEED
 			#If statment between whether SBML or local code used as requires two different workflows
 			if usesbml[i] == True:
 				sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, refmod = ref_model,input_file_data = input_file_datas[count])
@@ -210,16 +210,19 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, refmod="", i
 	#####
 
 	if sbml_obj.analysisType == 0:
-		MutInfo1=getEntropy1.run_getEntropy1(sbml_obj)
-		plotbar.plotbar(MutInfo1, sbml_obj.name ,sbml_obj.nmodels ,0,fname)
+		MutInfo=getEntropy1.run_getEntropy1(sbml_obj)
+		plotbar.plotbar(MutInfo, sbml_obj.name ,sbml_obj.nmodels ,0,fname)
 	elif sbml_obj.analysisType == 1:
-		MutInfo2=getEntropy2.run_getEntropy2(sbml_obj)
-		plotbar.plotbar(MutInfo2, sbml_obj.name ,sbml_obj.nmodels ,1,fname)
+		MutInfo=getEntropy2.run_getEntropy2(sbml_obj)
+		plotbar.plotbar(MutInfo, sbml_obj.name ,sbml_obj.nmodels ,1,fname)
 	elif sbml_obj.analysisType == 2 and refmod == "":
 		return sbml_obj
 	elif sbml_obj.analysisType == 2 and refmod != "":
-		getEntropy3.run_getEntropy3(sbml_obj, refmod)
+		MutInfo=getEntropy3.run_getEntropy3(sbml_obj, refmod)
 
+	mutual_infos = open(fname+"/"+"MUTINFO","a")
+	for MUT in MutInfo:
+		mutual_infos.write(str(MUT)+"\n")
 	## End timing for mutual information calculation
 	time2=time.time()
 	#####
