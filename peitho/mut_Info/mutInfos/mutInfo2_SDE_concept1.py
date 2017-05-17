@@ -270,6 +270,143 @@ def mutInfo2SDE(data,theta,cov,N4):
 
 	print "-----Determining optimal kernel launch configuration (for part 2/2)-----"
 
+	# Launch configuration: Block size and shape (as close to square as possible)
+	block = launch.optimal_blocksize(autoinit.device, gpu_kernel_func3SDE)
+	block_i = launch.factor_partial(block)
+	block_j = block / block_i
+	print "Optimal blocksize:", block, "threads"
+	print "Block shape:", str(block_i)+"x"+str(block_j)
+
+	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
+	grid_prelim_i , grid_prelim_j = launch.optimise_gridsize_sde(3, block_i, block_j, 0, T, S)[0:2]
+	grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i, B))
+	grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j, N4))
+	print "Grid shape:", str(grid_i)+"x"+str(grid_j)
+	print "Registers:", gpu_kernel_func1SDE.num_regs , "\n"
+
+	print "-----Calculation part 2 of 2 now running-----"
+
+	# Determine required number of runs for i and j
+	numRuns_i = int(ceil(B/grid_i))
+	numRuns_j = int(ceil(N4/grid_j))
+
+	# Initialise array to hold results of log N3 avarage
+	res_log_1 = zeros([N1,B], dtype=float64)
+
+	# Create template array for res1
+	try:
+		template_res1 = zeros([int(grid_i),int(grid_j)], dtype=float64)
+	except:
+		print "ERROR: Not enought memory (RAM) available to create array for GPU results. Reduce GPU grid size."
+		sys.exit()
+
+	# Maximum number of particles per run in i, j and k direction
+	Ni = int(grid_i)
+
+	# Main nested for-loop for calculation of second log term
+	for n in range(N1):
+
+		for i in range(numRuns_i):
+
+			# If last run with less that max remaining particles, set Ni to remaining number of particles
+			if((int(grid_i)*(i+1)) > B):
+				Ni = int(B - grid_i*i)
+
+			# Set i dimension of block and grid for this run
+			if(Ni<block_i):
+				gi = 1
+				bi = Ni
+			else:
+				gi = ceil(Ni/block_i)
+				bi = block_i
+
+			# Prepare data that depends on n and i for this run
+			data_subset = ascontiguousarray(data[n,(i*int(grid_i)):(i*int(grid_i)+Ni),:,:])
+
+			# Maximum number of particles per run in j direction
+			Nj = int(grid_j)
+
+			# Reset last to "False"
+			last = False
+
+			for j in range(numRuns_j):
+
+				# If last run with less that max remaining particles, set Nj to remaining number of particles
+				if((int(grid_j)*(j+1)) > N4):
+					Nj = int(N4 - grid_j*j)
+					last = True
+
+				# Prepare input that depends on n and j for this run
+				theta_subset = theta[N1+N3+(i*N4)+(j*int(grid_j)):N1+N3+(i*N4)+(j*int(grid_j)+Nj),:,:]
+				invcov_subset = invcov[N1+N3+(i*N4)+(j*int(grid_j)):N1+N3+(i*N4)+(j*int(grid_j)+Nj),:,:]
+				invdet_subset = invdet[N1+N3+(i*N4)+(j*int(grid_j)):N1+N3+(i*N4)+(j*int(grid_j)+Nj),:]
+
+				# Set i dimension of block and grid for this run
+				if(Nj<block_j):
+					gj = 1
+					bj = Nj
+				else:
+					gj = ceil(Nj/block_j)
+					bj = block_j
+
+				# Prepare results array for run
+				if last == True:
+					res1 = copy.deepcopy(template_res1[:Ni,:Nj])
+				elif j == 0:
+					res1 = copy.deepcopy(template_res1[:Ni,:Nj])
+
+				# Call GPU kernel function
+				gpu_kernel_func3SDE(int32(Ni), int32(Nj), float64(pre), driver.In(invdet_subset), driver.In(data_subset),driver.In(theta_subset), driver.In(invcov_subset),driver.Out(res1), block=(int(bi),int(bj),int(1)),grid=(int(gi),int(gj),int(1)))
+
+				# Sum over N3 and sore in results array
+				res_log_1[n,i*int(grid_i):i*int(grid_i)+Ni] += sum(res1, axis=1)
+
+	# Divide by N4 and take log
+	res_log_1 = log(res_log_1) - log(N4)
+
+	# Calculate final result
+	mutinfo = sum(res_log_1 - res_log_2) / (N1 * B)
+	print mutinfo
+
+	print "\n", "------CPU CALCS RUNNING NOW---------"
+###############################CPU TEST#########################################
+	cpu_log2 = zeros((N1,B,N3), dtype=float64)
+	cpu_log1 = zeros((N1,B,N4), dtype=float64)
+
+	for i in range(N1):
+		for j in range(B):
+			for k in range(N3):
+				for l in range(T):
+					cpu_log2[i,j,k] += pre + log(sqrt(invdet[N1+k,l])) - 0.5 * dot(dot(expand_dims(data[i,j,l,:]-theta[N1+k,l,:],0),invcov[N1+k,l*S:(l+1)*S,:]),expand_dims(data[i,j,l,:]-theta[N1+k,l,:],1))
+
+	cpu_log2 = exp(cpu_log2)
+	cpu_log2 = sum(cpu_log2, axis=2)
+	cpu_log2 = log(cpu_log2) - log(N3)
+
+	for i in range(N1):
+		for j in range(B):
+			for k in range(N4):
+				for l in range(T):
+					cpu_log1[i,j,k] += pre + log(sqrt(invdet[N1+N3+i*N4+k,l])) - 0.5 * dot(dot(expand_dims(data[i,j,l,:]-theta[N1+N3+i*N4+k,l,:],0),invcov[N1+N3+i*N4+k,l*S:(l+1)*S,:]),expand_dims(data[i,j,l,:]-theta[N1+N3+i*N4+k,l,:],1))
+
+	cpu_log1 = exp(cpu_log1)
+	cpu_log1 = sum(cpu_log1, axis=2)
+	cpu_log1 = log(cpu_log1) - log(N4)
+
+	cpu = sum(cpu_log1 - cpu_log2) / (N1 * B)
+###############################CPU TEST#########################################
+
+	return mutinfo, cpu
 
 
-mutInfo2SDE(data_t,theta_t,cov_t, N4)
+gpu, cpu = mutInfo2SDE(data_t,theta_t,cov_t, N4)
+
+print ""
+print "CPU OUT"
+print cpu
+print ""
+print "GPU OUT"
+print gpu
+print ""
+print "Error:"
+print cpu - gpu
