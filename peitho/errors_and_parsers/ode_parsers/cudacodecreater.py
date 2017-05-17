@@ -10,7 +10,6 @@ import peitho.errors_and_parsers.abc_sysbio.abcsysbio_parser.ParseAndWrite as Pa
 ##outPath - where the cudacode files are written to
 def cudacodecreater(input_files, inPath="",outPath="", typeInt ="ODE", template=False):
 	#Since only doing ODEs right now this is given for the intType
-	print input_files
 	if template == False:
 		intType = ["CUDA "+typeInt]*len(input_files)
 		#Sets the names of the cuda code files

@@ -178,8 +178,8 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 			sys.exit()
 		#### SDE model message#################	
 		if model_type == "SDE":
-			print "\n\nWARNING: SDE models will be supported in future version!\n\n"
-			sys.exit()
+			print "\n\nWARNING: SDE models currently under development!\n\n"
+			#sys.exit()
 
 		########################################
 

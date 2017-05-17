@@ -103,16 +103,16 @@ def run_cudasim(m_object,inpath="", intType="ODE",usesbml=False):
 
 		result_var = LNAInstance.run(parameters, species_var, constant_sets = not(m_object.initialprior), pairings=m_object.pairParamsICS)
 		
-		print result[0][0,0,:,:]
+		#print result[0][0,0,:,:]
 		#print "----------------"
 		#print result_var[0][0,0,:,:]
-				
-		#cuda_order = list(set(m_object.cuda))
+		#print "\n\n"
 
-		#m_object.sort_mu_covariance(cuda_order, [x[:,0,:,:] for x in result_var],nspecies)
+		cuda_order = list(set(m_object.cuda))
 
-		#m_object.measured_species()
-		sys.exit()
+		m_object.sort_mu_covariance(cuda_order, [x[:,0,:,:] for x in result_var],nspecies)
+
+		m_object.measured_species()
 
 
 # A function to pickle object

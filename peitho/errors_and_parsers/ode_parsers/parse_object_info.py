@@ -97,7 +97,7 @@ def type_parser (type, filename):
 	if re_ODE.match(type):
 		return 0
 	elif re_SDE.match(type):
-		print "\n\nWARNING: Type of the model in " ,filename,  self.name[self.nmodels-1], " is not fully supported yet!\n\n"
+		#print "\n\nWARNING: Type of the model in " ,filename,  self.name[self.nmodels-1], " is not fully supported yet!\n\n"
 		return 1
 
 	else:
@@ -1293,9 +1293,9 @@ class algorithm_info:
 				self.mus[p] = mus
 				self.covariances[p] = covariances
 
-		print [x.shape for x in self.mus]
-		print "----------"
-		print [x.shape for x in covariances]
+		#print [x.shape for x in self.mus]
+		#print "----------"
+		#print [x.shape for x in self.covariances]
 
 	def measured_species(self):
 		self.B=[""]*self.nmodels

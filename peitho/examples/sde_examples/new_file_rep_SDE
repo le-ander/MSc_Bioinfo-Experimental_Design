@@ -128,8 +128,8 @@ alpha 7 5
 
 
 >combination
-initset2 paramexp1 fit1
-initset3 paramexp2 fit1
-initset2 paramexp2 fit1
+initset2 paramexp1 measured1
+initset3 paramexp2 measured1
+initset2 paramexp2 measured1
 <combination
 
