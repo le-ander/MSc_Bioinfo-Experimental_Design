@@ -100,6 +100,14 @@ def optimise_gridsize_sde(kernel_no, bx, by, bz, T_Mod, S_Mod, T_Ref=0, S_Ref=0)
 		x_pre = (-b + sqrt(pow(b,2)-4*a*c))/(2*a)
 		y_pre = (by/bx)*x_pre
 
+	elif kernel_no == 3:
+		a = 8 * (by/bx)
+		b = 8 * (by/bx) * (T_Mod*S_Mod) * (1 + 0.5*S_Mod + 1/(2*S_Mod) + (bx/by))
+		c = 8 - avail_mem
+
+		x_pre = (-b + sqrt(pow(b,2)-4*a*c))/(2*a)
+		y_pre = (by/bx)*x_pre
+
 	else:
 		print "UNDEFINED GRIDSIZE FOR THIS KERNEL NUMBER"
 		return
