@@ -1320,8 +1320,32 @@ class algorithm_info:
 
 			self.B[i]=B
 	
-	def sortCUDASimoutput_SDE(self,cuda_order,result,result_var):
+	def sortCUDASimoutput_SDE(self,cudaorder,result,result_var):
 
-		#index_NA = [p for p, e in enumerate(numpy.isnan(numpy.sum(numpy.sum(cudaout[i][:,:,:],axis=2),axis=1))) if e==True]
-		
-		print "here"			
+		#If approach is of type 2 then total particles is N1+N2+N1xN3 otherwise just sum of Ni
+		if self.analysisType == 1:
+			Nparticles = self.N1sample+self.N2sample+self.N1sample*self.N3sample
+		else:
+			Nparticles = self.particles
+
+		#cuda_NAs holds the number of particles which don't result in NAs from cuda-sim
+		##Format of cuda_NAs:
+		##For approach 1 and 3: {"Exp_1.cu":[N1,N2,N3,N4],"Exp_2.cu:[N1,N2,N3,N4],...etc"}
+		##For approach 2: {"Exp_1.cu":[N1,N2,[N3_1,...,N3_N1]],"Exp_2.cu:[N1,N2,[N3_1,...,N3_N1]],...etc"}
+		cuda_NAs = dict((k, []) for k in cudaorder)
+
+		for i, cudafile in enumerate(cudaorder):
+			#Index_NA finds the particle indices for which there are NAs
+			index_NA = [p for p, e in enumerate(numpy.isnan(numpy.sum(numpy.sum(cudaout[i][:,:,:],axis=2),axis=1))) if e==True]
+			
+			#Detects whether we have priors over the initial conditions or not and sets pairings_ICs for iteration over in the next part
+			if self.initialprior == False:
+				pairing_ICs = enumerate(self.pairParamsICS.values()[i])
+			else:
+				pairing_ICs = enumerate(range(1))
+
+			#Iteration over different initial conditions
+			for j, IC in pairing_ICs:
+				print "here"
+
+		print cuda_NAs

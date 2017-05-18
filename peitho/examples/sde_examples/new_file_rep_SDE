@@ -39,7 +39,7 @@ False
 >prior
 uniform 1 10
 uniform 0 20
-lognormal 10 15
+lognormal 28 150
 uniform 0 10
 <prior
 

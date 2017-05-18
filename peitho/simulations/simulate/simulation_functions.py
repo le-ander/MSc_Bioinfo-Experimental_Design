@@ -108,13 +108,16 @@ def run_cudasim(m_object,inpath="", intType="ODE",usesbml=False):
 			result_var = [result_var]
 
 		print [x.shape for x in result]
+		print result[0][0,1,:,:]
+		print result[0][1,1,:,:]
+		print result[0][2,1,:,:]
 		print "----------------"
 		print [x.shape for x in result_var]
 		print "\n\n"
 
 		cuda_order = list(set(m_object.cuda))
 
-		m_object.sortCUDASimoutput_SDE(cuda_order,result,result_var)
+		#m_object.sortCUDASimoutput_SDE(cuda_order,result,result_var)
 
 		sys.exit()
 
