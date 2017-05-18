@@ -365,7 +365,13 @@ def mutInfo2SDE(data,theta,cov,N4):
 	res_log_1 = log(res_log_1) - log(N4)
 
 	# Calculate final result
-	mutinfo = sum(res_log_1 - res_log_2) / (N1 * B)
+	# Calculate final result
+	masked_diff = ma.masked_invalid(res_log_1 - res_log_2)
+	sum_B = ma.average(masked_diff, axis=1)
+	mutinfo = average(sum_B, axis=0)
+	inf_count = ma.count_masked(masked_diff)
+	print "Percentage of infinites", (inf_count*100)/(N1*B), "%"
+
 	print mutinfo
 
 	print "\n", "------CPU CALCS RUNNING NOW---------"
@@ -393,7 +399,11 @@ def mutInfo2SDE(data,theta,cov,N4):
 	cpu_log1 = sum(cpu_log1, axis=2)
 	cpu_log1 = log(cpu_log1) - log(N4)
 
-	cpu = sum(cpu_log1 - cpu_log2) / (N1 * B)
+	cpu_diff = ma.masked_invalid(cpu_log1 - cpu_log2)
+	cpu_sumB = ma.average(cpu_diff, axis=1)
+	cpu = average(cpu_sumB, axis=0)
+	cpu_infs = ma.count_masked(cpu_diff)
+	print "Percentage of infinites CPU", (cpu_infs*100)/(N1*B), "%"
 ###############################CPU TEST#########################################
 
 	return mutinfo, cpu
