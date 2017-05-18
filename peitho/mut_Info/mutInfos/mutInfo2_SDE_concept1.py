@@ -10,13 +10,13 @@ import copy
 from peitho.mut_Info.mutInfos import launch
 
 
-random.seed(123)
-N1 = 4
-B = 2
-N3 = 3
-N4 = 4
+#random.seed(123)
+N1 = 10
+B = 10
+N3 = 10
+N4 = 10
 T = 17
-S = 7
+S = 17
 
 data_t = random.rand(N1,B,T,S).astype(float64)
 theta_t = random.rand(N1+N3+N1*N4,T,S).astype(float64)
@@ -104,7 +104,7 @@ def mutInfo2SDE(data,theta,cov,N4):
 				}
 				vector2[t] += vector1[idx2d(t,s_i,%(S)s)] * (x[idx3d(ti,t,s_i,%(T)s,%(S)s)] - mu[idx3d(tj,t,s_i,%(T)s,%(S)s)]);
 			}
-			res1[idx2d(ti,tj,n4)] += log(sqrtf(invdet[idx2d(ti,t,%(T)s)])) - 0.5 * vector2[t] + pre;
+			res1[idx2d(ti,tj,n4)] += log(sqrtf(invdet[idx2d(tj,t,%(T)s)])) - 0.5 * vector2[t] + pre;
 		}
 		res1[idx2d(ti,tj,n4)] = exp(res1[idx2d(ti,tj,n4)]);
 	}
@@ -337,9 +337,9 @@ def mutInfo2SDE(data,theta,cov,N4):
 					last = True
 
 				# Prepare input that depends on n and j for this run
-				theta_subset = theta[N1+N3+(i*N4)+(j*int(grid_j)):N1+N3+(i*N4)+(j*int(grid_j)+Nj),:,:]
-				invcov_subset = invcov[N1+N3+(i*N4)+(j*int(grid_j)):N1+N3+(i*N4)+(j*int(grid_j)+Nj),:,:]
-				invdet_subset = invdet[N1+N3+(i*N4)+(j*int(grid_j)):N1+N3+(i*N4)+(j*int(grid_j)+Nj),:]
+				theta_subset = theta[N1+N3+(n*N4)+(j*int(grid_j)):N1+N3+(n*N4)+(j*int(grid_j)+Nj),:,:]
+				invcov_subset = invcov[N1+N3+(n*N4)+(j*int(grid_j)):N1+N3+(n*N4)+(j*int(grid_j)+Nj),:,:]
+				invdet_subset = invdet[N1+N3+(n*N4)+(j*int(grid_j)):N1+N3+(n*N4)+(j*int(grid_j)+Nj),:]
 
 				# Set i dimension of block and grid for this run
 				if(Nj<block_j):
