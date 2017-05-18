@@ -9,21 +9,6 @@ import copy
 
 from peitho.mut_Info.mutInfos import launch
 
-## REMOVE SEED
-random.seed(123)
-N1 = 43
-B = 19
-N3 = 37
-T = 33
-S = 13
-
-data_t = random.rand(N1,B,T,S).astype(float64)
-theta_t = random.rand(N1+N3,T,S).astype(float64)
-cov_t = random.rand(N1+N3,S*T,S).astype(float64)
-
-##Check input types!!
-
-
 
 def mutInfo1SDE(data,theta,cov):
 
@@ -364,45 +349,4 @@ def mutInfo1SDE(data,theta,cov):
 	inf_count = ma.count_masked(masked_diff)
 	print "Percentage of infinites", (inf_count*100)/(N1*B), "%"
 
-	print mutinfo
-
-	print "\n", "------CPU CALCS RUNNING NOW---------"
-###############################CPU TEST#########################################
-	cpu_log2 = zeros((N1,B,N3), dtype=float64)
-	cpu_log1 = zeros((N1,B), dtype=float64)
-
-	for i in range(N1):
-		for j in range(B):
-			for k in range(N3):
-				for l in range(T):
-					cpu_log2[i,j,k] += pre + log(sqrt(invdet[N1+k,l])) - 0.5 * dot(dot(expand_dims(data[i,j,l,:]-theta[N1+k,l,:],0),invcov[N1+k,l*S:(l+1)*S,:]),expand_dims(data[i,j,l,:]-theta[N1+k,l,:],1))
-
-	cpu_log2 = exp(cpu_log2)
-	cpu_log2 = sum(cpu_log2, axis=2)
-	cpu_log2 = log(cpu_log2) - log(N3)
-
-	for i in range(N1):
-		for j in range(B):
-			for l in range(T):
-				cpu_log1[i,j] += pre + log(sqrt(invdet[i,l])) - 0.5 * dot(dot(expand_dims(data[i,j,l,:]-theta[i,l,:],0),invcov[i,l*S:(l+1)*S,:]),expand_dims(data[i,j,l,:]-theta[i,l,:],1))
-
-	cpu_diff = ma.masked_invalid(cpu_log1 - cpu_log2)
-	cpu_sumB = ma.average(cpu_diff, axis=1)
-	cpu = average(cpu_sumB, axis=0)
-	cpu_infs = ma.count_masked(cpu_diff)
-	print "Percentage of infinites CPU", (cpu_infs*100)/(N1*B), "%"
-###############################CPU TEST#########################################
-
-	return mutinfo, cpu
-
-gpu, cpu = mutInfo1SDE(data_t,theta_t,cov_t)
-
-print ""
-print "CPU OUT"
-print cpu
-print ""
-print "GPU OUT"
-print gpu
-print ""
-print "Error:"
-print cpu - gpu
+	return mutinfo

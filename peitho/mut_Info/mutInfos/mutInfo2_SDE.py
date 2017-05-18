@@ -9,23 +9,8 @@ import copy
 
 from peitho.mut_Info.mutInfos import launch
 
-## REMOVE SEED
-random.seed(123)
-N1 = 43
-B = 19
-N3 = 37
-T = 33
-S = 13
 
-data_t = random.rand(N1,B,T,S).astype(float64)
-theta_t = random.rand(N1+N3,T,S).astype(float64)
-cov_t = random.rand(N1+N3,S*T,S).astype(float64)
-
-##Check input types!!
-
-
-
-def mutInfo1SDE(data,theta,cov):
+def mutInfo2SDE(data,theta,cov,N4):
 
 	kernel_code_template = """
 
@@ -79,17 +64,17 @@ def mutInfo1SDE(data,theta,cov):
 	}
 
 	//Function to calculate sum multivariate gaussians for first log term
-	__global__ void kernel_func2SDE(int n1, int b, double pre, float *invdet, double *x, double *mu, float *invcov, double *res1){
+	__global__ void kernel_func3SDE(int b, int n4, double pre, float *invdet, double *x, double *mu, float *invcov, double *res1){
 
 		unsigned int ti = threadIdx.x + blockDim.x * blockIdx.x;
 		unsigned int tj = threadIdx.y + blockDim.y * blockIdx.y;
 
-		if((ti>=n1)||(tj>=b)) return;
+		if((ti>=b)||(tj>=n4)) return;
 
 		double vector1[%(ST)s] = {0.0};
 		double vector2[%(T)s] = {0.0};
 
-		res1[idx2d(ti,tj,b)] = 0.0;
+		res1[idx2d(ti,tj,n4)] = 0.0;
 
 		for(int t=0; t<%(T)s; t++){
 
@@ -99,20 +84,21 @@ def mutInfo1SDE(data,theta,cov):
 
 				for(int s_j=0; s_j<%(S)s; s_j++){
 
-					vector1[idx2d(t,s_i,%(S)s)] += (x[idx4d(ti,tj,t,s_j,b,%(T)s,%(S)s)] - mu[idx3d(ti,t,s_j,%(T)s,%(S)s)]) * invcov[idx4d(ti,t,s_j,s_i,%(T)s,%(S)s,%(S)s)];
+					vector1[idx2d(t,s_i,%(S)s)] += (x[idx3d(ti,t,s_j,%(T)s,%(S)s)] - mu[idx3d(tj,t,s_j,%(T)s,%(S)s)]) * invcov[idx4d(tj,t,s_j,s_i,%(T)s,%(S)s,%(S)s)];
 				}
-				vector2[t] += vector1[idx2d(t,s_i,%(S)s)] * (x[idx4d(ti,tj,t,s_i,b,%(T)s,%(S)s)] - mu[idx3d(ti,t,s_i,%(T)s,%(S)s)]);
+				vector2[t] += vector1[idx2d(t,s_i,%(S)s)] * (x[idx3d(ti,t,s_i,%(T)s,%(S)s)] - mu[idx3d(tj,t,s_i,%(T)s,%(S)s)]);
 			}
-			res1[idx2d(ti,tj,b)] += log(sqrtf(invdet[idx2d(ti,t,%(T)s)])) - 0.5 * vector2[t] + pre;
+			res1[idx2d(ti,tj,n4)] += log(sqrtf(invdet[idx2d(tj,t,%(T)s)])) - 0.5 * vector2[t] + pre;
 		}
+		res1[idx2d(ti,tj,n4)] = exp(res1[idx2d(ti,tj,n4)]);
 	}
 	"""
 
-	print "\n", "-----Preprocessing Data (matrix inversion etc.)-----", "\n"
+	print "-----Preprocessing Data (matrix inversion etc.)-----"
 
-	# Determine number of particles (N1,N3), betas (B), timepoints (T), species (S)
+	# Determine number of particles (N1,N3,N4), betas (B), timepoints (T), species (S)
 	N1, B, T, S = data.shape
-	N3 = theta.shape[0] - N1
+	N3 = theta.shape[0] - N1 * (N4+1)
 
 	# Fill placeholders in kernel (pycuda metaprogramming)
 	kernel_code = kernel_code_template % {
@@ -126,18 +112,19 @@ def mutInfo1SDE(data,theta,cov):
 
 	# Create GPU function handle
 	gpu_kernel_func1SDE = mod.get_function("kernel_func1SDE")
-	gpu_kernel_func2SDE = mod.get_function("kernel_func2SDE")
+	gpu_kernel_func3SDE = mod.get_function("kernel_func3SDE")
+
 
 	# Precalculation for GPU kernel for faster computation
 	pre = log(1/(sqrt(pow(2*math.pi,S))))
 
 	# Initialise arrays for inverted covariance matrices and inverted determinants
-	invcov = zeros((N1+N3,S*T,S), dtype=float32)
-	invdet = zeros((N1+N3,T), dtype=float32)
+	invcov = zeros((N1+N3+N1*N4,S*T,S), dtype=float32)
+	invdet = zeros((N1+N3+N1*N4,T), dtype=float32)
 
 	# Invert covariance matrices and calculate the determinant of the inverted matrices
 	##Remove abs() for invdet
-	for i in range(N1+N3):
+	for i in range(N1+N3+N1*N4):
 		for j in range(T):
 			invcov[i,j*S:(j+1)*S,:] = linalg.inv(cov[i,j*S:(j+1)*S,:])
 			invdet[i,j] = abs(linalg.det(invcov[i,j*S:(j+1)*S,:]))
@@ -166,7 +153,7 @@ def mutInfo1SDE(data,theta,cov):
 	print "Grid shape:", str(grid_i)+"x"+str(grid_j)+"x"+str(grid_k)
 	print "Registers:", gpu_kernel_func1SDE.num_regs , "\n"
 
-	print "-----Calculation part 1 of 2 now running-----", "\n"
+	print "-----Calculation part 1 of 2 now running-----"
 
 	# Determine required number of runs for i and j
 	numRuns_i = int(ceil(N1/grid_i))
@@ -268,27 +255,26 @@ def mutInfo1SDE(data,theta,cov):
 	print "-----Determining optimal kernel launch configuration (for part 2/2)-----"
 
 	# Launch configuration: Block size and shape (as close to square as possible)
-	block = launch.optimal_blocksize(autoinit.device, gpu_kernel_func2SDE)
+	block = launch.optimal_blocksize(autoinit.device, gpu_kernel_func3SDE)
 	block_i = launch.factor_partial(block)
 	block_j = block / block_i
 	print "Optimal blocksize:", block, "threads"
 	print "Block shape:", str(block_i)+"x"+str(block_j)
 
-
 	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
-	grid_prelim_i , grid_prelim_j = launch.optimise_gridsize_sde(2, block_i, block_j, 0, T, S)[0:2]
-	grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i, N1))
-	grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j, B))
+	grid_prelim_i , grid_prelim_j = launch.optimise_gridsize_sde(3, block_i, block_j, 0, T, S)[0:2]
+	grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i, B))
+	grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j, N4))
 	print "Grid shape:", str(grid_i)+"x"+str(grid_j)
-	print "Registers:", gpu_kernel_func2SDE.num_regs , "\n"
+	print "Registers:", gpu_kernel_func1SDE.num_regs , "\n"
 
 	print "-----Calculation part 2 of 2 now running-----"
 
 	# Determine required number of runs for i and j
-	numRuns_i = int(ceil(N1/grid_i))
-	numRuns_j = int(ceil(B/grid_j))
+	numRuns_i = int(ceil(B/grid_i))
+	numRuns_j = int(ceil(N4/grid_j))
 
-	# Initialise array to hold results of second log term
+	# Initialise array to hold results of log N3 avarage
 	res_log_1 = zeros([N1,B], dtype=float64)
 
 	# Create template array for res1
@@ -302,61 +288,67 @@ def mutInfo1SDE(data,theta,cov):
 	Ni = int(grid_i)
 
 	# Main nested for-loop for calculation of second log term
-	for i in range(numRuns_i):
+	for n in range(N1):
 
-		# If last run with less that max remaining particles, set Ni to remaining number of particles
-		if((int(grid_i)*(i+1)) > N1):
-			Ni = int(N1 - grid_i*i)
-
-		# Prepare input that depends on i for this run
-		theta_subset = theta[(i*int(grid_i)):(i*int(grid_i)+Ni),:,:]
-		invcov_subset = invcov[(i*int(grid_i)):(i*int(grid_i)+Ni),:,:]
-		invdet_subset = invdet[(i*int(grid_i)):(i*int(grid_i)+Ni),:]
-
-		# Set i dimension of block and grid for this run
-		if(Ni<block_i):
-			gi = 1
-			bi = Ni
-		else:
-			gi = ceil(Ni/block_i)
-			bi = block_i
-
-		# Maximum number of particles per run in j direction
-		Nj = int(grid_j)
-
-		# Reset last to "False"
-		last = False
-
-		for j in range(numRuns_j):
+		for i in range(numRuns_i):
 
 			# If last run with less that max remaining particles, set Ni to remaining number of particles
-			if((int(grid_j)*(j+1)) > B):
-				Nj = int(B - grid_j*j)
-				last = True
+			if((int(grid_i)*(i+1)) > B):
+				Ni = int(B - grid_i*i)
 
-			# Prepare data that depends on i and j for this run
-			data_subset = ascontiguousarray(data[(i*int(grid_i)):(i*int(grid_i)+Ni),(j*int(grid_j)):(j*int(grid_j)+Nj),:,:]) # d1 subunit for the next k runs
-
-			# Set j dimension of block and grid for this run
-			if(Nj<block_j):
-				gj = 1
-				bj = Nj
+			# Set i dimension of block and grid for this run
+			if(Ni<block_i):
+				gi = 1
+				bi = Ni
 			else:
-				gj = ceil(Nj/block_j)
-				bj = block_j
+				gi = ceil(Ni/block_i)
+				bi = block_i
 
-			# Prepare results array for run
-			if last == True:
-				res1 = copy.deepcopy(template_res1[:Ni,:Nj])
-			elif j == 0:
-				res1 = copy.deepcopy(template_res1[:Ni,:Nj])
+			# Prepare data that depends on n and i for this run
+			data_subset = ascontiguousarray(data[n,(i*int(grid_i)):(i*int(grid_i)+Ni),:,:])
 
-			# Call GPU kernel function
-			gpu_kernel_func2SDE(int32(Ni), int32(Nj), float64(pre), driver.In(invdet_subset), driver.In(data_subset),driver.In(theta_subset), driver.In(invcov_subset),driver.Out(res1), block=(int(bi),int(bj),int(1)),grid=(int(gi),int(gj),int(1)))
+			# Maximum number of particles per run in j direction
+			Nj = int(grid_j)
 
-			# Store in results array
-			res_log_1[i*int(grid_i):i*int(grid_i)+Ni,j*int(grid_j):j*int(grid_j)+Nj] = res1
+			# Reset last to "False"
+			last = False
 
+			for j in range(numRuns_j):
+
+				# If last run with less that max remaining particles, set Nj to remaining number of particles
+				if((int(grid_j)*(j+1)) > N4):
+					Nj = int(N4 - grid_j*j)
+					last = True
+
+				# Prepare input that depends on n and j for this run
+				theta_subset = theta[N1+N3+(n*N4)+(j*int(grid_j)):N1+N3+(n*N4)+(j*int(grid_j)+Nj),:,:]
+				invcov_subset = invcov[N1+N3+(n*N4)+(j*int(grid_j)):N1+N3+(n*N4)+(j*int(grid_j)+Nj),:,:]
+				invdet_subset = invdet[N1+N3+(n*N4)+(j*int(grid_j)):N1+N3+(n*N4)+(j*int(grid_j)+Nj),:]
+
+				# Set i dimension of block and grid for this run
+				if(Nj<block_j):
+					gj = 1
+					bj = Nj
+				else:
+					gj = ceil(Nj/block_j)
+					bj = block_j
+
+				# Prepare results array for run
+				if last == True:
+					res1 = copy.deepcopy(template_res1[:Ni,:Nj])
+				elif j == 0:
+					res1 = copy.deepcopy(template_res1[:Ni,:Nj])
+
+				# Call GPU kernel function
+				gpu_kernel_func3SDE(int32(Ni), int32(Nj), float64(pre), driver.In(invdet_subset), driver.In(data_subset),driver.In(theta_subset), driver.In(invcov_subset),driver.Out(res1), block=(int(bi),int(bj),int(1)),grid=(int(gi),int(gj),int(1)))
+
+				# Sum over N3 and sore in results array
+				res_log_1[n,i*int(grid_i):i*int(grid_i)+Ni] += sum(res1, axis=1)
+
+	# Divide by N4 and take log
+	res_log_1 = log(res_log_1) - log(N4)
+
+	# Calculate final result
 	# Calculate final result
 	masked_diff = ma.masked_invalid(res_log_1 - res_log_2)
 	sum_B = ma.average(masked_diff, axis=1)
@@ -364,45 +356,4 @@ def mutInfo1SDE(data,theta,cov):
 	inf_count = ma.count_masked(masked_diff)
 	print "Percentage of infinites", (inf_count*100)/(N1*B), "%"
 
-	print mutinfo
-
-	print "\n", "------CPU CALCS RUNNING NOW---------"
-###############################CPU TEST#########################################
-	cpu_log2 = zeros((N1,B,N3), dtype=float64)
-	cpu_log1 = zeros((N1,B), dtype=float64)
-
-	for i in range(N1):
-		for j in range(B):
-			for k in range(N3):
-				for l in range(T):
-					cpu_log2[i,j,k] += pre + log(sqrt(invdet[N1+k,l])) - 0.5 * dot(dot(expand_dims(data[i,j,l,:]-theta[N1+k,l,:],0),invcov[N1+k,l*S:(l+1)*S,:]),expand_dims(data[i,j,l,:]-theta[N1+k,l,:],1))
-
-	cpu_log2 = exp(cpu_log2)
-	cpu_log2 = sum(cpu_log2, axis=2)
-	cpu_log2 = log(cpu_log2) - log(N3)
-
-	for i in range(N1):
-		for j in range(B):
-			for l in range(T):
-				cpu_log1[i,j] += pre + log(sqrt(invdet[i,l])) - 0.5 * dot(dot(expand_dims(data[i,j,l,:]-theta[i,l,:],0),invcov[i,l*S:(l+1)*S,:]),expand_dims(data[i,j,l,:]-theta[i,l,:],1))
-
-	cpu_diff = ma.masked_invalid(cpu_log1 - cpu_log2)
-	cpu_sumB = ma.average(cpu_diff, axis=1)
-	cpu = average(cpu_sumB, axis=0)
-	cpu_infs = ma.count_masked(cpu_diff)
-	print "Percentage of infinites CPU", (cpu_infs*100)/(N1*B), "%"
-###############################CPU TEST#########################################
-
-	return mutinfo, cpu
-
-gpu, cpu = mutInfo1SDE(data_t,theta_t,cov_t)
-
-print ""
-print "CPU OUT"
-print cpu
-print ""
-print "GPU OUT"
-print gpu
-print ""
-print "Error:"
-print cpu - gpu
+	return mutinfo
