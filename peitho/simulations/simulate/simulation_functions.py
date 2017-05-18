@@ -102,17 +102,27 @@ def run_cudasim(m_object,inpath="", intType="ODE",usesbml=False):
 		result = modelInstance.run(parameters, species, constant_sets = not(m_object.initialprior), pairings=m_object.pairParamsICS)
 
 		result_var = LNAInstance.run(parameters, species_var, constant_sets = not(m_object.initialprior), pairings=m_object.pairParamsICS)
-		
-		#print result[0][0,0,:,:]
-		#print "----------------"
-		#print result_var[0][0,0,:,:]
-		#print "\n\n"
+
+		if type(result)!=list:
+			result = [result]
+			result_var = [result_var]
+
+		print [x.shape for x in result]
+		print "----------------"
+		print [x.shape for x in result_var]
+		print "\n\n"
 
 		cuda_order = list(set(m_object.cuda))
+
+		m_object.sortCUDASimoutput_SDE(cuda_order,result,result_var)
+
+		sys.exit()
 
 		m_object.sort_mu_covariance(cuda_order, [x[:,0,:,:] for x in result_var],nspecies)
 
 		m_object.measured_species()
+
+		sys.exit()
 
 
 # A function to pickle object

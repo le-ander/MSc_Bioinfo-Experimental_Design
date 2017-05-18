@@ -120,6 +120,9 @@ def mutInfo1(data,theta,N1,N2,sigma,scale):
 	#Initialize array for results
 	result = zeros([N1,numRuns_j])
 
+	# Maximum number of particles per run in i and j direction
+	Ni = int(grid_i)
+
 	# Create template array for res1
 	try:
 		temp_res1 = zeros([Ni,int(ceil(grid_j/block_j))]).astype(float64)
@@ -132,9 +135,6 @@ def mutInfo1(data,theta,N1,N2,sigma,scale):
 
 	# Determine 1/2*sigma*sigma for GPU calculation
 	sigmasq_inv = 1/(2*sigma*sigma)
-
-	# Maximum number of particles per run in i and j direction
-	Ni = int(grid_i)
 
 	# Main nested for-loop for mutual information calculations
 	for i in range(numRuns_i):

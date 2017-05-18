@@ -1319,3 +1319,9 @@ class algorithm_info:
 					B = numpy.vstack((B,temp))
 
 			self.B[i]=B
+	
+	def sortCUDASimoutput_SDE(self,cuda_order,result,result_var):
+
+		#index_NA = [p for p, e in enumerate(numpy.isnan(numpy.sum(numpy.sum(cudaout[i][:,:,:],axis=2),axis=1))) if e==True]
+		
+		print "here"			
