@@ -7,15 +7,15 @@ SDE
 <dt
 
 >particles
-10
+5
 <particles
 
 >beta
-10
+3
 <beta
 
 >nsample
-1 9 0 0
+2 3 0 0
 <nsample
 
 >sigma
