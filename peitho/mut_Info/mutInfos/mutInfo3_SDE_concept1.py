@@ -12,20 +12,24 @@ from peitho.mut_Info.mutInfos import launch
 ## REMOVE SEED
 random.seed(123)
 N1 = 43
-B = 19
+B_mod = 19
+B_ref = 19
 N3 = 37
 T = 33
 S = 13
 
-data_t = random.rand(N1,B,T,S).astype(float64)
-theta_t = random.rand(N1+N3,T,S).astype(float64)
-cov_t = random.rand(N1+N3,S*T,S).astype(float64)
+data_ref_t = random.rand(N1,B_ref,T,S).astype(float64)
+theta_ref_t = random.rand(N1+N3,T,S).astype(float64)
+cov_ref_t = random.rand(N1+N4,S*T,S).astype(float64)
+data_mod_t = random.rand(N1,B_mod,T,S).astype(float64)
+theta_mod_t = random.rand(N1+N4,T,S).astype(float64)
+cov_mod_t = random.rand(N1+N3,S*T,S).astype(float64)
 
 ##Check input types!!
 
 
 
-def mutInfo1SDE(data,theta,cov):
+def mutInfo1SDE(dataMod,thetaMod,covMod,dataRef,thetaRef,covRef):
 
 	kernel_code_template = """
 
@@ -77,42 +81,14 @@ def mutInfo1SDE(data,theta,cov):
 		}
 		res1[idx3d(ti,tj,tk,b,n3)] = exp(res1[idx3d(ti,tj,tk,b,n3)]);
 	}
-
-	//Function to calculate sum multivariate gaussians for first log term
-	__global__ void kernel_func2SDE(int n1, int b, double pre, float *invdet, double *x, double *mu, float *invcov, double *res1){
-
-		unsigned int ti = threadIdx.x + blockDim.x * blockIdx.x;
-		unsigned int tj = threadIdx.y + blockDim.y * blockIdx.y;
-
-		if((ti>=n1)||(tj>=b)) return;
-
-		double vector1[%(ST)s] = {0.0};
-		double vector2[%(T)s] = {0.0};
-
-		res1[idx2d(ti,tj,b)] = 0.0;
-
-		for(int t=0; t<%(T)s; t++){
-
-			for(int s_i=0; s_i<%(S)s; s_i++){
-
-				vector1[idx2d(t,s_i,%(S)s)] = 0.0;
-
-				for(int s_j=0; s_j<%(S)s; s_j++){
-
-					vector1[idx2d(t,s_i,%(S)s)] += (x[idx4d(ti,tj,t,s_j,b,%(T)s,%(S)s)] - mu[idx3d(ti,t,s_j,%(T)s,%(S)s)]) * invcov[idx4d(ti,t,s_j,s_i,%(T)s,%(S)s,%(S)s)];
-				}
-				vector2[t] += vector1[idx2d(t,s_i,%(S)s)] * (x[idx4d(ti,tj,t,s_i,b,%(T)s,%(S)s)] - mu[idx3d(ti,t,s_i,%(T)s,%(S)s)]);
-			}
-			res1[idx2d(ti,tj,b)] += log(sqrtf(invdet[idx2d(ti,t,%(T)s)])) - 0.5 * vector2[t] + pre;
-		}
-	}
 	"""
 
 	print "\n", "-----Preprocessing Data (matrix inversion etc.)-----", "\n"
 
 	# Determine number of particles (N1,N3), betas (B), timepoints (T), species (S)
-	N1, B, T, S = data.shape
-	N3 = theta.shape[0] - N1
+	N1, B_ref, T, S = data_ref.shape
+	B_mod = data_mod.shape[1]
+	N4 = theta.shape[0] - N1
 
 	# Fill placeholders in kernel (pycuda metaprogramming)
 	kernel_code = kernel_code_template % {
@@ -126,7 +102,6 @@ def mutInfo1SDE(data,theta,cov):
 
 	# Create GPU function handle
 	gpu_kernel_func1SDE = mod.get_function("kernel_func1SDE")
-	gpu_kernel_func2SDE = mod.get_function("kernel_func2SDE")
 
 	# Precalculation for GPU kernel for faster computation
 	pre = log(1/(sqrt(pow(2*math.pi,S))))
