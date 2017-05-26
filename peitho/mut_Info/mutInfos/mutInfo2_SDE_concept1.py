@@ -10,7 +10,7 @@ import copy
 from peitho.mut_Info.mutInfos import launch
 
 
-#random.seed(123)
+random.seed(123)
 N1 = 10
 B = 10
 N3 = 10
@@ -300,11 +300,11 @@ def mutInfo2SDE(data,theta,cov,N4):
 		print "ERROR: Not enought memory (RAM) available to create array for GPU results. Reduce GPU grid size."
 		sys.exit()
 
-	# Maximum number of particles per run in i, j and k direction
-	Ni = int(grid_i)
-
 	# Main nested for-loop for calculation of second log term
 	for n in range(N1):
+
+		# Maximum number of particles per run in i, j and k direction
+		Ni = int(grid_i)
 
 		for i in range(numRuns_i):
 
@@ -364,7 +364,6 @@ def mutInfo2SDE(data,theta,cov,N4):
 	# Divide by N4 and take log
 	res_log_1 = log(res_log_1) - log(N4)
 
-	# Calculate final result
 	# Calculate final result
 	masked_diff = ma.masked_invalid(res_log_1 - res_log_2)
 	sum_B = ma.average(masked_diff, axis=1)
