@@ -170,11 +170,11 @@ def mutInfo2SDE(data,theta,cov,N4):
 		print "ERROR: Not enought memory (RAM) available to create array for GPU results. Reduce GPU grid size."
 		sys.exit()
 
-	# Maximum number of particles per run in i, j and k direction
-	Ni = int(grid_i)
-
 	# Main nested for-loop for calculation of second log term
 	for i in range(numRuns_i):
+
+		# Maximum number of particles per run in i, j and k direction
+		Ni = int(grid_i)
 
 		# If last run with less that max remaining particles, set Ni to remaining number of particles
 		if((int(grid_i)*(i+1)) > N1):
