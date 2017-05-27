@@ -10,24 +10,6 @@ import copy
 
 from peitho.mut_Info.mutInfos import launch
 
-## REMOVE SEED
-random.seed(123)
-N1 = 43
-B_mod = 17
-B_ref = 19
-N4 = 37
-T = 33
-S = 13
-
-data_ref_t = random.rand(N1,B_ref,T,S).astype(float64)
-theta_ref_t = random.rand(N1+N4,T,S).astype(float64)
-cov_ref_t = random.rand(N1+N4,S*T,S).astype(float64)
-data_mod_t = random.rand(N1,B_mod,T,S).astype(float64)
-theta_mod_t = random.rand(N1+N4,T,S).astype(float64)
-cov_mod_t = random.rand(N1+N4,S*T,S).astype(float64)
-
-##Check input types!!
-
 
 def mutInfo3SDE(dataMod,thetaMod,covMod,dataRef,thetaRef,covRef):
 
@@ -372,56 +354,4 @@ def mutInfo3SDE(dataMod,thetaMod,covMod,dataRef,thetaRef,covRef):
 	inf_count3 = float(ma.count_masked(masked3))
 	print "Percentage of infinites: Term 1: %.1f %%, Term 2: %.1f %%, Term 3: %.1f %%"%((inf_count1*100)/(N1*B_mod*B_ref*N4), (inf_count2*100)/(N1*B_mod*N4), (inf_count3*100)/(N1*B_ref*N4))
 
-	print "\n", mutinfo
-
-
-	print "\n", "------CPU CALCS RUNNING NOW---------"
-###############################CPU TEST#########################################
-	cpu_1 = zeros((N1,B_mod,N4), dtype=float64)
-	cpu_2 = zeros((N1,B_ref,N4), dtype=float64)
-
-	for i in range(N1):
-		for j in range(B_mod):
-			for k in range(N4):
-				for l in range(T):
-					cpu_1[i,j,k] += pre + log(sqrt(invdetMod[k,l])) - 0.5 * dot(dot(expand_dims(dataMod[i,j,l,:]-thetaMod[N1+k,l,:],0),invcovMod[k,l*S:(l+1)*S,:]),expand_dims(dataMod[i,j,l,:]-thetaMod[N1+k,l,:],1))
-	cpu_1 = exp(cpu_1)
-
-	for i in range(N1):
-		for j in range(B_ref):
-			for k in range(N4):
-				for l in range(T):
-					cpu_2[i,j,k] += pre + log(sqrt(invdetRef[k,l])) - 0.5 * dot(dot(expand_dims(dataRef[i,j,l,:]-thetaRef[N1+k,l,:],0),invcovRef[k,l*S:(l+1)*S,:]),expand_dims(dataRef[i,j,l,:]-thetaRef[N1+k,l,:],1))
-	cpu_2 = exp(cpu_2)
-
-	cpu_masked1 = ma.masked_invalid(expand_dims(cpu_1, axis=2)*expand_dims(cpu_2, axis=1))
-	cpu_masked2 = ma.masked_invalid(cpu_1)
-	cpu_masked3 = ma.masked_invalid(cpu_2)
-
-	cpu_term1 = average(average(log(ma.average(cpu_masked1, axis=3)), axis=2), axis=1)
-	cpu_term2 = average(log(ma.average(cpu_masked2, axis=2)), axis=1)
-	cpu_term3 = average(log(ma.average(cpu_masked3, axis=2)), axis=1)
-
-	cpu = average(cpu_term1 - cpu_term2 - cpu_term3, axis=0)
-
-	cpu_inf_count1 = float(ma.count_masked(masked1))
-	cpu_inf_count2 = float(ma.count_masked(masked2))
-	cpu_inf_count3 = float(ma.count_masked(masked3))
-	print "Percentage of CPU infinites: Term 1: %.1f %%, Term 2: %.1f %%, Term 3: %.1f %%"%((cpu_inf_count1*100)/(N1*B_mod*B_ref*N4), (cpu_inf_count2*100)/(N1*B_mod*N4), (cpu_inf_count3*100)/(N1*B_ref*N4))
-###############################CPU TEST#########################################
-
-	return mutinfo, cpu
-
-with warnings.catch_warnings():
-	warnings.simplefilter("ignore")
-	gpu, cpu = mutInfo3SDE(data_mod_t, theta_mod_t, cov_mod_t, data_ref_t, theta_ref_t, cov_ref_t)
-
-print ""
-print "CPU OUT"
-print cpu
-print ""
-print "GPU OUT"
-print gpu
-print ""
-print "Error:"
-print cpu - gpu
+	return mutinfo
