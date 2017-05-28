@@ -9,22 +9,6 @@ from mutInfos import launch
 import copy
 
 
-#random.seed(123)
-N1 = 201
-N2 = 240
-B = 107
-T = 251
-S = 3
-A = 2
-
-trans_mat = random.rand(A,S).astype(float32)
-data = random.rand(N1,B,T,S).astype(float64)
-theta = random.rand(N1+N2,T,S).astype(float64)
-cov = random.rand(N1+N2,S*T,S).astype(float64)
-
-##CHECK INPUT TYPES!!
-
-
 def transform_gpu(data,theta,cov,trans_mat):
 
 	kernel_code_template = """
@@ -382,78 +366,3 @@ def transform_gpu(data,theta,cov,trans_mat):
 
 
 	return result_data, result_theta , result_cov
-
-################################################################################################################################
-
-gpu=transform_gpu(data,theta,cov,trans_mat)
-
-print gpu[0].shape
-print gpu[1].shape
-print gpu[2].shape
-
-
-########TEST NUMPY DATA#######
-
-for i in range(data.shape[0]):
-	for j in range(data.shape[1]):
-		resg=dot(data[i,j,:,:],swapaxes(trans_mat,0,1))
-
-		if j==0:
-			resj=copy.deepcopy(resg)
-		elif j==1:
-			resj=stack((resj,resg), axis=0)
-		else:
-			resj=concatenate((resj,expand_dims(resg, 0)),axis=0)
-	if i==0:
-		np_data=copy.deepcopy(resj)
-	elif i==1:
-		np_data=stack((np_data,resj),axis=0)
-	else:
-		np_data=concatenate((np_data, expand_dims(resj, 0)), axis=0)
-
-print sum(subtract(gpu[0], np_data))
-
-#print gpu[0][5,7,:,:]
-#print np_data[5,7,:,:]
-
-
-########TEST NUMPY THETA#######
-
-for i in range(theta.shape[0]):
-	resg=dot(theta[i,:,:],swapaxes(trans_mat,0,1))
-
-	if i==0:
-		np_theta=copy.deepcopy(resg)
-	elif i==1:
-		np_theta=stack((np_theta,resg),axis=0)
-	else:
-		np_theta=concatenate((np_theta, expand_dims(resg, 0)), axis=0)
-
-print sum(subtract(gpu[1], np_theta))
-
-#print gpu[1][5,:,:]
-#print np_theta[5,:,:]
-
-
-########TEST NUMPY COV#######
-
-for i in range(cov.shape[0]):
-	for j in range(data.shape[2]):
-		resg=dot(dot(trans_mat,cov[i,j*S:j*S+S,:]),swapaxes(trans_mat,0,1))
-
-		if j==0:
-			resj=copy.deepcopy(resg)
-		else:
-			resj=concatenate((resj,resg),axis=0)
-
-	if i==0:
-		np_cov=copy.deepcopy(resj)
-	elif i==1:
-		np_cov=stack((np_cov,resj),axis=0)
-	else:
-		np_cov=concatenate((np_cov, expand_dims(resj, 0)), axis=0)
-
-print sum(subtract(gpu[2], np_cov))
-
-#print gpu[2][0,0:2,:]
-#print np_cov[0,0:2,:]
