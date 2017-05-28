@@ -121,11 +121,10 @@ def mutInfo1SDE(data,theta,cov):
 	invdet = zeros((N1+N3,T), dtype=float32)
 
 	# Invert covariance matrices and calculate the determinant of the inverted matrices
-	##Remove abs() for invdet
 	for i in range(N1+N3):
 		for j in range(T):
 			invcov[i,j*S:(j+1)*S,:] = linalg.inv(cov[i,j*S:(j+1)*S,:])
-			invdet[i,j] = abs(linalg.det(invcov[i,j*S:(j+1)*S,:]))
+			invdet[i,j] = linalg.det(invcov[i,j*S:(j+1)*S,:])
 
 	#################### Calculating second log term ###########################
 

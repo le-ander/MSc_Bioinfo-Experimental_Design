@@ -95,17 +95,15 @@ def mutInfo3SDE(dataMod,thetaMod,covMod,dataRef,thetaRef,covRef):
 	invdetRef = zeros((N4,T), dtype=float32)
 
 	# Invert covariance matrices and calculate the determinant of the inverted matrices
-	##Remove abs() for invdet
 	for i in range(N4):
 		for j in range(T):
 			invcovMod[i,j*S:(j+1)*S,:] = linalg.inv(covMod[N1+i,j*S:(j+1)*S,:])
-			invdetMod[i,j] = abs(linalg.det(invcovMod[i,j*S:(j+1)*S,:]))
+			invdetMod[i,j] = linalg.det(invcovMod[i,j*S:(j+1)*S,:])
 
-	##Remove abs() for invdet
 	for i in range(N4):
 		for j in range(T):
 			invcovRef[i,j*S:(j+1)*S,:] = linalg.inv(covRef[N1+i,j*S:(j+1)*S,:])
-			invdetRef[i,j] = abs(linalg.det(invcovRef[i,j*S:(j+1)*S,:]))
+			invdetRef[i,j] = linalg.det(invcovRef[i,j*S:(j+1)*S,:])
 
 	#################### Calculating model probability ###########################
 
