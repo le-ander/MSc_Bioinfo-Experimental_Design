@@ -1295,7 +1295,8 @@ class algorithm_info:
 
 		#print [x.shape for x in self.mus]
 		#print "----------"
-		#print [x.shape for x in self.covariances]
+		print [x.shape for x in self.covariances]
+		#print self.covariances[0][8,6:11,0:5]
 
 	def measured_species(self):
 		self.B=[""]*self.nmodels
