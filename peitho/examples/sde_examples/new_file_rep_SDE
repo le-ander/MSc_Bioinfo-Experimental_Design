@@ -11,11 +11,11 @@ SDE
 <particles
 
 >beta
-10
+3
 <beta
 
 >nsample
-1 9 0 0
+2 3 2 3
 <nsample
 
 >sigma
@@ -39,7 +39,7 @@ False
 >prior
 uniform 1 10
 uniform 0 20
-lognormal 10 15
+uniform 500 2000
 uniform 0 10
 <prior
 
@@ -128,10 +128,10 @@ alpha 7 5
 
 
 >combination
-initset1 paramexp1 measured1
 initset2 paramexp1 measured1
 <combination
 
+initset2 paramexp1 measured1
 initset2 paramexp4 measured1
 initset3 paramexp2 measured1
 initset2 paramexp2 measured1

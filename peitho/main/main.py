@@ -51,7 +51,7 @@ def main():
 			#Cycles through the list of SBML and local code files
 			for i in range(0,len(input_file_SBMLs)):
 				#NEED TO REMOVE SEED
-				#random.seed(123)
+				random.seed(123)
 				#If statment between whether SBML or local code used as requires two different workflows
 				if usesbml[i]==True:
 					sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, input_file_data = input_file_datas[count], intType=intType, memory_check = memory_check)
@@ -245,18 +245,19 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, memory_check
 		#Calls function to run cudasim and sort output
 		cudasim_run = simulation_functions.run_cudasim(sbml_obj,inpath=outPath,intType=intType,usesbml=usesbml)
 
-		#Calculates the scaling factor
-		print "-----Calculating scaling factor-----"
-		#Calculating scaling is different when doing approach 3 or not
-		if sbml_obj.analysisType != 2:
-			#Scaling for when doing approach 1 or 2
-			sbml_obj.scaling()
-		else:
-			#Scaling for when doing approach 3
-			if refmod == "":
-				sbml_obj.scaling_ge3()
+		if intType == "ODE":
+			#Calculates the scaling factor
+			print "-----Calculating scaling factor-----"
+			#Calculating scaling is different when doing approach 3 or not
+			if sbml_obj.analysisType != 2:
+				#Scaling for when doing approach 1 or 2
+				sbml_obj.scaling()
 			else:
-				sbml_obj.scaling_ge3(len(refmod.times),len(refmod.fitSpecies[0]))
+				#Scaling for when doing approach 3
+				if refmod == "":
+					sbml_obj.scaling_ge3()
+				else:
+					sbml_obj.scaling_ge3(len(refmod.times),len(refmod.fitSpecies[0]))
 
 		#Depending upon the approach different functions are run to calculate the mutual information
 
@@ -266,6 +267,19 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, memory_check
 
 		#Makes directory to hold the results files and sets results path variable
 		if sbml_obj.analysisType == 0 or sbml_obj.analysisType==1 or (sbml_obj.analysisType == 2 and refmod != ""):
+			###########REMOVE################
+			###########REMOVE################
+			###########REMOVE################
+			###########REMOVE################
+			###########REMOVE################
+			print "here"
+			sys.exit()
+			###########REMOVE################
+			###########REMOVE################
+			###########REMOVE################
+			###########REMOVE################
+			###########REMOVE################
+			###########REMOVE################
 			if not(os.path.isdir("./"+fname+"/results")):
 					os.mkdir(fname+"/results")
 			if not(os.path.isdir("./"+fname+"/results/results_"+input_file_SBML_name)):

@@ -95,7 +95,7 @@ def run_cudasim(m_object,inpath="", intType="ODE",usesbml=False):
 		except:
 			species_var = concatenate((species,var_IC),axis=1)
 		
-		#print parameters
+		print parameters.shape
 		#print "------------------"
 		#print species_var
 		#print "\n\n\n"
@@ -107,22 +107,25 @@ def run_cudasim(m_object,inpath="", intType="ODE",usesbml=False):
 			result = [result]
 			result_var = [result_var]
 
-		print [x.shape for x in result]
-		print "----------------"
-		print [x.shape for x in result_var]
-		print "\n\n"
+		#print [x.shape for x in result]
+		#print result[0][0,1,:,:]
+		#print result[0][1,1,:,:]
+		#print result[0][2,1,:,:]
+		#print "----------------"
+		#print [x.shape for x in result_var]
+		#print "\n\n"
 
 		cuda_order = list(set(m_object.cuda))
 
-		m_object.sortCUDASimoutput_SDE(cuda_order,result,result_var)
+		#m_object.sortCUDASimoutput_SDE(cuda_order,result,result_var)
 
-		sys.exit()
+		#sys.exit()
 
 		m_object.sort_mu_covariance(cuda_order, [x[:,0,:,:] for x in result_var],nspecies)
 
 		m_object.measured_species()
 
-		sys.exit()
+		#sys.exit()
 
 
 # A function to pickle object

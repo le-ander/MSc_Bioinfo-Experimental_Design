@@ -1009,7 +1009,7 @@ class algorithm_info:
 					size_cudaout_start = sum(size_cudaout_start)
 					size_cudaout_end = size_cudaout_start + sum([cuda_NAs[cudafile][pos][0]]+[cuda_NAs[cudafile][pos][1]]+cuda_NAs[cudafile][pos][2])
 
-				#Copies associated cudaoutput to corresponding experiement
+				#Copies associated cudaoutput to corresponding experiment
 				self.cudaout[model] = cudaout_temp[size_cudaout_start:size_cudaout_end,:,:]
 		#If priors over initial conditions then assign just corresponding cuda code
 		else:
@@ -1295,7 +1295,8 @@ class algorithm_info:
 
 		#print [x.shape for x in self.mus]
 		#print "----------"
-		#print [x.shape for x in self.covariances]
+		print [x.shape for x in self.covariances]
+		#print self.covariances[0][8,6:11,0:5]
 
 	def measured_species(self):
 		self.B=[""]*self.nmodels
@@ -1320,8 +1321,50 @@ class algorithm_info:
 
 			self.B[i]=B
 	
-	def sortCUDASimoutput_SDE(self,cuda_order,result,result_var):
+	def sortCUDASimoutput_SDE(self,cudaorder,result,result_var):
 
-		#index_NA = [p for p, e in enumerate(numpy.isnan(numpy.sum(numpy.sum(cudaout[i][:,:,:],axis=2),axis=1))) if e==True]
-		
-		print "here"			
+		#If approach is of type 2 then total particles is N1+N2+N1xN3 otherwise just sum of Ni
+		if self.analysisType == 1:
+			Nparticles = self.N1sample+self.N2sample+self.N1sample*self.N3sample
+		else:
+			Nparticles = self.particles
+
+		#cuda_NAs holds the number of particles which don't result in NAs from cuda-sim
+		##Format of cuda_NAs:
+		##For approach 1 and 3: {"Exp_1.cu":[N1,N2,N3,N4],"Exp_2.cu:[N1,N2,N3,N4],...etc"}
+		##For approach 2: {"Exp_1.cu":[N1,N2,[N3_1,...,N3_N1]],"Exp_2.cu:[N1,N2,[N3_1,...,N3_N1]],...etc"}
+
+		cuda_NAs = dict((k, []) for k in cudaorder)
+
+		for i, cudafile in enumerate(cudaorder):
+			#Index_NA finds the particle indices for which there are NAs
+			Index_NA = [[ numpy.isnan(numpy.sum(result[i][k,l,:,:])) for l in range(0,result[i].shape[1])] for k in range(0,result[i].shape[0])]
+			#index_NA = [p for p, e in enumerate(numpy.isnan(numpy.sum(numpy.sum(result[i][:,:,:,:],axis=3),axis=2))) if e==True]
+			print Index_NA
+			#print index_NA.shape
+			
+			#Detects whether we have priors over the initial conditions or not and sets pairings_ICs for iteration over in the next part
+			if self.initialprior == False:
+				pairing_ICs = enumerate(self.pairParamsICS.values()[i])
+			else:
+				pairing_ICs = enumerate(range(1))
+
+			#Iteration over different initial conditions
+			for j, IC in pairing_ICs:
+				Index_NA_IC = Index_NA[i*Nparticles:(i+1)*Nparticles]
+				Index_NA_IC_N1 = Index_NA_IC[0:self.N1sample]
+				Index_NA_IC_N2 = Index_NA_IC[self.N1sample:(self.N1sample+self.N2sample)]
+				N1s = [self.beta-sum(x) for x in Index_NA_IC_N1]
+				N2s = [self.beta-sum(x) for x in Index_NA_IC_N2]
+				cuda_NAs[cudafile].append([N1s,N2s])
+
+				print [cuda_NAs[cudafile][j][0].index(0)]
+				print [cuda_NAs[cudafile][j][1].index(0)]
+
+				print cuda_NAs
+				print Index_NA_IC_N1[0]
+				print result[i][0,Index_NA_IC_N1[0],:,:]
+				#Use masking
+				sys.exit()
+
+		#print cuda_NAs
