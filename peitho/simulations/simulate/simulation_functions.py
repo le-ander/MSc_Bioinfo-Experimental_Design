@@ -17,8 +17,8 @@ except:
 import time
 import sys
 
-import peitho.errors_and_parsers.ode_parsers.parse_object_info as parse_object_info
-import peitho.errors_and_parsers.sde_parsers.covariance_sort as covariance_sort
+#import peitho.errors_and_parsers.ode_parsers.parse_object_info as parse_object_info
+#import peitho.errors_and_parsers.sde_parsers.covariance_sort as covariance_sort
 
 
 
@@ -95,7 +95,7 @@ def run_cudasim(m_object,inpath="", intType="ODE",usesbml=False):
 		except:
 			species_var = concatenate((species,var_IC),axis=1)
 		
-		print parameters.shape
+		#print parameters.shape
 		#print "------------------"
 		#print species_var
 		#print "\n\n\n"
@@ -124,6 +124,8 @@ def run_cudasim(m_object,inpath="", intType="ODE",usesbml=False):
 		m_object.sort_mu_covariance(cuda_order, [x[:,0,:,:] for x in result_var],nspecies)
 
 		m_object.measured_species()
+
+		m_object.sort_sde_sims(list(set(m_object.cuda)),result)
 
 		#sys.exit()
 
