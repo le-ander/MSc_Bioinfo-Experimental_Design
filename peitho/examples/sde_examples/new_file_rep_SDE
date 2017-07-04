@@ -7,15 +7,15 @@ SDE
 <dt
 
 >particles
-10
+5
 <particles
 
 >beta
-3
+2
 <beta
 
 >nsample
-2 3 2 3
+2 3 0 0
 <nsample
 
 >sigma
@@ -55,6 +55,7 @@ constant 0
 
 >measuredspecies
 species1 species2 species3+species4 species2-species3
+All
 <measuredspecies
 
 >paramfit
@@ -129,6 +130,8 @@ alpha 7 5
 
 >combination
 initset2 paramexp1 measured1
+initset1 paramexp1 measured2
+initset2 paramexp2 measured1
 <combination
 
 initset2 paramexp1 measured1

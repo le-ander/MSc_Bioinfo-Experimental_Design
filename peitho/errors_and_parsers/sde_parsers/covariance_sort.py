@@ -52,3 +52,4 @@ def sort_mu_covariance(sbml_object,covariance_matrix,nspecies):
 
 def measured_species(sbml_object):
 	print sbml_object.fitSpecies
+	print "here213"
