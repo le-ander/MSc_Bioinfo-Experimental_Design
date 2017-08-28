@@ -54,6 +54,7 @@ def input_checker(sys_arg):
 	intType="ODE"
 	template_creator=False
 	memory_check=False
+	seed_bool = False
 
 
 	#For loop cycles over the command line arguments
@@ -123,6 +124,11 @@ def input_checker(sys_arg):
 
 			elif option == 'intType' :
 				intType = sys_arg[i+1]
+
+			elif option == 'seed':
+				seed_bool = True
+				seed_value = sys_arg[i+1]
+
 			#If flag not recognised calls printOptions()
 			elif not(sys_arg[i-1][2:] == 'infile_SBML'):
 				print "\nERROR: unknown option "+sys_arg[i]
@@ -196,6 +202,10 @@ def input_checker(sys_arg):
 
 			elif option == 'iT' :
 				intType = sys_arg[i+1]
+
+			elif option == 'sd':
+				seed_bool = True
+				seed_value = sys_arg[i+1]
 
 			#If an unrecognised flag is called and calls printOptions
 			elif not(sys_arg[i-1][2:] == 'i1'):

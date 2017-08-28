@@ -50,8 +50,10 @@ def main():
 			count = 0
 			#Cycles through the list of SBML and local code files
 			for i in range(0,len(input_file_SBMLs)):
-				#NEED TO REMOVE SEED
-				random.seed(123)
+				#Setting value if provided
+				if seed_bool == True :
+					random.seed(seed_value)
+
 				#If statment between whether SBML or local code used as requires two different workflows
 				if usesbml[i]==True:
 					sorting_files(input_file_SBMLs[i],analysis,fname,usesbml[i], iname, input_file_data = input_file_datas[count], intType=intType, memory_check = memory_check)
@@ -180,7 +182,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, memory_check
 		#Creates cudacode and saves to the directory made
 
 		cudacodecreater.cudacodecreater(input_files_SBML,inPath=inPath+"/",outPath=outPath, typeInt=intType)
-		
+
 		if intType == "SDE":
 			sde_parse.LNA_CUDAWriter(input_files_SBML,inpath=inPath+"/",outpath=outPath)
 
@@ -293,14 +295,27 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, memory_check
 		######
 		print "\n"
 
-		if sbml_obj.analysisType == 0:
-			MutInfo, MutInfo_inf[0], MutInfo_inf[1] =mutInfo1.run_mutInfo1(sbml_obj,input_file_SBML)
-		elif sbml_obj.analysisType == 1:
-			MutInfo, MutInfo_inf[0], MutInfo_inf[1]=mutInfo2.run_mutInfo2(sbml_obj,input_file_SBML)
-		elif sbml_obj.analysisType == 2 and refmod == "":
-			return sbml_obj
-		elif sbml_obj.analysisType == 2 and refmod != "":
-			MutInfo, MutInfo_inf[0], MutInfo_inf[1]=mutInfo3.run_mutInfo3(sbml_obj, refmod, input_file_SBML)
+		if intType == "ODE":
+			if sbml_obj.analysisType == 0:
+				MutInfo, MutInfo_inf[0], MutInfo_inf[1] =mutInfo1.run_mutInfo1(sbml_obj,input_file_SBML)
+			elif sbml_obj.analysisType == 1:
+				MutInfo, MutInfo_inf[0], MutInfo_inf[1]=mutInfo2.run_mutInfo2(sbml_obj,input_file_SBML)
+			elif sbml_obj.analysisType == 2 and refmod == "":
+				return sbml_obj
+			elif sbml_obj.analysisType == 2 and refmod != "":
+				MutInfo, MutInfo_inf[0], MutInfo_inf[1]=mutInfo3.run_mutInfo3(sbml_obj, refmod, input_file_SBML)
+
+		elif intType == "SDE":
+			if sbml_obj.analysisType == 0:
+				MutInfo, MutInfo_inf[0], MutInfo_inf[1] =mutInfo1_SDE.run_mutInfo1_SDE(sbml_obj,input_file_SBML)
+			elif sbml_obj.analysisType == 1:
+				MutInfo, MutInfo_inf[0], MutInfo_inf[1]=mutInfo2_SDE.run_mutInfo2_SDE(sbml_obj,input_file_SBML)
+			elif sbml_obj.analysisType == 2 and refmod == "":
+				return sbml_obj
+			elif sbml_obj.analysisType == 2 and refmod != "":
+				MutInfo, MutInfo_inf[0], MutInfo_inf[1]=mutInfo3_SDE.run_mutInfo3_SDE(sbml_obj, refmod, input_file_SBML)
+
+
 
 		## Plot bar graphs
 		plotbar.plotbarh(MutInfo, sbml_obj.name ,sbml_obj.nmodels ,sbml_obj.analysisType,resultspath,input_file_SBML_name)
