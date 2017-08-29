@@ -346,14 +346,15 @@ def mutInfo1SDE(data,theta,cov):
 	sum_B = ma.average(masked_diff, axis=1)
 	mutinfo = average(sum_B, axis=0)
 	inf_count = ma.count_masked(masked_diff)
-	print "Percentage of infinites", (inf_count*100)/(N1*B), "%"
+	inf_prop = (inf_count*100)/(N1*B)
+	print "Percentage of infinites", inf_prop, "%"
 
-	return mutinfo
+	return mutinfo, inf_count, inf_prop
 
 
 
 
-def run_mutInfo1_SDE():
+def run_mutInfo1_SDE(model_obj, ):
 	#Initiates list to hold mutual information
 	MutInfo1 = []
 	#Initiates list to hold number of infinites
@@ -363,7 +364,7 @@ def run_mutInfo1_SDE():
 
 	#Cycles through each experiment
 	for experiment in range(model_obj.nmodels):
-
+		'''
 		#Extracts N1 and N2
 		if model_obj.initialprior == False:
 			pos = model_obj.pairParamsICS[model_obj.cuda[experiment]].index([x[1] for x in model_obj.x0prior[experiment]])
@@ -373,18 +374,26 @@ def run_mutInfo1_SDE():
 			pos = model_obj.cudaout_structure[model_obj.cuda[experiment]][0]
 			N1 = pos[0]
 			N2 = pos[1]
+		'''
+		#transform
+		print "-----Performing matrix transformation for Experiment", experiment+1, "for", input_SBML,"-----\n"
+		t_data, t_theta, t_cov = transform_gpu(model_obj.cudaout[experiment],model_obj.mu[experiment],model_obj.covariances[experiment], model_obj.B[experiment])
+
 
 		#Calculates mutual information
 		print "-----Calculating Mutual Information for Experiment", experiment+1, "for", input_SBML,"-----\n"
 
 		## Assign mutual information and number of infinites to lists
-		temp_list=mutInfo1(model_obj.trajectories[experiment],model_obj.cudaout[experiment],N1,N2,model_obj.sigma,model_obj.scale[experiment])
+		temp_list=mutInfo1SDE(t_data, t_theta, t_cov)
 		MutInfo_lists = [MutInfo1, MutInfo1_infs, MutInfo1_infs_prop]
 		for x, lst in zip(temp_list, MutInfo_lists):
 			lst.append(x)
 
 		## Print out mutual information
 		print "Mutual Information for Experiment", str(experiment+1)+":", MutInfo1[experiment], "\n"
+
+	return MutInfo1_SDE, MutInfo1_SDE_infs, MutInfo1_SDE_infs_prop
+
 	#transform
 	#calculate mut inf
 	#return mutinfo and infs
