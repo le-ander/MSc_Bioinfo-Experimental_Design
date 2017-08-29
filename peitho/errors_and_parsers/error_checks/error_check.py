@@ -55,6 +55,7 @@ def input_checker(sys_arg):
 	template_creator=False
 	memory_check=False
 	seed_bool = False
+	seed_value = 0
 
 
 	#For loop cycles over the command line arguments
