@@ -12,6 +12,9 @@ import peitho.errors_and_parsers.ode_parsers.parse_object_info as parse_object_i
 import peitho.mut_Info.mutInfos.mutInfo1 as mutInfo1
 import peitho.mut_Info.mutInfos.mutInfo2 as mutInfo2
 import peitho.mut_Info.mutInfos.mutInfo3 as mutInfo3
+import peitho.mut_Info.mutInfos.mutInfo1_SDE as mutInfo1_SDE
+import peitho.mut_Info.mutInfos.mutInfo2_SDE as mutInfo2_SDE
+import peitho.mut_Info.mutInfos.mutInfo3_SDE as mutInfo3_SDE
 import peitho.errors_and_parsers.ode_parsers.cudacodecreater as cudacodecreater
 import peitho.mut_Info.outputs.plotbar as plotbar
 import peitho.errors_and_parsers.ode_parsers.SBML_reactions as SBML_reactions
