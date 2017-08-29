@@ -354,7 +354,7 @@ def mutInfo1SDE(data,theta,cov):
 
 
 
-def run_mutInfo1_SDE(model_obj, ):
+def run_mutInfo1_SDE(model_obj, input_SBML ):
 	#Initiates list to hold mutual information
 	MutInfo1 = []
 	#Initiates list to hold number of infinites
