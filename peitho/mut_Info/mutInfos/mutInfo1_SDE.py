@@ -8,6 +8,7 @@ import operator
 import copy
 
 from peitho.mut_Info.mutInfos import launch
+import peitho.mut_Info.mutInfos import transform_gpu
 
 
 def mutInfo1SDE(data,theta,cov):
@@ -377,7 +378,7 @@ def run_mutInfo1_SDE(model_obj, input_SBML ):
 		'''
 		#transform
 		print "-----Performing matrix transformation for Experiment", experiment+1, "for", input_SBML,"-----\n"
-		t_data, t_theta, t_cov = transform_gpu(model_obj.cudaout[experiment],model_obj.mu[experiment],model_obj.covariances[experiment], model_obj.B[experiment])
+		t_data, t_theta, t_cov = transform_gpu.transform_gpu(model_obj.cudaout[experiment],model_obj.mu[experiment],model_obj.covariances[experiment], model_obj.B[experiment])
 
 
 		#Calculates mutual information
