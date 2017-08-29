@@ -5,7 +5,7 @@ from pycuda import autoinit
 
 import sys
 
-from mutInfos import launch
+from peitho.mut_Info.mutInfos import launch
 import copy
 
 
