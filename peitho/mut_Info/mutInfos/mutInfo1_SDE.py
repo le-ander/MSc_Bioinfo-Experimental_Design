@@ -8,7 +8,7 @@ import operator
 import copy
 
 from peitho.mut_Info.mutInfos import launch
-import peitho.mut_Info.mutInfos import transform_gpu
+from peitho.mut_Info.mutInfos import transform_gpu
 
 
 def mutInfo1SDE(data,theta,cov):
