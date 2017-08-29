@@ -28,7 +28,7 @@ def main():
 	time3=time.time()
 
 	# Reads in command line arguments
-	input_file_SBMLs, input_file_datas, analysis, fname, usesbml, iname, intType, template_creator, memory_check = error_check.input_checker(sys.argv)
+	input_file_SBMLs, input_file_datas, analysis, fname, usesbml, iname, intType, template_creator, memory_check, seed_bool, seed_value = error_check.input_checker(sys.argv)
 
 	# Run program when in non template mode
 	if template_creator==False:

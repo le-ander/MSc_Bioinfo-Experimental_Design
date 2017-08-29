@@ -234,4 +234,4 @@ def input_checker(sys_arg):
 		os.mkdir(fname)
 
 
-	return input_file_SBML, input_file_data, analysis, fname, usesbml, iname, intType, template_creator, memory_check
+	return input_file_SBML, input_file_data, analysis, fname, usesbml, iname, intType, template_creator, memory_check, seed_bool, seed_value
