@@ -275,7 +275,7 @@ def sorting_files(input_file_SBML, analysis, fname, usesbml, iname, memory_check
 			###########REMOVE################
 			###########REMOVE################
 			#print "here"
-			sys.exit()
+			#sys.exit()
 			###########REMOVE################
 			###########REMOVE################
 			###########REMOVE################
