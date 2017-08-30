@@ -8,6 +8,7 @@ setup(name='peitho',
 	author_email='jonas.mackerodt16@imperial.ac.uk',
 	license='MIT',
 	packages=find_packages(),
+	include_package_data=True,
 	install_requires = [
 		'pycuda',
 		'numpy',
