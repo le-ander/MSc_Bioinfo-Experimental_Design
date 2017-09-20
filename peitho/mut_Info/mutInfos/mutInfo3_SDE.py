@@ -66,18 +66,24 @@ def mutInfo3SDE(dataMod,thetaMod,covMod,dataRef,thetaRef,covRef):
 	}
 	"""
 
-	print "\n", "-----Preprocessing Data (matrix inversion etc.)-----", "\n"
-
 	# Determine number of particles (N1,N4), betas (B), timepoints (T), species (S)
-	N1, B_ref, T, S = dataRef.shape
-	B_mod = dataMod.shape[1]
+	N1, B_ref, T_ref, S_ref = dataRef.shape
+	B_mod, T_mod, S_mod = dataMod.shape[1:]
 	N4 = thetaMod.shape[0] - N1
+
+
+	#################### Calculating model probability ###########################
+
+	print "\n", "-----Preprocessing Data (matrix inversion etc.) (for part 1/2)-----", "\n"
+
+	# Precalculation for GPU kernel for faster computation
+	pre = log(1/(sqrt(pow(2*math.pi,S_mod))))
 
 	# Fill placeholders in kernel (pycuda metaprogramming)
 	kernel_code = kernel_code_template % {
-		'T': T,
-		'S': S,
-		'ST': S*T
+		'T': T_mod,
+		'S': S_mod,
+		'ST': S_mod*T_mod
 		}
 
 	# Compile GPU kernel
@@ -86,27 +92,16 @@ def mutInfo3SDE(dataMod,thetaMod,covMod,dataRef,thetaRef,covRef):
 	# Create GPU function handle
 	gpu_kernel_func1SDE = mod.get_function("kernel_func1SDE")
 
-	# Precalculation for GPU kernel for faster computation
-	pre = log(1/(sqrt(pow(2*math.pi,S))))
-
 	# Initialise arrays for inverted covariance matrices and inverted determinants
-	invcovMod = zeros((N4,S*T,S), dtype=float32)
-	invdetMod = zeros((N4,T), dtype=float32)
-	invcovRef = zeros((N4,S*T,S), dtype=float32)
-	invdetRef = zeros((N4,T), dtype=float32)
+	invcovMod = zeros((N4,S_mod*T_mod,S_mod), dtype=float32)
+	invdetMod = zeros((N4,T_mod), dtype=float32)
 
 	# Invert covariance matrices and calculate the determinant of the inverted matrices
 	for i in range(N4):
-		for j in range(T):
-			invcovMod[i,j*S:(j+1)*S,:] = linalg.inv(covMod[N1+i,j*S:(j+1)*S,:])
-			invdetMod[i,j] = linalg.det(invcovMod[i,j*S:(j+1)*S,:])
+		for j in range(T_mod):
+			invcovMod[i,j*S_mod:(j+1)*S_mod,:] = linalg.inv(covMod[N1+i,j*S_mod:(j+1)*S_mod,:])
+			invdetMod[i,j] = linalg.det(invcovMod[i,j*S_mod:(j+1)*S_mod,:])
 
-	for i in range(N4):
-		for j in range(T):
-			invcovRef[i,j*S:(j+1)*S,:] = linalg.inv(covRef[N1+i,j*S:(j+1)*S,:])
-			invdetRef[i,j] = linalg.det(invcovRef[i,j*S:(j+1)*S,:])
-
-	#################### Calculating model probability ###########################
 
 	print "-----Determining optimal kernel launch configuration (for part 1/2)-----"
 
@@ -123,7 +118,7 @@ def mutInfo3SDE(dataMod,thetaMod,covMod,dataRef,thetaRef,covRef):
 
 
 	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
-	grid_prelim_i , grid_prelim_j, grid_prelim_k = launch.optimise_gridsize_sde(1, float(block_i), float(block_j), float(block_k), T, S)
+	grid_prelim_i , grid_prelim_j, grid_prelim_k = launch.optimise_gridsize_sde(1, float(block_i), float(block_j), float(block_k), T_mod, S_mod)
 	grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i, N1))
 	grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j, B_mod))
 	grid_k = float(min(autoinit.device.max_grid_dim_y, grid_prelim_k, N4))
@@ -228,15 +223,50 @@ def mutInfo3SDE(dataMod,thetaMod,covMod,dataRef,thetaRef,covRef):
 
 	#################### Calculating reference model probability ###########################
 
+	print "\n", "-----Preprocessing Data (matrix inversion etc.) (for part 2/2)-----", "\n"
+
+	# Precalculation for GPU kernel for faster computation
+	pre = log(1/(sqrt(pow(2*math.pi,S_ref))))
+
+	# Fill placeholders in kernel (pycuda metaprogramming)
+	kernel_code = kernel_code_template % {
+		'T': T_ref,
+		'S': S_ref,
+		'ST': S_ref*T_ref
+		}
+
+	# Compile GPU kernel
+	mod = compiler.SourceModule(kernel_code)
+
+	# Create GPU function handle
+	gpu_kernel_func1SDE = mod.get_function("kernel_func1SDE")
+
+	# Initialise arrays for inverted covariance matrices and inverted determinants
+	invcovRef = zeros((N4,S_ref*T_ref,S_ref), dtype=float32)
+	invdetRef = zeros((N4,T_ref), dtype=float32)
+
+	# Invert covariance matrices and calculate the determinant of the inverted matrices
+	for i in range(N4):
+		for j in range(T_ref):
+			invcovRef[i,j*S_ref:(j+1)*S_ref,:] = linalg.inv(covRef[N1+i,j*S_ref:(j+1)*S_ref,:])
+			invdetRef[i,j] = linalg.det(invcovRef[i,j*S_ref:(j+1)*S_ref,:])
+
+
 	print "-----Determining optimal kernel launch configuration (for part 2/2)-----"
 
 	# Launch configuration: Block size and shape (as close to square as possible)
+	block = launch.optimal_blocksize(autoinit.device, gpu_kernel_func1SDE)
+	primes = launch.pFactors(block)
+	l1 = int(len(primes)/3)
+	l2 = int(len(primes)- 2*l1)
+	block_i = float(reduce(operator.mul, primes[:l2]))
+	block_j = float(reduce(operator.mul, primes[l2:l2+l1]))
+	block_k = float(reduce(operator.mul, primes[l2+l1:l2+2*l1]))
 	print "Optimal blocksize:", block, "threads"
 	print "Block shape:", str(block_i)+"x"+str(block_j)+"x"+str(block_k)
 
-
 	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
-	grid_prelim_i , grid_prelim_j, grid_prelim_k = launch.optimise_gridsize_sde(1, float(block_i), float(block_j), float(block_k), T, S)
+	grid_prelim_i , grid_prelim_j, grid_prelim_k = launch.optimise_gridsize_sde(1, float(block_i), float(block_j), float(block_k), T_ref, S_ref)
 	grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j, B_ref))
 	print "Grid shape:", str(grid_i)+"x"+str(grid_j)+"x"+str(grid_k), "\n"
 
@@ -351,9 +381,11 @@ def mutInfo3SDE(dataMod,thetaMod,covMod,dataRef,thetaRef,covRef):
 	inf_count1 = float(ma.count_masked(masked1))
 	inf_count2 = float(ma.count_masked(masked2))
 	inf_count3 = float(ma.count_masked(masked3))
+	sum_inf_count = inf_count1 + inf_count2 + inf_count3
+	sum_inf_prop = ((inf_count1*100)/(N1*B_mod*B_ref*N4) + (inf_count2*100)/(N1*B_mod*N4) + (inf_count3*100)/(N1*B_ref*N4))/3
 	print "Percentage of infinites: Term 1: %.1f %%, Term 2: %.1f %%, Term 3: %.1f %%"%((inf_count1*100)/(N1*B_mod*B_ref*N4), (inf_count2*100)/(N1*B_mod*N4), (inf_count3*100)/(N1*B_ref*N4))
 
-	return mutinfo
+	return mutinfo, sum_inf_count, sum_inf_prop
 
 def run_mutInfo3_SDE(model_obj, ref_model_obj, input_SBML  ):
 	#Initiates list to hold mutual information
