@@ -128,7 +128,11 @@ def input_checker(sys_arg):
 
 			elif option == 'seed':
 				seed_bool = True
-				seed_value = sys_arg[i+1]
+			    try:
+			        seed_value = int(sys_arg[i+1])
+			    except:
+			        print "ERROR: Seed needs to be provided as an unsigned integer"
+			        sys.exit()
 
 			#If flag not recognised calls printOptions()
 			elif not(sys_arg[i-1][2:] == 'infile_SBML'):
@@ -206,7 +210,11 @@ def input_checker(sys_arg):
 
 			elif option == 'sd':
 				seed_bool = True
-				seed_value = sys_arg[i+1]
+			    try:
+			        seed_value = int(sys_arg[i+1])
+			    except:
+			        print "ERROR: Seed needs to be provided as an unsigned integer"
+			        sys.exit()
 
 			#If an unrecognised flag is called and calls printOptions
 			elif not(sys_arg[i-1][2:] == 'i1'):
