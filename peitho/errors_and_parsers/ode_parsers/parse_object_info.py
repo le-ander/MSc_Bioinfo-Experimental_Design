@@ -3,6 +3,7 @@
 import re, sys, numpy, copy, math
 from numpy.random import *
 from xml.dom import minidom
+from numpy import array
 
 
 
@@ -1319,6 +1320,9 @@ class algorithm_info:
 					B = temp
 				else:
 					B = numpy.vstack((B,temp))
+
+				if len(B.shape)==1:
+					B = array([B])
 
 			self.B[i]=B
 
