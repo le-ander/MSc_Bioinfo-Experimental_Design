@@ -55,9 +55,9 @@ constant 0
 
 >measuredspecies
 All
+species1 species2
 <measuredspecies
 
-species1 species2 species3+species4 species2-species3
 
 >paramfit
 All
@@ -132,7 +132,8 @@ alpha 7 5
 >combination
 initset2 paramexp1 measured1
 <combination
-
+initset3 paramexp1 measured1
+initset3 paramexp4 measured1
 initset2 paramexp1 measured1
 initset2 paramexp4 measured1
 initset3 paramexp2 measured1

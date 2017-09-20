@@ -1380,10 +1380,10 @@ class algorithm_info:
 		self.cudaout=[""]*len(self.cuda)
 
 		#If approach is of type 2 then total particles is N1+N2+N1xN3 otherwise just sum of Ni
-		if self.analysisType == 1:
-			Nparticles = self.N1sample+self.N2sample+self.N1sample*self.N3sample
-		else:
-			Nparticles = self.particles
+		# if self.analysisType == 1:
+		# 	Nparticles = self.N1sample+self.N2sample+self.N1sample*self.N3sample
+		# else:
+		# 	Nparticles = self.particles
 
 		#print [x.shape for x in cudaout]
 
@@ -1396,13 +1396,12 @@ class algorithm_info:
 
 				#Finds which initial condition this experiment has
 				pos = self.pairParamsICS[cudafile].index([x[1] for x in self.x0prior[model]])
-
 				#sys.exit()
 				#Find total number of particles associated with cuda file
 				#if self.analysisType!=1:
-				size_cudaout_start = pos*Nparticles
+				size_cudaout_start = pos*self.N1sample
 					#size_cudaout_start = sum(size_cudaout_start)
-				size_cudaout_end = (pos+1)*Nparticles
+				size_cudaout_end = (pos+1)*self.N1sample
 				# else:
 				# 	size_cudaout_start  = [sum([cuda_NAs[cudafile][x][0]]+[cuda_NAs[cudafile][x][1]]+cuda_NAs[cudafile][x][2]) for x in range(pos-1)]
 				# 	size_cudaout_start = sum(size_cudaout_start)
