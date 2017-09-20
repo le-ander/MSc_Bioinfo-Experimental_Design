@@ -123,16 +123,16 @@ def input_checker(sys_arg):
 				iname = option[9:]
 				print "Input file destination: " + iname + "\n"
 
-			elif option == 'intType' :
+			elif option == 'intType':
 				intType = sys_arg[i+1]
 
 			elif option == 'seed':
 				seed_bool = True
-			    try:
-			        seed_value = int(sys_arg[i+1])
-			    except:
-			        print "ERROR: Seed needs to be provided as an unsigned integer"
-			        sys.exit()
+				try:
+					seed_value = int(sys_arg[i+1])
+				except:
+					print "ERROR: Seed needs to be provided as an unsigned integer"
+					sys.exit()
 
 			#If flag not recognised calls printOptions()
 			elif not(sys_arg[i-1][2:] == 'infile_SBML'):
@@ -210,11 +210,11 @@ def input_checker(sys_arg):
 
 			elif option == 'sd':
 				seed_bool = True
-			    try:
-			        seed_value = int(sys_arg[i+1])
-			    except:
-			        print "ERROR: Seed needs to be provided as an unsigned integer"
-			        sys.exit()
+				try:
+					seed_value = int(sys_arg[i+1])
+				except:
+					print "ERROR: Seed needs to be provided as an unsigned integer"
+					sys.exit()
 
 			#If an unrecognised flag is called and calls printOptions
 			elif not(sys_arg[i-1][2:] == 'i1'):
