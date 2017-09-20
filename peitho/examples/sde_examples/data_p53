@@ -3,15 +3,19 @@
 <dt
 
 >particles
-14500
+9
 <particles
 
+>beta
+5
+<beta
+
 >nsample
-1000 4500 4500 4500
+2 3 2 2
 <nsample
 
 >type
-ODE
+SDE
 <type
 
 >sigma
@@ -71,5 +75,5 @@ Unchanged
 <Parameter - Experiment 1
 
 >combination
-initset1 paramexp1 fit1
+initset1 paramexp1 measured1
 <combination

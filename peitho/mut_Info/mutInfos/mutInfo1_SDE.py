@@ -365,17 +365,6 @@ def run_mutInfo1_SDE(model_obj, input_SBML ):
 
 	#Cycles through each experiment
 	for experiment in range(model_obj.nmodels):
-		'''
-		#Extracts N1 and N2
-		if model_obj.initialprior == False:
-			pos = model_obj.pairParamsICS[model_obj.cuda[experiment]].index([x[1] for x in model_obj.x0prior[experiment]])
-			N1 = model_obj.cudaout_structure[model_obj.cuda[experiment]][pos][0]
-			N2 = model_obj.cudaout_structure[model_obj.cuda[experiment]][pos][1]
-		else:
-			pos = model_obj.cudaout_structure[model_obj.cuda[experiment]][0]
-			N1 = pos[0]
-			N2 = pos[1]
-		'''
 		#transform
 		print "-----Performing matrix transformation for Experiment", experiment+1, "for", input_SBML,"-----\n"
 		t_data, t_theta, t_cov = transform_gpu.transform_gpu(model_obj.cudaout[experiment],model_obj.mus[experiment],model_obj.covariances[experiment], model_obj.B[experiment])

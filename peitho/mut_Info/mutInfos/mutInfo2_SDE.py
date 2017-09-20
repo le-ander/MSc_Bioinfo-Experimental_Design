@@ -8,7 +8,7 @@ import operator
 import copy
 
 from peitho.mut_Info.mutInfos import launch
-
+from peitho.mut_Info.mutInfos import transform_gpu
 
 def mutInfo2SDE(data,theta,cov,N4):
 
@@ -353,6 +353,37 @@ def mutInfo2SDE(data,theta,cov,N4):
 	sum_B = ma.average(masked_diff, axis=1)
 	mutinfo = average(sum_B, axis=0)
 	inf_count = ma.count_masked(masked_diff)
-	print "Percentage of infinites", (inf_count*100)/(N1*B), "%"
+	inf_prop = (inf_count*100)/(N1*B)
+	print "Percentage of infinites", inf_prop, "%"
 
-	return mutinfo
+	return mutinfo, inf_count, inf_prop
+
+
+def run_mutInfo2_SDE(model_obj, input_SBML ):
+	#Initiates list to hold mutual information
+	MutInfo2_SDE = []
+	#Initiates list to hold number of infinites
+	MutInfo2_SDE_infs = []
+	#Initiates list to hold percentage of infinites
+	MutInfo2_SDE_infs_prop = []
+
+	#Cycles through each experiment
+	for experiment in range(model_obj.nmodels):
+		#transform
+		print "-----Performing matrix transformation for Experiment", experiment+1, "for", input_SBML,"-----\n"
+		#print model_obj.cudaout[experiment]
+		t_data, t_theta, t_cov = transform_gpu.transform_gpu(model_obj.cudaout[experiment],model_obj.mus[experiment],model_obj.covariances[experiment], model_obj.B[experiment])
+		#print "Data:", t_data
+
+		#Calculates mutual information
+		print "-----Calculating Mutual Information for Experiment", experiment+1, "for", input_SBML,"-----\n"
+
+		## Assign mutual information and number of infinites to lists
+		temp_list=mutInfo2SDE(t_data, t_theta, t_cov, model_obj.N3sample)
+		MutInfo_lists = [MutInfo2_SDE, MutInfo2_SDE_infs, MutInfo2_SDE_infs_prop]
+		for x, lst in zip(temp_list, MutInfo_lists):
+			lst.append(x)
+
+		## Print out mutual information
+		print "Mutual Information for Experiment", str(experiment+1)+":", MutInfo2_SDE[experiment], "\n"
+	return MutInfo2_SDE, MutInfo2_SDE_infs, MutInfo2_SDE_infs_prop
