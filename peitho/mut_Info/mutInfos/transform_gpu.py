@@ -32,7 +32,7 @@ def transform_gpu(data,theta,cov,trans_mat):
 	}
 
 	//Function for affine transformation of data array
-	__global__ void data_func(int n, int b, float *trans_mat, double *data, double *resgpu){
+	__global__ void data_func(int n, int b, double *trans_mat, double *data, double *resgpu){
 
 		unsigned int ti = threadIdx.x + blockDim.x * blockIdx.x;
 		unsigned int tj = threadIdx.y + blockDim.y * blockIdx.y;
@@ -54,7 +54,7 @@ def transform_gpu(data,theta,cov,trans_mat):
 	}
 
 	//Function for affine transformation of theta array
-	__global__ void theta_func(int n, float *trans_mat, double *theta, double *resgpu){
+	__global__ void theta_func(int n, double *trans_mat, double *theta, double *resgpu){
 
 		unsigned int ti = threadIdx.x + blockDim.x * blockIdx.x;
 
@@ -76,7 +76,7 @@ def transform_gpu(data,theta,cov,trans_mat):
 
 
 	//Function for affine transformation of cov array
-	__global__ void cov_func(int n, int t, float *trans_mat, double *cov, double *res_cov){
+	__global__ void cov_func(int n, int t, double *trans_mat, double *cov, double *res_cov){
 
 		unsigned int ti = threadIdx.x + blockDim.x * blockIdx.x;
 		unsigned int tj = threadIdx.y + blockDim.y * blockIdx.y;
@@ -118,7 +118,7 @@ def transform_gpu(data,theta,cov,trans_mat):
 	# Determine number of particles (N), betas (B), timepoints (T), species (S) and transformed species (A)
 	N,B,T,S = data.shape
 	A = trans_mat.shape[0]
-
+	
 	# Fill placeholders in kernel (pycuda metaprogramming)
 	kernel_code = kernel_code_template % {
 		'T': T,
