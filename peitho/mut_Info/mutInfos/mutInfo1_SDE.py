@@ -357,11 +357,11 @@ def mutInfo1SDE(data,theta,cov):
 
 def run_mutInfo1_SDE(model_obj, input_SBML ):
 	#Initiates list to hold mutual information
-	MutInfo1 = []
+	MutInfo1_SDE = []
 	#Initiates list to hold number of infinites
-	MutInfo1_infs = []
+	MutInfo1_SDE_infs = []
 	#Initiates list to hold percentage of infinites
-	MutInfo1_infs_prop = []
+	MutInfo1_SDE_infs_prop = []
 
 	#Cycles through each experiment
 	for experiment in range(model_obj.nmodels):
@@ -375,12 +375,12 @@ def run_mutInfo1_SDE(model_obj, input_SBML ):
 
 		## Assign mutual information and number of infinites to lists
 		temp_list=mutInfo1SDE(t_data, t_theta, t_cov)
-		MutInfo_lists = [MutInfo1, MutInfo1_infs, MutInfo1_infs_prop]
+		MutInfo_lists = [MutInfo1_SDE, MutInfo1_SDE_infs, MutInfo1_SDE_infs_prop]
 		for x, lst in zip(temp_list, MutInfo_lists):
 			lst.append(x)
 
 		## Print out mutual information
-		print "Mutual Information for Experiment", str(experiment+1)+":", MutInfo1[experiment], "\n"
+		print "Mutual Information for Experiment", str(experiment+1)+":", MutInfo1_SDE[experiment], "\n"
 
 	return MutInfo1_SDE, MutInfo1_SDE_infs, MutInfo1_SDE_infs_prop
 

@@ -84,7 +84,7 @@ def run_cudasim(m_object,inpath="", intType="ODE",usesbml=False):
 			for j in range(i,nspecies):
 				if i==j:
 					var_IC[pos] = 1.0
-				else:print data.shape
+				else:
 					var_IC[pos] = 0.0
 				pos+=1
 		var_IC = array(var_IC)
@@ -104,12 +104,13 @@ def run_cudasim(m_object,inpath="", intType="ODE",usesbml=False):
 		speciesN1 = [x[0:m_object.N1sample] for x in species]
 
 		result = modelInstance.run(parametersN1, speciesN1, constant_sets = not(m_object.initialprior), pairings=m_object.pairParamsICS)
-
 		result_var = LNAInstance.run(parameters, species_var, constant_sets = not(m_object.initialprior), pairings=m_object.pairParamsICS)
 
 		if type(result)!=list:
-			result = [result]
+			result = [result.astype(float64)]
 			result_var = [result_var]
+		else:
+			result = [x.astype(float64) for x in result]
 
 		#print [x.shape for x in result]
 		#print result[0][0,1,:,:]
