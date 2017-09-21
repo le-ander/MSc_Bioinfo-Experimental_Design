@@ -13,4 +13,3 @@ selection beyond guesswork.
 
 [1] J. Liepe, S. Filippi, M. Komorowski, and M. P. Stumpf, “Maximizing the information content of experiments in systems biology,” PLoS Comput Biol, vol. 9, no. 1,
 p. e1002888, 2013.
-
