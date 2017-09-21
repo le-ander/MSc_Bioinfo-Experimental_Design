@@ -79,7 +79,9 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 	if (len(set(models_nparameters)) == 1) and (len(set(models_nspecies)) ==1):
 		nparameters_all=models_nparameters[0]
 		nspecies_all = models_nspecies[0]
-
+	else:
+		print "Input models do not have identical numbers of parameters"
+		sys.exit()
 	#################################################################################################
 	
 
@@ -99,7 +101,8 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 	fitparam_regex = re.compile(r'>paramfit\s*\n(.+)\n<paramfit')
 	times_regex = re.compile(r'>timepoint\n(.+)\n<timepoint', re.DOTALL)
 	particles_regex = re.compile(r'>particles\n(.+)\n<particles', re.DOTALL)
-	dt_regex = re.compile(r'>dt\n(.+)\n<dt', re.DOTALL)
+ 	dt_regex = re.compile(r'>dt\n(.+)\n<dt', re.DOTALL)
+ 	beta_regex = re.compile(r'>beta\n(.+)\n<beta', re.DOTALL)
 	init_regex = re.compile(r'>Initial\sConditions\s\d+\s*\n(.+?)\n<Initial\sConditions\s\d', re.DOTALL)
 	init_prior_regex = re.compile(r'>initials\s*\n(.+)\n<initials', re.DOTALL)
 	samplefrompost_regex = re.compile(r'>samplefromposterior\s*\n(True|False)\s*\n((\w+\.\w+)\n(\w+\.\w+)\n)?<samplefromposterior')
@@ -152,6 +155,10 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 			sys.exit()
 		#######################
 
+		####obtain dt value####
+		beta = beta_regex.search(info).group(1)
+		beta = int(beta)
+		#######################
 
 		####obtain number of particles####
 		particles = particles_regex.search(info).group(1)
@@ -159,6 +166,7 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 			particles = int(particles)
 		except:
 			print "\n\nERROR: Please provide an integer value as number of particles: >particles ... <particles in input data file " + dataname +"!\n\n"
+
 			sys.exit()
 		##################################
 		
@@ -170,8 +178,9 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 			sys.exit()
 		#### SDE model message#################	
 		if model_type == "SDE":
-			print "\n\nWARNING: SDE models will be supported in future version!\n\n"
-			sys.exit()
+			print "\n\nWARNING: SDE models currently under development!\n\n"
+			#sys.exit()
+
 		########################################
 
 		####obtain timepoint for cudasim####
@@ -179,6 +188,7 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 		try:
 			times = [float(i) for i in times]
 		except:
+
 			print "\n\nERROR: Please provide a whitespace seperated list of float value: >timepoints ... <timepoints in input data file " + dataname +"!\n\n"
 			sys.exit()
 
@@ -300,6 +310,7 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 			### error check for prior distribution format ###
 			for i in prior:
 					if prior_check_constant.match(i) == None and prior_check_uniform.match(i)==None and prior_check_normal.match(i)==None and prior_check_lognormal.match(i)==None:
+
 						print "\n\nERROR: Prior distributions of model parameter are not in the right format: >prior ... <prior in input data file " + dataname +"!"
 						sys.exit()
 			####obtain constants of initial condition
@@ -309,12 +320,14 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 					init_con = [k.split("\n") for k in init_list]
 					fit_init = "None"
 				except:
+
 					print "\n\nERROR: Constant values for initial conditions are not in the right format: >Initial Conditions ... <Initial Conditions in input data file " + dataname +"!\n\n"
 					sys.exit()
 				### error check for initial condition format ###
 				for i in init_con:
 					for j in i:
 						if prior_check_constant.match(j) == None and (j!="Unchanged" and len(i)!=1):
+
 							print "Initial conditions can only be defined as constants: >Initial Conditions ... <Initial Conditions in input data file " + dataname +"!\n\n"
 							sys.exit()
 
@@ -324,12 +337,14 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 				try:
 					init_con.append(init_prior_regex.search(info).group(1).split("\n"))
 				except:
+
 					print "\n\nERROR: Prior distributions of initial conditions are not in the right format: >initials ... <initials in input data file " + dataname +"!\n\n"
 					sys.exit()
 				### error check for prior distribution format ###
 				for i in init_con:
 					for j in i:
 						if prior_check_constant.match(i) == None and prior_check_uniform.match(i)==None and prior_check_normal.match(i)==None and prior_check_lognormal.match(i)==None:
+
 							print "\n\nERROR: Prior distributions of initial conditions are not in the right format: >initials ... <initials in input data file " + dataname +"!\n\n"
 							sys.exit()
 
@@ -339,6 +354,7 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 						fit_init_list = init_fit_regex.search(info).group(1)
 						fit_init = fit_init_list
 					except:
+
 						print "\n\nERROR: Fitting information for initial condition is not in the right format: >initialfit ... <initialfit in input data file " + dataname +"!\n\n"
 						sys.exit()
 				else:
@@ -352,6 +368,7 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 			fit_list = fit_regex.search(info).group(1).split("\n")
 			fit_species = fit_list
 		except:
+
 			print "\n\nERROR: No measurable species are defined: >measuredspecies .... <measurespecies in input data file " + dataname +"!\n\n"
 			sys.exit()
 		##########################################
@@ -363,6 +380,7 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 				fitparam_list = fitparam_regex.search(info).group(1)
 				fit_param = fitparam_list
 			except:
+
 				print "\n\nERROR: Fitting information for model parameter is not in the right format: >paramfit .... <paramfit in input data file " + dataname +"!\n\n"
 				sys.exit()
 		else:
@@ -376,6 +394,7 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 				fit_comp_list = comp_fit_regex.search(info).group(1)
 				fit_comp = fit_comp_list
 			except:
+
 				print "\n\nERROR: Fitting information for compartments is not in the right format: >compfit .... <compfit in input data file " + dataname +"!\n\n"
 				sys.exit()
 		else:
@@ -388,6 +407,7 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 			comps_list = comp_regex.search(info).group(1).split("\n")
 			comps = comps_list
 		except:
+
 			print "\n\nERROR: Prior distributions/constant of compartments is not in the right format: >compartment .... <compartment in input data file " + dataname +"!\n\n"
 			sys.exit()
 		#############################################################
@@ -397,6 +417,7 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 		try:
 			comb_list = comb_regex.search(info).group(1).split("\n")
 		except:
+
 			print "\n\nERROR: Combinations of initial conditions, parameter changes and species fit defining an experiment are not in the right format: >combination .... <combination in input data file " + dataname +"!\n\n"
 			sys.exit()
 		if comb_list[0]=="All":
@@ -408,8 +429,9 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 						comb.append([h,i,j])
 		else:
 			try:
-				comb = [[int(j)-1 for j in re.search(r'initset(\d+) paramexp(\d+) fit(\d+)', i).group(1,2,3)] for i in comb_list]
+				comb = [[int(j)-1 for j in re.search(r'initset(\d+) paramexp(\d+) measured(\d+)', i).group(1,2,3)] for i in comb_list]
 			except:
+
 				print "\n\nERROR: Combinations of initial conditions, parameter changes and species fit defining an experiment are not in the right format: >combination .... <combination in input data file " + dataname +"!\n\n"
 				sys.exit()
 			all_combination = False
@@ -424,6 +446,7 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 	out_file.write("<input>\n\n")
 
 	####Write number of models/experiments defined to input.xml file#####################################################################
+
 	out_file.write("######################## number of experiments\n\n")
 	out_file.write("# Number of experiments for which details are described in this input file\n")
 	if template_creator==False:
@@ -435,6 +458,7 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 	#### Model type #######################################################################################################################
 	out_file.write("######################## type of models\n\n")
 	out_file.write("# type: the method used to simulate your model. ODE, SDE or Gillespie.\n")
+
 	if (template_creator==False and model_type):
 		out_file.write("<type> "+model_type+" </type>\n\n")
 	elif template_creator == True:
@@ -442,6 +466,7 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 
 	####Writes number of particles to be simulated to input.xml file#######################################################################
 	out_file.write("######################## particles\n\n")
+
 	if (template_creator==False and particles):
 		out_file.write("<particles> "+ repr(particles) +" </particles>\n\n")
 	elif template_creator == True:
@@ -451,10 +476,18 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 	####Writes dt value for ODE/SDE solver to input.xml file###############################################################################
 	out_file.write("######################## dt\n\n")
 	out_file.write("# Internal timestep for solver.\n# Make this small for a stiff model.\n")
+
 	if (template_creator==False and dt):
 		out_file.write("<dt> "+ repr(dt) +" </dt>\n\n")
 	elif template_creator == True:
 		out_file.write("<dt> 0.01 </dt>\n\n")
+
+	out_file.write("######################## beta\n\n")
+	#out_file.write("# Internal timestep for solver.\n# Make this small for a stiff model.\n")
+	if (template_creator==False and beta):
+		out_file.write("<beta> "+ repr(beta) +" </beta>\n\n")
+	elif template_creator == True:
+		out_file.write("<beta> 1 </beta>\n\n")
 
 	###################################################################################################################################
 	
@@ -464,17 +497,20 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 	####Writes timepoint for simulation output to input.xml file###########################################################################	
 	out_file.write("# times: For ABC SMC, times must be a whitespace delimited list\n")
 	out_file.write("# In simulation mode these are the timepoints for which the simulations will be output\n")
+
 	if (template_creator==False and times):
 		out_file.write("<times>");
 		for i in times:
 			out_file.write(" "+repr(i) )
 		out_file.write(" </times>\n\n");
 
+
 	elif template_creator == True:
 		out_file.write("<times> 0 1 2 3 4 5 6 7 8 9 10 </times>\n\n")
 	###################################################################################################################################
 
 	####Writes sample sizes for N1, N2, N3 and N4######################################################################################
+
 	out_file.write("# Sizes of N1, N2, N3 and N4 samples for entropy calculation\n")
 	if (template_creator==False and nsample):
 		out_file.write("<nsamples>\n");
@@ -484,12 +520,14 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 			out_file.write(" </N"+repr(index+1)+">\n")
 		out_file.write(" </nsamples>\n\n");
 
+
 	elif template_creator == True:
 		out_file.write("<nsamples>\n<N1>9000</N1>\n<N2>1000</N2>\n<N3>0</N3>\n<N4>0</N4>\n</nsamples>\n\n")
 	###################################################################################################################################
 
 	####Writes sigma###################################################################################################################
 	out_file.write("# Sigma\n")
+
 	if (template_creator==False and sigma):
 		out_file.write("<sigma> "+ repr(sigma) +" </sigma>\n\n")
 	elif template_creator == True:
@@ -509,6 +547,7 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 	####Writes if initial conditions are defined by prior distributions################################################################
 	out_file.write("# Indicates if a initial conditions are provided as prior distributions \n")
 	out_file.write("<initialprior> ")
+
 	if template_creator==False:
 		out_file.write(repr(init_prior))
 	elif template_creator == True:
@@ -520,6 +559,7 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 	out_file.write("# Single or subset of parameters to be considered for calculation of mututal inforamtion:\n")
 		
 	out_file.write("<paramfit> ")
+
 	if template_creator==False:
 		out_file.write(fit_param)
 	elif template_creator == True:
@@ -544,6 +584,7 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 
 	####Writes if posterior sample is provided and where the samples and associated weights file are located ###########################
 	out_file.write("# Indicates if a sample from a posterior + associated weights are provided(1=True / 0=False) and the names of sample and weight file \n")
+
 	if template_creator==False:
 		out_file.write("<samplefrompost> ")
 		out_file.write(repr(samplefrompost))
@@ -565,8 +606,9 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 	
 
 
+
 	####Experiments################################################################
-	out_file.write("######################## experiments\n\n")
+	out_file.write("######################## Experiments\n\n")
 	out_file.write("<experiments>\n")
 
 
@@ -660,13 +702,16 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 		out_file.write("#       constant, value \n")
 		out_file.write("#       normal, mean, variance \n")
 		out_file.write("#       uniform, lower, upper \n")
+
 		out_file.write("#       lognormal, mean, variance \n")
 		out_file.write("#       posterior \n\n")
 		####Writes values/prior for initial conditions#####################################################################################
 		out_file.write("<initial>\n")
 
 		counter=0
+
 		if template_creator==False:
+
 			if samplefrompost == False:
 
 				if init_con[comb[j][0]][0]=="Unchanged":
@@ -695,6 +740,7 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 						out_file.write(" </ic" + repr(counter)+">\n")
 
 
+
 		elif template_creator==True:
 			x=0
 			for k in range(0,len(species)):
@@ -709,12 +755,15 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 		####Writes compartment defined for model/experiment and their associated sizes expressed as constants or priors####################
 		out_file.write("<compartments>\n")
 		counter=0
+
 		if template_creator==False:
+
 			for k in range(len(comps)):
 				counter=counter+1
 				out_file.write("<compartment"+repr(counter)+"> ")
 				out_file.write(comps[k])
 				out_file.write(" </compartment" + repr(counter)+">\n")
+
 
 
 		elif template_creator==True:
@@ -729,6 +778,7 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 
 
 
+
 		####Writes parameters of model defined for experiment and their associated sizes expressed as priors##############
 		out_file.write("<parameters>\n")
 		counter=0
@@ -740,13 +790,14 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 					out_file.write("<parameter"+repr(counter)+"> ")
 					out_file.write(prior[k])
 					out_file.write(" </parameter" + repr(counter)+">\n")
-#					
+					
 			elif samplefrompost==True:
 				for k in range(models_nparameters[comb[j][1]]):
 					counter=counter+1
 					out_file.write("<parameter"+repr(counter)+"> ")
 					out_file.write("posterior")
 					out_file.write(" </parameter" + repr(counter)+">\n")
+
 
 
 
@@ -761,6 +812,7 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 		out_file.write("</parameters>\n")
 		###################################################################################################################################
 
+
 		out_file.write("</experiment"+repr(j+1)+">\n\n") 
 		
 
@@ -773,6 +825,7 @@ def generateTemplate(source, analysis_type, filename="input_file", dataname=None
 	######################################################################################
 
 	#####Return list of the combination of the experimental condition used to define aboves experiment#####################################
+
 	if template_creator==False:
 		return comb
 	elif template_creator==True:

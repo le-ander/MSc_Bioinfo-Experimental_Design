@@ -3,6 +3,7 @@
 import re, sys, numpy, copy, math
 from numpy.random import *
 from xml.dom import minidom
+from numpy import array
 
 
 
@@ -67,7 +68,9 @@ def parse_required_single_value( node, tagname, message, cast ):
 
 
 #### Function to obtain a vector of value from given node and tag in input xml file################
+
 def parse_required_vector_value(self, node, tagname, message, cast ):
+
 	try:
 		data = node.getElementsByTagName(tagname)[0].firstChild.data
 	except:
@@ -89,13 +92,14 @@ def parse_required_vector_value(self, node, tagname, message, cast ):
 	return(ret)
 
 
+
 def type_parser (type, filename):
-	
+
 	if re_ODE.match(type):
 		return 0
 	elif re_SDE.match(type):
-		print "\n\nERROR: Type of the model in " ,filename,  self.name[self.nmodels-1], " is not supported!\n\n"
-		sys.exit()
+		#print "\n\nWARNING: Type of the model in " ,filename,  self.name[self.nmodels-1], " is not fully supported yet!\n\n"
+		return 1
 
 	else:
 		print "\n\nERROR: Type of the model ", self.name[self.nmodels-1], " is not supported in " +filename+ "!\n\n"
@@ -104,6 +108,7 @@ def type_parser (type, filename):
 
 #### Function to identify prior the user given prior and obtain its values#########################
 #####
+
 def process_prior(self, tmp ,filename):
 	prior_tmp = [0,0,0]
 
@@ -112,6 +117,7 @@ def process_prior(self, tmp ,filename):
 		try:
 			prior_tmp[1] = float( tmp[1] )
 		except:
+
 			print "\n\nERROR: Value of the prior for experiment ", self.name[self.nmodels-1], "has the wrong format in" +filename+ "!\n\n"
 			sys.exit()
 
@@ -121,6 +127,7 @@ def process_prior(self, tmp ,filename):
 			prior_tmp[1] = float( tmp[1] )
 			prior_tmp[2] = float( tmp[2] )
 		except:
+
 			print "\n\nERROR: Value of the prior for experiment ", self.name[self.nmodels-1], "has the wrong format in" +filename+ "!\n\n"
 			sys.exit()
 
@@ -130,6 +137,7 @@ def process_prior(self, tmp ,filename):
 			prior_tmp[1] = float( tmp[1] )
 			prior_tmp[2] = float( tmp[2] )
 		except:
+
 			print "\n\nERROR: Value of the prior for experiment ", self.name[self.nmodels-1], "has the wrong format in" +filename+ "!\n\n"
 			sys.exit()
 
@@ -139,6 +147,7 @@ def process_prior(self, tmp ,filename):
 			prior_tmp[1] = float( tmp[1] )
 			prior_tmp[2] = float( tmp[2] )
 		except:
+
 			print "\n\nERROR: Value of the prior for experiment ", self.name[self.nmodels-1], "has the wrong format in" +filename+ "!\n\n"
 			sys.exit()
 
@@ -146,6 +155,7 @@ def process_prior(self, tmp ,filename):
 		prior_tmp[0] = 4
 
 	else:
+
 		print "\n\nERROR: Supplied parameter prior  in", filename , tmp[0], " is unsupported!\n\n"
 		sys.exit()
 
@@ -240,9 +250,9 @@ class algorithm_info:
 		xmldoc = minidom.parse(filename)
 		### mode is 0  inference, 1 simulate, 2 design
 		#self.mode = mode
-		
+
 		### initialises attributes of the object
-		
+
 		#### Global model/experiment attributes
 		self.modelnumber = 0
 		self.particles = 0
@@ -256,14 +266,14 @@ class algorithm_info:
 		self.ncompparams = []
 
 		#### SDE specific attributes
-		#self.beta = 
+		#self.beta =
 		#self.cuda_SDE =
 
 		#### Posterior sample attributes
 		self.sampleFromPost = False
 		self.post_sample_file = ""
 		self.post_weight_file = ""
-		
+
 		#### Attribute indicating if initial conditions are defined by priors
 		self.initialprior = False
 
@@ -299,6 +309,7 @@ class algorithm_info:
 		## Required arguments
 
 		### get number of models
+
 		self.modelnumber = parse_required_single_value( xmldoc, "experimentnumber", "\n\nERROR: Please provide an integer value for <experimentnumber> in"+ filename+ "!", int )
 
 		#### gets type of model (ODE/SDE)#####################
@@ -312,9 +323,13 @@ class algorithm_info:
 		### get dt
 		self.dt = parse_required_single_value( xmldoc, "dt", "\n\nERROR: Please provide an float value for <dt> in"+ filename+ "!", float )
 
+		### get beta
+		self.beta = parse_required_single_value( xmldoc, "beta", "\n\nERROR: Please provide an int value for <beta> in"+ filename+ "!", int )
+
 
 		### indetifies data node in input xml file
 		dataref = xmldoc.getElementsByTagName('data')[0]
+
 
 
 		### get timepoints
@@ -323,6 +338,7 @@ class algorithm_info:
 		#### check if times are in ascending order
 
 		### get global number of parameters
+
 		self.nparameters_all = parse_required_single_value(dataref, "nparameters_all", "\n\nERROR: Please provide an integer value for <data><nparameters_all> in"+ filename+ "!", int)
 
 
@@ -347,6 +363,7 @@ class algorithm_info:
 		#### get sizes of N1, N2, N3 and N4 samples
 		nsampleref = xmldoc.getElementsByTagName('nsamples')[0]
 
+
 		self.N1sample = parse_required_single_value( dataref, "N1", "\n\nERROR: Please provide an integer value for <nsamples><N1> in"+ filename+ "!", int )
 		self.N2sample = parse_required_single_value( dataref, "N2", "\n\nERROR: Please provide an integer value for <nsamples><N2> in"+ filename+ "!", int )
 		self.N3sample = parse_required_single_value( dataref, "N3", "\n\nERROR: Please provide an integer value for <nsamples><N3> in"+ filename+ "!", int )
@@ -358,6 +375,7 @@ class algorithm_info:
 
 
 		### get model attributes
+
 		modelref = xmldoc.getElementsByTagName('experiments')[0]
 		for m in modelref.childNodes:
 			if m.nodeType == m.ELEMENT_NODE:
@@ -366,27 +384,30 @@ class algorithm_info:
 				self.x0prior.append([])
 				self.compprior.append([])
 
+
 				#### gets name of experiment##################
 				try:
 					self.name.append( str(m.getElementsByTagName('name')[0].firstChild.data).strip() )
 				except:
 					print "\n\nERROR: Please provide a string value for <name> for experiment ", self.nmodels, " in ", filename, "!"
 					sys.exit()
-				
+
 				#### gets name of associated SBML file###############
 				try:
 					self.source.append( str(m.getElementsByTagName('source')[0].firstChild.data).strip() )
 				except:
+
 					print "\n\nERROR: Please provide an string value for <source> for experiment ", self.nmodels, " in ", filename, "!"
 					sys.exit()
-				
+
 				#### gets name of associated CUDA file#############
 				try:
 					self.cuda.append( str(m.getElementsByTagName('cuda')[0].firstChild.data).strip() )
 				except:
+
 					print "\n\nERROR: Please provide an string value for <cuda> for experiment ", self.nmodels, " in ", filename, "!"
 					sys.exit()
-				
+
 
 				nparameter = 0
 				ncompparam = 0
@@ -399,6 +420,7 @@ class algorithm_info:
 							ncompparam += 1
 							prior_tmp = [0,0,0]
 							tmp = str( p.firstChild.data ).split()
+
 							self.compprior[self.nmodels-1].append( process_prior(self, tmp ,filename) )
 				except:
 					ncompparam = 0
@@ -410,6 +432,7 @@ class algorithm_info:
 						nparameter += 1
 						prior_tmp = [0,0,0]
 						tmp = str( p.firstChild.data ).split()
+
 						self.prior[self.nmodels-1].append( process_prior(self, tmp, filename) )
 
 
@@ -421,6 +444,7 @@ class algorithm_info:
 						ninit += 1
 						prior_tmp = [0,0,0]
 						tmp = str( inn.firstChild.data ).split()
+
 						self.x0prior[self.nmodels-1].append( process_prior(self, tmp, filename) )
 
 
@@ -433,6 +457,7 @@ class algorithm_info:
 
 				#### Error checking for parameter prior, initial condtion prior and measurable species
 				if nparameter == 0:
+
 					print "\n\nERROR: No parameters specified in experiment ", self.nmodels, " in ", filename, "!"
 					sys.exit()
 				if ninit == 0:
@@ -448,6 +473,7 @@ class algorithm_info:
 
 
 		if self.nmodels == 0:
+
 			print "\n\nERROR: No experiments specified in "+ filename+ "!"
 			sys.exit()
 
@@ -475,6 +501,7 @@ class algorithm_info:
 		try:
 			self.param_fit =( parse_fitting_information_parameters('paramfit', dataref, 'parameter' ,self.nparameters_all )  )
 		except:
+
 			print "\n\nERROR: Parameters to be fitted are not defined properly in <paramfit> ... </paramfit> in" +filename+ "!"
 			sys.exit()
 		###
@@ -483,6 +510,7 @@ class algorithm_info:
 		try:
 			self.init_fit =( parse_fitting_information_parameters('initfit', dataref, 'initial' ,self.nspecies_all )  )
 		except:
+
 			print "\n\nERROR: Initial conditions to be fitted are not defined properly in <initfit> ... </initfit> in" +filename+ "!"
 			sys.exit()
 		###
@@ -491,6 +519,7 @@ class algorithm_info:
 		try:
 			self.comp_fit=( parse_fitting_information_parameters('compfit', dataref, 'compartment' ,self.ncompparams_all )  )
 		except:
+
 			print "\n\nERROR: Compartments to be fitted are not defined properly in <compfit> ... </compfit> in" +filename+ "!"
 			sys.exit()
 		###
@@ -498,6 +527,7 @@ class algorithm_info:
 	# A method which prints out details about the models/experiments defined in the object
 	def print_info(self):
 		print "\nALGORITHM INFO"
+
 		print "experimentnumber:", self.modelnumber
 		print "samples:", self.particles
 		print "dt:", self.dt
@@ -524,6 +554,7 @@ class algorithm_info:
 		print "times:", self.times
 
 
+
 		print "EXPERIMENTS:", self.nmodels
 		for i in range(self.nmodels):
 			print "\t", "npar:", self.nparameters[i]
@@ -540,11 +571,11 @@ class algorithm_info:
 
 	# A method to sample from the priors
 	##(method gets called by sorting_files)
-	##Arguments: 
+	##Arguments:
 	##inputpath - if a sample for the prior is given then inputpath is where this file is
 	##usesbml - input indicating whether an SBML file is used or not
 	def THETAS(self, inputpath="", usesbml = False):
-		
+
 		#Compartments are always defined in SBML file and so if local code used but number of compartments > 0 then change usesbml to TRUE in order to sample from compartment prior
 		if self.ncompparams_all!=0:
 			usesbml = True
@@ -553,10 +584,10 @@ class algorithm_info:
 		if self.sampleFromPost==False:
 
 			#Sets up matrix for parameters
-			parameters = numpy.zeros([self.particles,self.nparameters_all]) 
+			parameters = numpy.zeros([self.particles,self.nparameters_all])
 
 			#Loop through number of parameters
-			for j in range(len(self.prior[0])): 
+			for j in range(len(self.prior[0])):
 
 				#####Constant prior#####
 				if(self.prior[0][j][0]==0):
@@ -583,10 +614,10 @@ class algorithm_info:
 			if self.initialprior == True:
 
 				#Sets up initial conditions array
-				species = numpy.zeros([self.particles,self.nspecies_all])  
-				
+				species = numpy.zeros([self.particles,self.nspecies_all])
+
 				#Loop through number of species
-				for j in range(len(self.x0prior[0])): 
+				for j in range(len(self.x0prior[0])):
 
 					#####Constant prior#####
 					if(self.x0prior[0][j][0]==0):
@@ -618,7 +649,7 @@ class algorithm_info:
 						x0prior_uniq.append(ic)
 
 				#Sets up the species array
-				species = [numpy.zeros([self.particles,self.nspecies_all]) for x in range(len(x0prior_uniq))] 
+				species = [numpy.zeros([self.particles,self.nspecies_all]) for x in range(len(x0prior_uniq))]
 
 				#Loop over each initial condition
 				for ic in range(len(x0prior_uniq)):
@@ -626,7 +657,7 @@ class algorithm_info:
 					for j in range(len(x0prior_uniq[ic])):
 
 						#####Constant prior#####
-						if(x0prior_uniq[ic][j][0]==0): 
+						if(x0prior_uniq[ic][j][0]==0):
 							species[ic][:,j] = x0prior_uniq[ic][j][1]
 
 						####If prior not defined####
@@ -641,7 +672,7 @@ class algorithm_info:
 				compartments = numpy.zeros([self.particles,self.ncompparams_all])
 
 				#Loop through number of compartments
-				for j in range(len(self.compprior[0])): 
+				for j in range(len(self.compprior[0])):
 
 					#####Constant prior#####
 					if(self.compprior[0][j][0]==0):  # j paramater self.index
@@ -702,10 +733,10 @@ class algorithm_info:
 					parameters = numpy.zeros( [self.particles,self.nparameters_all] )
 					species = numpy.zeros([self.particles,self.nspecies_all])
 					#For loop draws samples one at a time
-					for i in range(self.particles): 
+					for i in range(self.particles):
 						#Function that gives sample
-						index = getWeightedSample(weights)  
-						parameters[i,:] = param[index][:self.nparameters_all] 
+						index = getWeightedSample(weights)
+						parameters[i,:] = param[index][:self.nparameters_all]
 						species[i,:] = param[index][-self.nspecies_all:]
 				else:
 					print "Please provide equal number of particles and weights in model!"
@@ -721,9 +752,9 @@ class algorithm_info:
 					parameters = numpy.zeros( [self.particles,self.nparameters_all] )
 					species = numpy.zeros([self.particles,self.nspecies_all])
 					#For loop draws samples one at a time
-					for i in range(self.particles): 
+					for i in range(self.particles):
 						#Function that gives sample
-						index = getWeightedSample(weights)  
+						index = getWeightedSample(weights)
 						compartments[i,:] = param[index][:self.ncompparams_all]
 						parameters[i,:] = param[index][self.ncompparams_all:self.ncompparams_all+self.nparameters_all] #self.index indefies list which is used to assign parameter value.  j corresponds to different parameters defines column
 						species[i,:] = param[index][-self.nspecies_all:]
@@ -762,7 +793,7 @@ class algorithm_info:
 
 				#Concatenates the N1 and N2 sample with the N1xN3 sample
 				species = numpy.concatenate((species[range(self.particles-self.N3sample),:],species_final),axis=0)
-			
+
 			else:
 				#Just creates a new intial values matrix that is the same but of size (N1+N2+N1xN3)x(number of species) since initial values are constant
 				for ic in range(len(species)):
@@ -824,7 +855,7 @@ class algorithm_info:
 
 	# A method to obtain the approach
 	##(method gets called by sorting_files)
-	##Arguments: 
+	##Arguments:
 	##analysisType - type of approach
 	def getAnalysisType(self,analysisType):
 		self.analysisType = analysisType
@@ -853,10 +884,10 @@ class algorithm_info:
 							temp_uniq.append(ic)
 
 					self.pairParamsICS[Cfile] = temp_uniq
-		
+
 	# A method to that sorts the output from CUDA-sim
 	##(method gets called by run_cudasim)
-	##Arguments: 
+	##Arguments:
 	##cudaorder - order in which cudacode files are passed in CUDA-sim
 	##cudaout - output from cudasim
 	def sortCUDASimoutput(self,cudaorder,cudaout):
@@ -879,7 +910,7 @@ class algorithm_info:
 		for i, cudafile in enumerate(cudaorder):
 			#Index_NA finds the particle indices for which there are NAs
 			index_NA = [p for p, e in enumerate(numpy.isnan(numpy.sum(numpy.sum(cudaout[i][:,:,:],axis=2),axis=1))) if e==True]
-			
+
 			#Detects whether we have priors over the initial conditions or not and sets pairings_ICs for iteration over in the next part
 			if self.initialprior == False:
 				pairing_ICs = enumerate(self.pairParamsICS.values()[i])
@@ -900,7 +931,7 @@ class algorithm_info:
 					N4_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample+self.N3sample+self.N4sample and x >= j*Nparticles + self.N1sample + self.N2sample+self.N3sample]
 					#Key is the cuda code file string and the values is a list corresponding to the remaining samples after removing NAs
 					cuda_NAs[cudafile].append([self.N1sample-len(N1_NA),self.N2sample-len(N2_NA),self.N3sample-len(N3_NA),self.N4sample-len(N4_NA)])
-				
+
 				#Approach 2 needs to be considered more carefully
 				#If there is an NA for N1 then need to remove all of the corresponding N3
 				#If there is an NA in an N3 then the N1 which this corresponds to has a different N3, i.e. after removing NAs
@@ -908,12 +939,12 @@ class algorithm_info:
 					#start and end are the position for the N1xN3 sample for a specific initial condition
 					start = j*Nparticles + self.N1sample+self.N2sample
 					end = j*Nparticles + self.N1sample+self.N2sample + self.N1sample*self.N3sample
-					
+
 					#Counts NAs in N1 and N2
 					N1_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample]
 					N2_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample and x >= j*Nparticles + self.N1sample]
 					new_N2 = self.N2sample-len(N2_NA)
-					
+
 					#Calculates the number of NAs in N1xN3 sample but seperates out between each N3 belonging to a specific N1
 					additional_N1N3_NAs = [range(int(j*Nparticles + self.N1sample + self.N2sample + x*self.N3sample),int(j*Nparticles + self.N1sample + self.N2sample + (x+1)*self.N3sample)) for x in N1_NA - j*Nparticles*numpy.ones([len(N1_NA)])]
 					y = []
@@ -928,7 +959,7 @@ class algorithm_info:
 
 					#Finds the NAs in the N1xN3 sample
 					N1N3_NA = [x for x in index_NA_IC if x < end and x >= start]
-					
+
 					#Finds the remaining particles in N1xN3 sample
 					remaining_N1N3 = [item for item in range(start,end) if item not in N1N3_NA]
 
@@ -942,17 +973,17 @@ class algorithm_info:
 
 					#Adds to indicies to remove
 					index_NA_IC = set().union(index_NA_IC, [x+j*Nparticles for x,y in enumerate(new_N1N3) if y == 0])
-					
+
 					#Calculates new NAs in N1 sample
 					N1_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample]
 					new_N1 = self.N1sample-len(N1_NA)
-					
+
 					#Sets the number remaining in the sample
 					cuda_NAs[cudafile].append([new_N1,new_N2,new_N1N3])
 
 					#Adds NAs to entire list index_NA
 					index_NA = list(set().union(index_NA,index_NA_IC))
-			
+
 			#Removes the NAs in the cuda output
 			cudaout[i] = numpy.delete(cudaout[i], index_NA, axis=0)
 
@@ -965,10 +996,10 @@ class algorithm_info:
 			for model, cudafile in enumerate(self.cuda):
 				#Picks corresponding sample for each cuda code
 				cudaout_temp = cudaout[cudaorder.index(cudafile)]
-			
+
 				#Finds which initial condition this experiment has
 				pos = self.pairParamsICS[cudafile].index([x[1] for x in self.x0prior[model]])
-				
+
 				#Find total number of particles associated with cuda file
 				if self.analysisType!=1:
 					size_cudaout_start = [sum(cuda_NAs[cudafile][x]) for x in range(pos-1)]
@@ -979,7 +1010,7 @@ class algorithm_info:
 					size_cudaout_start = sum(size_cudaout_start)
 					size_cudaout_end = size_cudaout_start + sum([cuda_NAs[cudafile][pos][0]]+[cuda_NAs[cudafile][pos][1]]+cuda_NAs[cudafile][pos][2])
 
-				#Copies associated cudaoutput to corresponding experiement
+				#Copies associated cudaoutput to corresponding experiment
 				self.cudaout[model] = cudaout_temp[size_cudaout_start:size_cudaout_end,:,:]
 		#If priors over initial conditions then assign just corresponding cuda code
 		else:
@@ -997,7 +1028,7 @@ class algorithm_info:
 
 	# A method to add noise to the N1 sample
 	##(method gets called by sortCUDASimoutput)
-	##Arguments: 
+	##Arguments:
 	##cudaorder - order in which cudacode files are passed in CUDA-sim
 	def addNoise(self,cudaorder):
 
@@ -1008,28 +1039,28 @@ class algorithm_info:
 		if self.initialprior == False:
 			#Iterates over cuda code files for each experiment
 			for model, cudafile in enumerate(self.cuda):
-				
+
 				#Finds position of initial condition used for a cuda code file
 				pos = self.pairParamsICS[cudafile].index([x[1] for x in self.x0prior[model]])
-				
+
 				#Finds the corresponding N1 to that cuda file
 				N1_temp = self.cudaout_structure[cudafile][pos][0]
-				
+
 				#Samples the noise
 				noise = normal(loc=0.0, scale=self.sigma, size=(N1_temp,len(self.times),len(self.fitSpecies[model])))
-				
+
 				#Adds the noise to the trajectories
 				self.trajectories[model] = self.cudaout[model][:N1_temp,:,:] + noise
 		else:
 			#Iterates over the cuda files for each experiment
 			for model, cudafile in enumerate(self.cuda):
-				
+
 				#Finds N1 corresponding to that cuda file
 				N1_temp = self.cudaout_structure[cudafile][0][0]
-				
+
 				#Samples noise
 				noise = normal(loc=0.0, scale=self.sigma, size=(N1_temp,len(self.times),len(self.fitSpecies[model])))
-				
+
 				#Adds noise to trajectories
 				self.trajectories[model] = self.cudaout[model][:N1_temp,:,:] + noise
 
@@ -1048,7 +1079,7 @@ class algorithm_info:
 				#Picks out measurable species if not combined with other
 				if len(fit) == 1:
 					cudaout_temp[:,:,j] = exp_n[:,:,fit[0]]
-				
+
 				#Calculates the fits if combinations required e.g. species1+species2-species3
 				else:
 					if fit[1] == "+":
@@ -1075,7 +1106,7 @@ class algorithm_info:
 		for model in range(self.nmodels):
 			#Calculates the maximum difference between trajectores and output from cuda sim
 			maxDistTraj = max([math.fabs(numpy.amax(self.trajectories[model]) - numpy.amin(self.cudaout[model])),math.fabs(numpy.amax(self.cudaout[model]) - numpy.amin(self.trajectories[model]))])
-			
+
 			#Sets an arbitray precision
 			preci = pow(10,-34)
 
@@ -1085,10 +1116,10 @@ class algorithm_info:
 			#Depending on how FmaxDistTraj compares to precision set an appropriate scale
 			if FmaxDistTraj<preci:
 #				self.scale[model] = math.log(pow(1.79*pow(10,300),1.0/(len(self.fitSpecies[model])*len(self.times))),math.e)
-				self.scale[model] = pow(1.79*pow(10,300),1.0/(len(self.fitSpecies[model])*len(self.times)))		
+				self.scale[model] = pow(1.79*pow(10,300),1.0/(len(self.fitSpecies[model])*len(self.times)))
 			else:
 				self.scale[model] = pow(preci,1.0/(len(self.fitSpecies[model])*len(self.times)))*1.0/FmaxDistTraj
-	
+
 	#Scaling method for approach 3
 	##(method gets called by sorting_files)
 	##M_Ref - number of timepoints in reference model
@@ -1102,20 +1133,20 @@ class algorithm_info:
 		for model in range(self.nmodels):
 			#Initiates list for distances
 			distance = []
-			
+
 			#Calculates distances between trajectories at timepoints
 			for tp in range(len(self.times)):
 				distance.append(max([math.fabs(numpy.amax(self.trajectories[model][:,tp,:]) - numpy.amin(self.cudaout[model][:,tp,:])),math.fabs(numpy.amax(self.cudaout[model][:,tp,:]) - numpy.amin(self.trajectories[model][:,tp,:]))]))
-			
+
 			#Assigns maximum of distance to maxDistList
 			maxDistList.append(numpy.amax(numpy.array(distance)))
-		
+
 		#MIGHT NOT BE NEEDED
 		#maxDistTraj = max(maxDistList)
 
 		#Initiates scales list
 		self.scale = [""]*self.nmodels
-		
+
 		#Sets arbitrary precision level
 		preci = pow(10,-34)
 
@@ -1125,14 +1156,14 @@ class algorithm_info:
 			#Extracts timepoints and measurable species for each experiment
 			M_Alt = len(self.times)
 			P_Alt = len(self.fitSpecies[model])
-			
+
 			#Finds maximum between reference and experiment
 			M_Max = float(max(M_Ref,M_Alt))
 			P_Max = float(max(P_Ref,P_Alt))
 
 			#Calculates proportional to normal based on maximum distance between trajectories on log scale
 			scale1 = math.log(preci)/(2.0*M_Max*P_Max) + (maxDistList[model]*maxDistList[model])/(2.0*self.sigma*self.sigma)
-			
+
 			#Calculates comparative scale
 			scale2 = math.log(pow(10,300))/(2.0*M_Max*P_Max)
 
@@ -1145,20 +1176,20 @@ class algorithm_info:
 	##refmod - object for the reference model
 	def copyTHETAS(self,refmod):
 		#Sets the N3 sample for experiments
-		
+
 		self.particles -= self.N3sample
 		self.N3sample = 0
-		
+
 		#Sets parameter sample for experiment
 		self.parameterSample = numpy.concatenate((refmod.parameterSample[:self.N1sample+self.N2sample,:],refmod.N4parameterSample),axis = 0)
 
 		#Sets sample for initial conditions
 		if self.initialprior == True and refmod.initialprior == True:
 			self.speciesSample = numpy.concatenate((refmod.speciesSample[:self.N1sample+self.N2sample,:],refmod.N4speciesSample),axis = 0)
-		
+
 		#For when constant initial conditions are used
 		elif self.initialprior == False and refmod.initialprior == False:
-			
+
 			#Finds set of constant initial conditions
 			x0prior_uniq = [self.x0prior[0]]
 			for ic in self.x0prior[1:]:
@@ -1171,7 +1202,7 @@ class algorithm_info:
 			#Copies the initial conditions into species list of arrays
 			for ic in range(len(x0prior_uniq)):
 				#Loop through number of parameter
-				for j in range(len(x0prior_uniq[ic])): 
+				for j in range(len(x0prior_uniq[ic])):
 					#####Constant prior#####
 					if(x0prior_uniq[ic][j][0]==0):  # j paramater self.index
 						species[ic][:,j] = x0prior_uniq[ic][j][1]
@@ -1186,6 +1217,338 @@ class algorithm_info:
 			sys.exit()
 
 		#For when compartments are used
-		if refmod.ncompparams_all > 0:	
+		if refmod.ncompparams_all > 0:
 			self.compsSample = numpy.concatenate((refmod.compsSample[:self.N1sample+self.N2sample,:],refmod.N4compsSample),axis = 0)
 
+
+	def sort_mu_covariance(self,cuda_order,covariance_matricies,nspecies):
+
+		self.mus = [""]*self.nmodels
+		self.covariances = [""]*self.nmodels
+
+		if self.analysisType == 1:
+			Nparticles = self.N1sample+self.N2sample+self.N1sample*self.N3sample
+		else:
+			Nparticles = self.particles
+
+		if self.initialprior == False:
+			x0priors = [[y[1] for y in x] for x in self.x0prior]
+			for p, cuda in enumerate(self.cuda):
+				which_cuda = cuda_order.index(cuda)
+				which_IC = self.pairParamsICS[cuda].index(x0priors[p])
+				covariance_matrix = covariance_matricies[which_cuda][which_IC*Nparticles:(which_IC+1)*Nparticles,:,:]
+
+				nparams = covariance_matrix.shape[0]
+				ntimes = covariance_matrix.shape[1]
+				ncov = covariance_matrix.shape[2]-nspecies
+
+				mus = covariance_matrix[:,:,0:nspecies]
+				variances_old = covariance_matrix[:,:,nspecies:]
+
+				covariances = numpy.zeros((nparams,ntimes*nspecies,nspecies))
+
+				for param in range(0,nparams):
+					count_1 = -1
+					for time in range(0,ntimes):
+						count_1 += 1
+						count_2 = -nspecies
+						for i in range(0, nspecies):
+							count_2 += nspecies-i
+							for j in range(i, nspecies):
+								if i == j:
+									covariances[param,i+count_1*nspecies,j] = variances_old[param, time, count_2 + j]
+								else:
+									covariances[param,i+count_1*nspecies,j] = variances_old[param, time, count_2 + j]
+									covariances[param,j+count_1*nspecies,i] = variances_old[param, time, count_2 + j]
+
+				self.mus[p] = mus
+				self.covariances[p] = covariances
+
+		else:
+			for p, cuda in enumerate(self.cuda):
+				which_cuda = cuda_order.index(cuda)
+				covariance_matrix = covariance_matricies[which_cuda]
+
+				nparams = covariance_matrix.shape[0]
+				ntimes = covariance_matrix.shape[1]
+				ncov = covariance_matrix.shape[2]-nspecies
+
+				mus = covariance_matrix[:,:,0:nspecies]
+				variances_old = covariance_matrix[:,:,nspecies:]
+
+				covariances = numpy.zeros((nparams,ntimes*nspecies,nspecies))
+
+				for param in range(0,nparams):
+					count_1 = -1
+					for time in range(0,ntimes):
+						count_1 += 1
+						count_2 = -nspecies
+						for i in range(0, nspecies):
+							count_2 += nspecies-i
+							for j in range(i, nspecies):
+								if i == j:
+									covariances[param,i+count_1*nspecies,j] = variances_old[param, time, count_2 + j]
+								else:
+									covariances[param,i+count_1*nspecies,j] = variances_old[param, time, count_2 + j]
+									covariances[param,j+count_1*nspecies,i] = variances_old[param, time, count_2 + j]
+
+				self.mus[p] = mus
+				self.covariances[p] = covariances
+
+		#print [x.shape for x in self.mus]
+		#print "----------"
+		#print [x.shape for x in self.covariances]
+		#print self.covariances[0][8,6:11,0:5]
+
+	def measured_species(self):
+		self.B=[""]*self.nmodels
+		for i in range(0,self.nmodels):
+			fits = self.fitSpecies[i]
+			for count, j in enumerate(fits):
+				temp = numpy.zeros((self.nspecies_all))
+				if len(j) == 1:
+					temp[j[0]] += 1.0
+				else:
+					temp[j[0]] += 1.0
+					for pos, x in enumerate(j[1::2]):
+						if x=="+":
+							temp[j[1:][pos+1]] += 1.0
+						elif x=="-":
+							temp[j[1:][pos+1]] -= 1.0
+
+				if count == 0:
+					B = temp
+				else:
+					B = numpy.vstack((B,temp))
+
+				if len(B.shape)==1:
+					B = array([B])
+
+			self.B[i]=B
+
+
+
+	def sortCUDASimoutput_SDE(self,cudaorder,result,result_var):
+
+		#If approach is of type 2 then total particles is N1+N2+N1xN3 otherwise just sum of Ni
+		if self.analysisType == 1:
+			Nparticles = self.N1sample+self.N2sample+self.N1sample*self.N3sample
+		else:
+			Nparticles = self.particles
+
+		#cuda_NAs holds the number of particles which don't result in NAs from cuda-sim
+		##Format of cuda_NAs:
+		##For approach 1 and 3: {"Exp_1.cu":[N1,N2,N3,N4],"Exp_2.cu:[N1,N2,N3,N4],...etc"}
+		##For approach 2: {"Exp_1.cu":[N1,N2,[N3_1,...,N3_N1]],"Exp_2.cu:[N1,N2,[N3_1,...,N3_N1]],...etc"}
+
+		cuda_NAs = dict((k, []) for k in cudaorder)
+
+		for i, cudafile in enumerate(cudaorder):
+			#Index_NA finds the particle indices for which there are NAs
+			Index_NA = [[ numpy.isnan(numpy.sum(result[i][k,l,:,:])) for l in range(0,result[i].shape[1])] for k in range(0,result[i].shape[0])]
+			#index_NA = [p for p, e in enumerate(numpy.isnan(numpy.sum(numpy.sum(result[i][:,:,:,:],axis=3),axis=2))) if e==True]
+			print Index_NA
+			#print index_NA.shape
+
+			#Detects whether we have priors over the initial conditions or not and sets pairings_ICs for iteration over in the next part
+			if self.initialprior == False:
+				pairing_ICs = enumerate(self.pairParamsICS.values()[i])
+			else:
+				pairing_ICs = enumerate(range(1))
+
+			#Iteration over different initial conditions
+			for j, IC in pairing_ICs:
+				Index_NA_IC = Index_NA[i*Nparticles:(i+1)*Nparticles]
+				Index_NA_IC_N1 = Index_NA_IC[0:self.N1sample]
+				Index_NA_IC_N2 = Index_NA_IC[self.N1sample:(self.N1sample+self.N2sample)]
+				N1s = [self.beta-sum(x) for x in Index_NA_IC_N1]
+				N2s = [self.beta-sum(x) for x in Index_NA_IC_N2]
+				cuda_NAs[cudafile].append([N1s,N2s])
+
+				print [cuda_NAs[cudafile][j][0].index(0)]
+				print [cuda_NAs[cudafile][j][1].index(0)]
+
+				print cuda_NAs
+				print Index_NA_IC_N1[0]
+				print result[i][0,Index_NA_IC_N1[0],:,:]
+				#Use masking
+				sys.exit()
+
+		#print cuda_NAs
+
+	def sort_sde_sims(self,cudaorder,cudaout):
+		self.cudaout=[""]*len(self.cuda)
+
+		#If approach is of type 2 then total particles is N1+N2+N1xN3 otherwise just sum of Ni
+		# if self.analysisType == 1:
+		# 	Nparticles = self.N1sample+self.N2sample+self.N1sample*self.N3sample
+		# else:
+		# 	Nparticles = self.particles
+
+		#print [x.shape for x in cudaout]
+
+
+		if self.initialprior == False:
+			#For loop over the cuda codes in the experiments
+			for model, cudafile in enumerate(self.cuda):
+				#Picks corresponding sample for each cuda code
+				cudaout_temp = cudaout[cudaorder.index(cudafile)]
+
+				#Finds which initial condition this experiment has
+				pos = self.pairParamsICS[cudafile].index([x[1] for x in self.x0prior[model]])
+				#sys.exit()
+				#Find total number of particles associated with cuda file
+				#if self.analysisType!=1:
+				size_cudaout_start = pos*self.N1sample
+					#size_cudaout_start = sum(size_cudaout_start)
+				size_cudaout_end = (pos+1)*self.N1sample
+				# else:
+				# 	size_cudaout_start  = [sum([cuda_NAs[cudafile][x][0]]+[cuda_NAs[cudafile][x][1]]+cuda_NAs[cudafile][x][2]) for x in range(pos-1)]
+				# 	size_cudaout_start = sum(size_cudaout_start)
+				# 	size_cudaout_end = size_cudaout_start + sum([cuda_NAs[cudafile][pos][0]]+[cuda_NAs[cudafile][pos][1]]+cuda_NAs[cudafile][pos][2])
+
+				self.cudaout[model] = cudaout_temp[size_cudaout_start:size_cudaout_end,:,:,:]
+		else:
+			for model, cudafile in enumerate(self.cuda):
+				self.cudaout[model] = cudaout[cudaorder.index(cudafile)]
+
+
+
+"""
+	def sortCUDASimoutput(self,cudaorder,cudaout):
+		#Sets up attribute for output of CUDA-sim
+		self.cudaout=[""]*len(self.cuda)
+
+
+		#If approach is of type 2 then total particles is N1+N2+N1xN3 otherwise just sum of Ni
+		if self.analysisType == 1:
+			Nparticles = self.N1sample+self.N2sample+self.N1sample*self.N3sample
+		else:
+			Nparticles = self.particles
+
+		#cuda_NAs holds the number of particles which don't result in NAs from cuda-sim
+		##Format of cuda_NAs:
+		##For approach 1 and 3: {"Exp_1.cu":[N1,N2,N3,N4],"Exp_2.cu:[N1,N2,N3,N4],...etc"}
+		##For approach 2: {"Exp_1.cu":[N1,N2,[N3_1,...,N3_N1]],"Exp_2.cu:[N1,N2,[N3_1,...,N3_N1]],...etc"}
+		cuda_NAs = dict((k, []) for k in cudaorder)
+
+		#For loop iterates over distinct cuda codes
+		for i, cudafile in enumerate(cudaorder):
+			#Index_NA finds the particle indices for which there are NAs
+			index_NA = [p for p, e in enumerate(numpy.isnan(numpy.sum(numpy.sum(cudaout[i][:,:,:],axis=2),axis=1))) if e==True]
+
+			#Detects whether we have priors over the initial conditions or not and sets pairings_ICs for iteration over in the next part
+			if self.initialprior == False:
+				pairing_ICs = enumerate(self.pairParamsICS.values()[i])
+			else:
+				pairing_ICs = enumerate(range(1))
+
+			#Iteration over different initial conditions
+			for j, IC in pairing_ICs:
+				#Splits up the NAs belong to each specific initial condition
+				index_NA_IC = [s for s in index_NA if s < (j+1)*Nparticles  and s >= j*Nparticles]
+
+				#Need to distinguish between approach 2 and the others as NAs handled differently
+				if self.analysisType !=1:
+					#For approach 1 and 3 simply count the NAs and remove
+					N1_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample]
+					N2_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample and x >= j*Nparticles + self.N1sample]
+					N3_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample+self.N3sample and x >= j*Nparticles + self.N1sample + self.N2sample]
+					N4_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample+self.N3sample+self.N4sample and x >= j*Nparticles + self.N1sample + self.N2sample+self.N3sample]
+					#Key is the cuda code file string and the values is a list corresponding to the remaining samples after removing NAs
+					cuda_NAs[cudafile].append([self.N1sample-len(N1_NA),self.N2sample-len(N2_NA),self.N3sample-len(N3_NA),self.N4sample-len(N4_NA)])
+
+				#Approach 2 needs to be considered more carefully
+				#If there is an NA for N1 then need to remove all of the corresponding N3
+				#If there is an NA in an N3 then the N1 which this corresponds to has a different N3, i.e. after removing NAs
+				elif self.analysisType == 1:
+					#start and end are the position for the N1xN3 sample for a specific initial condition
+					start = j*Nparticles + self.N1sample+self.N2sample
+					end = j*Nparticles + self.N1sample+self.N2sample + self.N1sample*self.N3sample
+
+					#Counts NAs in N1 and N2
+					N1_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample]
+					N2_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample+self.N2sample and x >= j*Nparticles + self.N1sample]
+					new_N2 = self.N2sample-len(N2_NA)
+
+					#Calculates the number of NAs in N1xN3 sample but seperates out between each N3 belonging to a specific N1
+					additional_N1N3_NAs = [range(int(j*Nparticles + self.N1sample + self.N2sample + x*self.N3sample),int(j*Nparticles + self.N1sample + self.N2sample + (x+1)*self.N3sample)) for x in N1_NA - j*Nparticles*numpy.ones([len(N1_NA)])]
+					y = []
+
+					for temp in additional_N1N3_NAs:
+						y+=temp
+
+					additional_N1N3_NAs = y
+
+					#Collects all detected NAs into one list
+					index_NA_IC = list(set().union(index_NA_IC,additional_N1N3_NAs))
+
+					#Finds the NAs in the N1xN3 sample
+					N1N3_NA = [x for x in index_NA_IC if x < end and x >= start]
+
+					#Finds the remaining particles in N1xN3 sample
+					remaining_N1N3 = [item for item in range(start,end) if item not in N1N3_NA]
+
+
+
+					#Splits up the N1xN3 into a list for each N1
+					keep_N1N3 = [[z for z in y if z not in index_NA_IC] for y in [list(range(x,x+self.N3sample)) for x in range(start,end,self.N3sample)]]
+
+					#Finds the number remaining in the N1xN3 sample
+					new_N1N3 = [len(x) for x in keep_N1N3 if len(x)!=0]
+
+					#Adds to indicies to remove
+					index_NA_IC = set().union(index_NA_IC, [x+j*Nparticles for x,y in enumerate(new_N1N3) if y == 0])
+
+					#Calculates new NAs in N1 sample
+					N1_NA = [x for x in index_NA_IC if x < j*Nparticles + self.N1sample]
+					new_N1 = self.N1sample-len(N1_NA)
+
+					#Sets the number remaining in the sample
+					cuda_NAs[cudafile].append([new_N1,new_N2,new_N1N3])
+
+					#Adds NAs to entire list index_NA
+					index_NA = list(set().union(index_NA,index_NA_IC))
+
+			#Removes the NAs in the cuda output
+			cudaout[i] = numpy.delete(cudaout[i], index_NA, axis=0)
+
+		#Sets the size of the sample to attribute after NAs removed
+		self.cudaout_structure = cuda_NAs
+
+		#Copies the correct cuda output to the correct experiment
+		if self.initialprior == False:
+			#For loop over the cuda codes in the experiments
+			for model, cudafile in enumerate(self.cuda):
+				#Picks corresponding sample for each cuda code
+				cudaout_temp = cudaout[cudaorder.index(cudafile)]
+
+				#Finds which initial condition this experiment has
+				pos = self.pairParamsICS[cudafile].index([x[1] for x in self.x0prior[model]])
+
+				#Find total number of particles associated with cuda file
+				if self.analysisType!=1:
+					size_cudaout_start = [sum(cuda_NAs[cudafile][x]) for x in range(pos-1)]
+					size_cudaout_start = sum(size_cudaout_start)
+					size_cudaout_end = size_cudaout_start + sum(cuda_NAs[cudafile][pos])
+				else:
+					size_cudaout_start  = [sum([cuda_NAs[cudafile][x][0]]+[cuda_NAs[cudafile][x][1]]+cuda_NAs[cudafile][x][2]) for x in range(pos-1)]
+					size_cudaout_start = sum(size_cudaout_start)
+					size_cudaout_end = size_cudaout_start + sum([cuda_NAs[cudafile][pos][0]]+[cuda_NAs[cudafile][pos][1]]+cuda_NAs[cudafile][pos][2])
+
+				#Copies associated cudaoutput to corresponding experiment
+				self.cudaout[model] = cudaout_temp[size_cudaout_start:size_cudaout_end,:,:]
+		#If priors over initial conditions then assign just corresponding cuda code
+		else:
+			for model, cudafile in enumerate(self.cuda):
+				self.cudaout[model] = cudaout[cudaorder.index(cudafile)]
+
+		#Calls fitSort() which accounts for which species are measurable
+		print "-----Sorting out measurable species-----"
+		self.fitSort()
+
+		#Adds noise to the N1 trajectories if ODEs used
+		if self.type == 0:
+			print "-----Adding noise to CUDA-Sim outputs-----"
+			self.addNoise(cudaorder)
+"""

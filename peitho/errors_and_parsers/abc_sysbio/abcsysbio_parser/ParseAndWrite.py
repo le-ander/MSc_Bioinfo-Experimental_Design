@@ -4,10 +4,10 @@ from peitho.errors_and_parsers.abc_sysbio.abcsysbio_parser.SDEPythonWriter impor
 from peitho.errors_and_parsers.abc_sysbio.abcsysbio_parser.ODECUDAWriter import OdeCUDAWriter
 from peitho.errors_and_parsers.abc_sysbio.abcsysbio_parser.SDECUDAWriter import SdeCUDAWriter
 from peitho.errors_and_parsers.abc_sysbio.abcsysbio_parser.GillespieCUDAWriter import GillespieCUDAWriter
-#from CWriter import CWriter
 from peitho.errors_and_parsers.abc_sysbio.abcsysbio_parser.CandPythonParser import CandPythonParser
 from peitho.errors_and_parsers.abc_sysbio.abcsysbio_parser.SDEAndGillespieCUDAParser import SdeAndGillespieCUDAParser
 from peitho.errors_and_parsers.abc_sysbio.abcsysbio_parser.ODECUDAParser import OdeCUDAParser
+
 import re
 
 def ParseAndWrite(source, integrationType, modelName = None, inputPath = "", outputPath = "", method = None):

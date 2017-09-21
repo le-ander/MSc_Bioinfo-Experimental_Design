@@ -2,8 +2,10 @@ from numpy import *
 
 from pycuda import compiler, driver
 from pycuda import autoinit
+
 import peitho.mut_Info.mutInfos.launch as launch
 import sys
+
 import copy
 
 
@@ -187,7 +189,7 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 	print "Block shape:", str(block_i)+"x"+str(block_j)
 
 	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
-	grid_prelim_i , grid_prelim_j = launch.optimise_gridsize(3, block_i, block_j, T_Mod, S_Mod, T_Ref, S_Ref)
+	grid_prelim_i , grid_prelim_j = launch.optimise_gridsize_ode(3, block_i, block_j, T_Mod, S_Mod, T_Ref, S_Ref)
 	grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i, N1))
 	grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j, N2))
 	print "Grid shape:", str(grid_i)+"x"+str(grid_j)
@@ -289,7 +291,7 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 	print "Block shape:", str(block_i)+"x"+str(block_j)
 
 	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multiple of block size)
-	grid_prelim_i , grid_prelim_j = launch.optimise_gridsize(1, block_i, block_j, T_Ref, S_Ref)
+	grid_prelim_i , grid_prelim_j = launch.optimise_gridsize_ode(1, block_i, block_j, T_Ref, S_Ref)
 	grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i, N1))
 	grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j, N3))
 	print "Grid shape:", str(grid_i)+"x"+str(grid_j)
@@ -389,7 +391,7 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 	print "Block shape:", str(block_i)+"x"+str(block_j)
 
 	# Launch configuration: Grid size (limited by GPU global memory) and grid shape (multipe of block size)
-	grid_prelim_i , grid_prelim_j = launch.optimise_gridsize(1, block_i, block_j, T_Mod, S_Mod)
+	grid_prelim_i , grid_prelim_j = launch.optimise_gridsize_ode(1, block_i, block_j, T_Mod, S_Mod)
 	grid_i = float(min(autoinit.device.max_grid_dim_x, grid_prelim_i, N1))
 	grid_j = float(min(autoinit.device.max_grid_dim_y, grid_prelim_j, N4))
 	print "Grid shape:", str(grid_i)+"x"+str(grid_j)
@@ -521,6 +523,7 @@ def mutInfo3(dataRef,thetaRef,dataMod,thetaMod,N1,N2,N3,N4,sigma_ref,sigma_mod,s
 	return Info2, count_all_inf, count_all_inf_prop
 
 
+
 # A function calling mutInfo3 for all provided experiments and outputs the mutual information
 ##Arguments:
 ##model_obj - an object containing all alternative experiments and all their associated information
@@ -532,6 +535,7 @@ def run_mutInfo3(model_obj, ref_obj, input_SBML):
 	MutInfo3_infs = []
 	#Initiates list to hold percentage of infinites
 	MutInfo3_infs_prop = []
+
 
 	#Cycles through experiments
 	for experiment in range(model_obj.nmodels):
