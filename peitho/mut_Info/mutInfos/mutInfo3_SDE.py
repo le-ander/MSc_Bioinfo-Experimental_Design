@@ -60,6 +60,7 @@ def mutInfo3SDE(dataMod,thetaMod,covMod,dataRef,thetaRef,covRef):
 				}
 				vector2[t] += vector1[idx2d(t,s_i,%(S)s)] * (x[idx4d(ti,tj,t,s_i,b,%(T)s,%(S)s)] - mu[idx3d(tk,t,s_i,%(T)s,%(S)s)]);
 			}
+			vector2[t]=log(vector2[t]+1);
 			res1[idx3d(ti,tj,tk,b,n4)] += log(sqrtf(invdet[idx2d(tk,t,%(T)s)])) - 0.5 * vector2[t] + pre;
 		}
 		res1[idx3d(ti,tj,tk,b,n4)] = exp(res1[idx3d(ti,tj,tk,b,n4)]);

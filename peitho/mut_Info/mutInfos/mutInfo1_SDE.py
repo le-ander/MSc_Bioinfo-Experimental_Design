@@ -59,6 +59,7 @@ def mutInfo1SDE(data,theta,cov):
 				}
 				vector2[t] += vector1[idx2d(t,s_i,%(S)s)] * (x[idx4d(ti,tj,t,s_i,b,%(T)s,%(S)s)] - mu[idx3d(tk,t,s_i,%(T)s,%(S)s)]);
 			}
+			vector2[t]=log(vector2[t]+1);
 			res1[idx3d(ti,tj,tk,b,n3)] += log(sqrtf(invdet[idx2d(tk,t,%(T)s)])) - 0.5 * vector2[t] + pre;
 		}
 		res1[idx3d(ti,tj,tk,b,n3)] = exp(res1[idx3d(ti,tj,tk,b,n3)]);
@@ -89,6 +90,7 @@ def mutInfo1SDE(data,theta,cov):
 				}
 				vector2[t] += vector1[idx2d(t,s_i,%(S)s)] * (x[idx4d(ti,tj,t,s_i,b,%(T)s,%(S)s)] - mu[idx3d(ti,t,s_i,%(T)s,%(S)s)]);
 			}
+			vector2[t]=log(vector2[t]+1);
 			res1[idx2d(ti,tj,b)] += log(sqrtf(invdet[idx2d(ti,t,%(T)s)])) - 0.5 * vector2[t] + pre;
 		}
 	}
@@ -338,7 +340,7 @@ def mutInfo1SDE(data,theta,cov):
 
 			# Call GPU kernel function
 			gpu_kernel_func2SDE(int32(Ni), int32(Nj), float64(pre), driver.In(invdet_subset), driver.In(data_subset),driver.In(theta_subset), driver.In(invcov_subset),driver.Out(res1), block=(int(bi),int(bj),int(1)),grid=(int(gi),int(gj),int(1)))
-
+			
 			# Store in results array
 			res_log_1[i*int(grid_i):i*int(grid_i)+Ni,j*int(grid_j):j*int(grid_j)+Nj] = res1
 
