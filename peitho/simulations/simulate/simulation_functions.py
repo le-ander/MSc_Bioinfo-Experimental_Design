@@ -57,10 +57,10 @@ def run_cudasim(m_object,inpath="", intType="ODE",usesbml=False):
 
 	elif intType=="SDE":
 
-		if usesbml == True:
-			inpath_LNA = inpath+"/LNA"
-		else:
-			inpath_LNA = inpath
+		#if usesbml == True:
+		inpath_LNA = inpath+"/LNA"
+		#else:
+		#inpath_LNA = inpath
 
 		modelInstance = EulerMaruyama.EulerMaruyama(m_object.times, list(set(m_object.cuda)), dt=m_object.dt, inpath=inpath, beta = m_object.beta)
 		LNAInstance = Lsoda.Lsoda(m_object.times, list(set(m_object.cuda)), dt=m_object.dt, inpath=inpath_LNA)
