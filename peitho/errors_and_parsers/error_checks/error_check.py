@@ -1,5 +1,6 @@
 import sys
 import os
+import shutil
 
 # A function that prints the flag options when run in the command line
 ##(input_checker)
@@ -57,6 +58,25 @@ def input_checker(sys_arg):
 	seed_bool = False
 	seed_value = 0
 
+	if (len(sys_arg)>1 and (sys_arg[1]=="--example" or sys_arg[1]=="-ex")):
+		if len(sys_arg) == 2:
+			example_out = "example_data"
+		elif len(sys_arg) == 3:
+			example_out = sys_arg[2]
+		elif len(sys_arg) > 3:
+			print "Too many arguments provided to -ex/--example flag.\n"
+			sys.exit()
+
+		if os.path.isdir(example_out):
+			print "Folder already exists!\n"
+			sys.exit()
+		else:
+			try:
+				shutil.copytree(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))+"/example_data", example_out)
+
+			except:
+				print "Output folder was not properly defined.\n"
+			sys.exit()
 
 	#For loop cycles over the command line arguments
 	for i in range(1,len(sys_arg)):
@@ -208,7 +228,7 @@ def input_checker(sys_arg):
 			elif option == 'iT' :
 				intType = sys_arg[i+1]
 
-			elif option == 'sd':
+			elif option == 's':
 				seed_bool = True
 				try:
 					seed_value = int(sys_arg[i+1])
