@@ -1,3 +1,12 @@
+# Include the license file
+include LICENSE.txt
+
+# Include the readme file
+include README.md
+
+# Include the manual file
+inlcude doc/manual.pdf
+
 # Include cudasims non-python files
 include peitho/simulations/cudasim/cuLsoda_all.cu
 include peitho/simulations/cudasim/MersenneTwister.cu
@@ -5,4 +14,4 @@ include peitho/simulations/cudasim/WarpStandard.cu
 include peitho/simulations/cudasim/MersenneTwister.dat
 
 # Include the example files
-recursive-include peitho/example
+recursive-include peitho/example_data *
